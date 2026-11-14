@@ -286,6 +286,12 @@ thead { background: #132734; color: #afc9d4; }
 .global-map-caption { margin-top: 10px; color: #849ca8; font-size: 10px; line-height: 1.5; }
 
 .mars-globe-section { margin: 22px 0 28px; scroll-margin-top: 78px; }
+.globe-mode-switch { display: flex; justify-content: flex-end; gap: 4px; margin: -6px 0 8px; }
+.globe-mode-switch button { border: 1px solid #34515d; border-radius: 6px; padding: 8px 13px; background: #10232f; color: #b9ced6; font-size: 11px; font-weight: 800; }
+.globe-mode-switch button[aria-pressed="true"] { border-color: #58edca; background: #17463f; color: #fff; }
+.globe-flat-mode { border: 1px solid #294653; border-radius: 10px; padding: 10px; background: #091925; }
+.globe-flat-mode .global-map-card { margin: 0; }
+.globe-transition-note { margin: 2px 4px 10px; color: #8da9b5; font-size: 10px; }
 .mars-globe-layout {
   display: grid; grid-template-columns: minmax(320px, 1fr) minmax(250px, 330px); gap: 14px;
   border: 1px solid #294653; border-radius: 10px; padding: 16px; background: #091925;
@@ -313,6 +319,17 @@ thead { background: #132734; color: #afc9d4; }
 }
 .globe-jezero-marker i { width: 9px; height: 9px; border-radius: 50%; background: #58edca; box-shadow: 0 0 12px #58edca; }
 .globe-jezero-marker:hover { background: #15443f; }
+.globe-site-markers { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.globe-site-pin {
+  position: absolute; transform: translate(-50%, -50%); width: 24px; height: 24px; padding: 0;
+  border: 2px solid #fff; border-radius: 50%; color: #07131b; box-shadow: 0 2px 8px #000a;
+  font-size: 10px; font-weight: 900; pointer-events: auto;
+}
+.globe-site-pin--landing { background: #55efc4; }
+.globe-site-pin--event { background: #ffad5a; }
+.globe-site-pin--mixed { background: #c7a3fc; }
+.globe-site-pin:hover, .globe-site-pin[aria-pressed="true"] { transform: translate(-50%, -50%) scale(1.24); outline: 2px solid #fff; outline-offset: 2px; }
+.mars-globe-stage .global-site-popup { z-index: 8; }
 .globe-controls {
   position: absolute; z-index: 4; right: 12px; top: 12px; display: grid; overflow: hidden;
   border: 1px solid #345361; border-radius: 7px; background: #0b1e2aeb;
@@ -328,6 +345,10 @@ thead { background: #132734; color: #afc9d4; }
 .globe-readout dt { color: #83aab9; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .globe-readout dd { margin: 0; color: #eff8fa; font: 700 11px ui-monospace, monospace; overflow-wrap: anywhere; }
 .globe-help { color: #84a0ab; }
+.globe-site-controls { margin: 16px 0; padding-top: 13px; border-top: 1px solid #284552; }
+.globe-site-controls > strong { display: block; margin-bottom: 8px; color: #e8f5f5; font-size: 11px; }
+.globe-site-picker { display: grid; gap: 4px; margin-top: 8px; color: #8fb0bd; font-size: 9px; }
+.globe-site-picker select { width: 100%; min-width: 0; border: 1px solid #34515d; border-radius: 5px; padding: 7px; background: #102b39; color: #eaf5f7; }
 .globe-detail-button { width: 100%; margin-top: 10px; border: 1px solid #58edca; border-radius: 6px; padding: 10px; background: #17463f; color: #f5fffc; font-weight: 800; }
 .globe-detail-button:hover { background: #1f5b51; }
 

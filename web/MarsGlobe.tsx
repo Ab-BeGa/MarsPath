@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent, type WheelEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react'
 import { useI18n } from './i18n.tsx'
 import { clampGlobeView, marsToGlobeScreen, screenUnitToMars, texturePixel, type GlobeView } from './marsGlobe.ts'
+import { MarsGlobalMap } from './MarsGlobalMap.tsx'
+import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
+import { loadMarsSites, type MarsSite } from './marsSites.ts'
 
 const TEXTURE_URL = '/data/mars-global/mola_global_overview.jpg'
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
@@ -38,6 +41,12 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
   const [metadata, setMetadata] = useState<Metadata | null>(null)
   const [error, setError] = useState('')
   const [size, setSize] = useState(520)
+  const [mode, setMode] = useState<'globe' | 'flat'>('globe')
+  const [sites, setSites] = useState<MarsSite[]>([])
+  const [siteError, setSiteError] = useState('')
+  const [siteFilter, setSiteFilter] = useState<'all' | MarsSite['category']>('all')
+  const [selectedSiteIds, setSelectedSiteIds] = useState<string[]>([])
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -66,6 +75,18 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
     }).catch(reason => { if (active) setError(reason instanceof Error ? reason.message : String(reason)) })
     return () => { active = false }
   }, [])
+
+  useEffect(() => {
+    let active = true
+    loadMarsSites('/data/mars-global/sites.json')
+      .then(catalogue => { if (active) setSites(catalogue.sites) })
+      .catch(reason => { if (active) setSiteError(reason instanceof Error ? reason.message : String(reason)) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (mode === 'globe' && view.zoom >= 1.65) setMode('flat')
+  }, [mode, view.zoom])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -159,13 +180,36 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
   const marker = marsToGlobeScreen(JEZERO.longitude, JEZERO.latitude, view)
   const markerLeft = 50 + marker.x * 43 * view.zoom
   const markerTop = 50 - marker.y * 43 * view.zoom
+  const filteredSites = sites.filter(site => siteFilter === 'all' || site.category === siteFilter)
+  const siteGroups = useMemo(() => {
+    const groups = new Map<string, MarsSite[]>()
+    for (const site of filteredSites) {
+      const key = `${site.latitude_deg}:${site.longitude_east_deg}`
+      groups.set(key, [...(groups.get(key) ?? []), site])
+    }
+    return [...groups.values()]
+  }, [filteredSites])
+  const selectedSites = selectedSiteIds.map(id => sites.find(site => site.id === id)).filter((site): site is MarsSite => Boolean(site))
+  const focusSite = (site: MarsSite) => {
+    setView(current => clampGlobeView({ ...current, longitude: site.longitude_east_deg, latitude: site.latitude_deg }))
+    setSelectedSiteIds([site.id])
+    setSelectedSiteId(site.id)
+  }
+  const closeSite = () => { setSelectedSiteIds([]); setSelectedSiteId(null) }
 
   return <section id="globe" className="mars-globe-section" aria-labelledby="globe-title">
     <div className="section-heading">
       <div><span className="section-kicker">{t('globe.kicker')}</span><h2 id="globe-title">{t('globe.title')}</h2><p>{t('globe.description')}</p></div>
       <span className="data-pill">MOLA · 463 m/px</span>
     </div>
-    <div className="mars-globe-layout">
+    <div className="globe-mode-switch" role="group" aria-label={t('globe.mode')}>
+      <button aria-pressed={mode === 'globe'} onClick={() => setMode('globe')}>{t('globe.mode.3d')}</button>
+      <button aria-pressed={mode === 'flat'} onClick={() => setMode('flat')}>{t('globe.mode.flat')}</button>
+    </div>
+    {mode === 'flat' ? <div className="globe-flat-mode">
+      <p className="globe-transition-note">{t('globe.flatNote')}</p>
+      <MarsGlobalMap onOpenRegion={onOpenDetail}/>
+    </div> : <div className="mars-globe-layout">
       <div className="mars-globe-stage">
         <canvas ref={canvasRef} className="mars-globe-canvas" aria-label={t('globe.accessibility')}
           onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endPointer}
@@ -173,6 +217,25 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
         {!metadata && !error && <span className="globe-loading">{t('globe.loading')}</span>}
         {marker.visible && <button className="globe-jezero-marker" style={{ left: `${markerLeft}%`, top: `${markerTop}%` }}
           onClick={onOpenDetail} aria-label={t('globe.detail')}><i/>JEZERO</button>}
+        <div className="globe-site-markers" aria-label={t('map.sites.title')}>
+          {siteGroups.map(group => {
+            const point = marsToGlobeScreen(group[0].longitude_east_deg, group[0].latitude_deg, view)
+            if (!point.visible) return null
+            const isEvent = group.every(site => site.category === 'science_event')
+            const mixed = group.some(site => site.category !== group[0].category)
+            return <button key={group.map(site => site.id).join(':')}
+              className={`globe-site-pin globe-site-pin--${mixed ? 'mixed' : isEvent ? 'event' : 'landing'}`}
+              style={{ left: `${50 + point.x * 43 * view.zoom}%`, top: `${50 - point.y * 43 * view.zoom}%` }}
+              aria-label={group.length > 1 ? t('map.sites.pinGroup', {count:group.length}) : t('map.sites.pin', {name:group[0].name})}
+              aria-pressed={group.some(site => site.id === selectedSiteId)}
+              title={group.map(site => site.name).join(' / ')}
+              onClick={() => { setSelectedSiteIds(group.map(site => site.id)); setSelectedSiteId(group[0].id) }}>
+              {group.length > 1 ? group.length : isEvent ? '✦' : '●'}
+            </button>
+          })}
+        </div>
+        {selectedSiteId && selectedSites.length > 0 && <MarsSiteInfoCard sites={selectedSites} selectedId={selectedSiteId}
+          onSelect={setSelectedSiteId} onClose={closeSite}/>}
         <div className="globe-controls" aria-label={t('globe.controls')}>
           <button onClick={() => updateZoom(1.15)} aria-label="+">+</button>
           <button onClick={() => updateZoom(1 / 1.15)} aria-label="−">−</button>
@@ -190,9 +253,23 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
           </dl>
           <p>{t('globe.limit')}</p>
           <p className="globe-help">{t('globe.help')}</p>
+          <div className="globe-site-controls">
+            <strong>{t('map.sites.title')}</strong>
+            <div className="global-site-filters" role="group" aria-label={t('map.sites.title')}>
+              {([['all','map.sites.all'],['landing_site','map.sites.landing'],['science_event','map.sites.science']] as const).map(([value,label]) =>
+                <button key={value} aria-pressed={siteFilter === value} onClick={() => { setSiteFilter(value); closeSite() }}>{t(label)}</button>)}
+            </div>
+            <label className="globe-site-picker"><span>{t('map.sites.pick')}</span>
+              <select value={selectedSiteId ?? ''} onChange={event => {
+                const site = sites.find(item => item.id === event.currentTarget.value)
+                if (site) focusSite(site); else closeSite()
+              }}><option value="">{t('map.sites.pickPlaceholder')}</option>{filteredSites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}</select>
+            </label>
+            {siteError && <span className="global-site-error">{t('map.sites.loadError')} {siteError}</span>}
+          </div>
           <button className="globe-detail-button" onClick={onOpenDetail}>{t('globe.detail')}</button>
         </>}
       </aside>
-    </div>
+    </div>}
   </section>
 }
