@@ -426,3 +426,28 @@ thead { background: #132734; color: #afc9d4; }
   .slope-settings fieldset { gap: 10px; }
   .slope-toggle { width: 100%; justify-content: center; }
 }
+
+/* Task #20: linked elevation profile and selected route segment. */
+.elevation-profile-panel {
+  margin: 16px 0 18px; padding: 20px 22px 16px;
+  background: #0c1a29; border: 1px solid #29424c; border-radius: 12px;
+}
+.elevation-profile-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.elevation-profile-head h3 { margin: 0 0 8px; color: #eaf3f7; font-size: 18px; }
+.elevation-profile-head p { margin: 0 0 12px; color: #9cb5c2; line-height: 1.5; font-size: 12px; }
+.elevation-profile-head > span { color: #55efc4; white-space: nowrap; font-size: 12px; font-weight: 700; }
+.elevation-profile-svg { display: block; width: 100%; height: auto; border: 1px solid #29424c; border-radius: 6px; background: #071522; }
+.elevation-profile-hit { cursor: crosshair; }
+.elevation-profile-controls { display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
+.elevation-profile-controls label { color: #b7cad2; font-size: 12px; }
+.elevation-profile-controls input[type="range"] { flex: 1; min-width: 160px; accent-color: #55efc4; }
+.elevation-profile-controls button { padding: 9px 12px; background: #183b47; border: 1px solid #3c6572; border-radius: 6px; color: #edf5f9; font-size: 12px; }
+.elevation-profile-controls button:disabled { opacity: .5; cursor: default; }
+.elevation-profile-reading { color: #d9eaf0; line-height: 1.6; font-size: 13px; margin: 13px 0 4px; }
+.elevation-profile-reading strong { color: #ffe2a5; }
+.elevation-profile-note { margin: 8px 0 0; color: #8da7b4; font-size: 11px; line-height: 1.6; }
+@media (max-width: 680px) {
+  .elevation-profile-panel { padding: 12px; }
+  .elevation-profile-head { flex-direction: column; gap: 2px; }
+  .elevation-profile-head h3 { font-size: 16px; }
+}

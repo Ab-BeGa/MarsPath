@@ -16,7 +16,7 @@ export type RouteComparison = {
   coverage: { direct: number; detour: number; partial: boolean }
   demVerified: boolean
   routes: RoutePair
-  source: { crs: string; demHash?: string }
+  source: { crs: string; demHash?: string; step: number }
 }
 
 function object(value: unknown): Record<string, unknown> {
@@ -152,6 +152,6 @@ export function compareRoutes(directInput: unknown, detourInput: unknown): Route
     coverage: { direct: direct.coverage, detour: detour.coverage, partial: direct.partial || detour.partial },
     demVerified,
     routes: { direct: direct.points, detour: detour.points },
-    source: { crs: direct.crs, demHash: direct.demHash },
+    source: { crs: direct.crs, demHash: direct.demHash, step: direct.step },
   }
 }

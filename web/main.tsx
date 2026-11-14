@@ -138,7 +138,8 @@ function App() {
         {!terrain && !mapError && <section className="load-state" role="status" aria-live="polite">
           <div className="loading-ring" aria-hidden="true"/><p>Загрузка геопривязанной DEM Езеро…</p>
         </section>}
-        {terrain && <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}/>}
+        {terrain && <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}
+          routeStepM={mapSourceMatches ? comparison?.source.step : undefined}/>}
         {comparison && terrain && !mapSourceMatches && <p className="alert" role="status">Маршруты не показаны на карте: не подтверждено совпадение исходной DEM и марсианской проекции. Сравнение чисел ниже остаётся доступным.</p>}
         <RouteComparisonPanel onComparison={setComparison}/>
         <footer className="page-footer"><span>JEZERO TRAVERSE © 2026</span>
