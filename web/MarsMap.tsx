@@ -594,7 +594,22 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
           <p>{t('map.science.position')} · {coordinate.format(science.latitude_deg)}° N · {coordinate.format(science.longitude_deg)}° E</p>
           <p>{t('map.science.geology')}</p>
           <p><strong>{t('map.science.taskLabel')}</strong> {t('map.science.task')}</p>
-          <a href="https://science.nasa.gov/resource/sample-collection-and-rock-analysis-at-wildcat-ridge/">{t('map.science.link')}</a>
+          {scienceOpen && <div className="science-photos">
+            {[
+              ['outcrop.jpg', 'outcrop', 'sample-collection-and-rock-analysis-at-wildcat-ridge'],
+              ['hazeltop.png', 'hazeltop', 'perseverance-rock-cores-from-wildcat-ridge'],
+              ['bearwallow.png', 'bearwallow', 'perseverance-rock-cores-from-wildcat-ridge'],
+            ].map(([file, caption, source]) => (
+              <figure key={file}>
+                <img src={`./data/jezero/wildcat-ridge/${file}`} alt={t(`map.science.photo.${caption}`)} loading="lazy" />
+                <figcaption>
+                  {t(`map.science.photo.${caption}`)}
+                  <small>NASA/JPL-Caltech/ASU/MSSS</small>
+                  <a href={`https://science.nasa.gov/resource/${source}/`}>{t('map.science.photo.source')}</a>
+                </figcaption>
+              </figure>
+            ))}
+          </div>}
           <button type="button" className="text-action" onClick={() => {
             setScienceOpen(false)
             scienceButtonRef.current?.focus()
