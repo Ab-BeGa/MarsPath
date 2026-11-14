@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MarsMap } from './MarsMap.tsx'
+import { MarsGlobe } from './MarsGlobe.tsx'
 import { RouteOverview } from './RouteOverview.tsx'
 import { loadMarsTerrain, type MarsTerrain } from './marsTerrain.ts'
 import { compareRoutes, type RouteComparison } from './compareRoutes.ts'
@@ -121,6 +122,7 @@ function App() {
           <span className="brand-title">JEZERO <em>TRAVERSE</em><small>{t('brand.subtitle')}</small></span>
         </a>
         <nav className="topnav" aria-label={t('nav.label')}>
+          <a href="#globe">{t('nav.globe')}</a>
           <a href="#map">{t('nav.map')}</a>
           <a href="#compare">{t('nav.compare')}</a>
         </nav>
@@ -140,6 +142,7 @@ function App() {
             <div><small>{t('hero.source')}</small><strong>NASA / USGS</strong></div>
           </div>
         </section>
+        <MarsGlobe onOpenDetail={() => document.getElementById('map')?.scrollIntoView({behavior:'smooth'})}/>
         {mapError && <section className="load-state" role="alert">
           <h2>{t('app.loadFailed')}</h2>
           <p>{localizeError(mapError)}</p>

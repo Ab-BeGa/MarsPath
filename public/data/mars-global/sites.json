@@ -29,6 +29,7 @@
         "longitude": "312.049° E"
       },
       "description_ru": "Посадочный аппарат NASA Viking 1 — первая успешная мягкая посадка аппарата США на Марс.",
+      "image": {"url":"https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/07/Viking_1_First_Image_From_Mars_1280.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg","page_url":"https://science.nasa.gov/mission/viking-1/","alt_ru":"Первый вид поверхности Марса, полученный аппаратом Viking 1","caption_ru":"Viking 1 передал первые снимки с поверхности Марса вскоре после посадки в Chryse Planitia.","credit":"NASA/JPL"},
       "georeferencing": {
         "method": "PDS ODE catalogue landing-site coordinate",
         "reported_decimal_places": {
@@ -67,6 +68,7 @@
         "longitude": "134.280° E"
       },
       "description_ru": "Viking 2 изучал грунт и атмосферу в равнине Утопия.",
+      "image": {"url":"https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia00/pia00568/PIA00568.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg","page_url":"https://science.nasa.gov/photojournal/first-color-image-of-the-viking-lander-2-site/","alt_ru":"Цветной вид каменистой поверхности в месте посадки Viking 2","caption_ru":"Первый цветной снимок Viking 2 показывает каменистую равнину Utopia Planitia.","credit":"NASA/JPL"},
       "georeferencing": {
         "method": "PDS ODE catalogue landing-site coordinate",
         "reported_decimal_places": {
@@ -105,6 +107,7 @@
         "longitude": "326.747° E"
       },
       "description_ru": "Посадочная станция Pathfinder доставила на Марс небольшой марсоход Sojourner.",
+      "image": {"url":"https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/07/pathfinder20160226-16.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg","page_url":"https://science.nasa.gov/mission/mars-pathfinder/","alt_ru":"Марсоход Sojourner рядом с посадочной станцией Mars Pathfinder","caption_ru":"Mars Pathfinder доставил Sojourner — первый марсоход, работавший на поверхности Марса.","credit":"NASA/JPL-Caltech"},
       "georeferencing": {
         "method": "PDS ODE catalogue landing-site coordinate",
         "reported_decimal_places": {
@@ -143,6 +146,7 @@
         "longitude": "175.47848° E"
       },
       "description_ru": "Посадка марсохода Spirit в кратере Гусев; далее аппарат исследовал окружающий рельеф.",
+      "image": {"url":"https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/07/rover2-1.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg","page_url":"https://science.nasa.gov/mission/mer-spirit/","alt_ru":"Марсоход Spirit на поверхности Марса","caption_ru":"Spirit исследовал породы и грунт кратера Гусев с 2004 по 2010 год.","credit":"NASA/JPL-Caltech"},
       "georeferencing": {
         "method": "PDS ODE radiometric Doppler solution",
         "reported_decimal_places": {
@@ -192,6 +196,7 @@
         "longitude": "354.47417° E"
       },
       "description_ru": "Посадка марсохода Opportunity в районе Meridiani Planum.",
+      "image": {"url":"https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/07/1057_rover2_768.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg","page_url":"https://science.nasa.gov/mission/mer-opportunity/","alt_ru":"Марсоход Opportunity на поверхности Марса","caption_ru":"Opportunity исследовал Meridiani Planum и подтвердил длительное воздействие жидкой воды в прошлом.","credit":"NASA/JPL-Caltech"},
       "georeferencing": {
         "method": "PDS ODE radiometric Doppler solution",
         "reported_decimal_places": {
@@ -241,6 +246,7 @@
         "longitude": "234.25° E"
       },
       "description_ru": "Полярный посадочный аппарат, исследовавший почву и неглубоко залегающий водяной лёд.",
+      "image": {"url":"https://assets.science.nasa.gov/content/dam/science/psd/mars/resources/detail_files/2347_Phoenix-Lander-on-Mars-hi-res-300-dpi-full2.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg","page_url":"https://science.nasa.gov/mission/mars-phoenix/","alt_ru":"Посадочный аппарат Phoenix на арктической равнине Марса","caption_ru":"Phoenix исследовал полярный грунт и подтвердил наличие водяного льда под поверхностью.","credit":"NASA/JPL-Caltech/University of Arizona"},
       "georeferencing": {
         "method": "PDS ODE / NASA published landing site",
         "reported_decimal_places": {
@@ -279,6 +285,7 @@
         "longitude": "137.44° E"
       },
       "description_ru": "Посадка Curiosity в кратере Гейл для исследований геологии и условий прошлой обитаемости.",
+      "image": {"url":"https://assets.science.nasa.gov/content/dam/science/psd/mars/resources/detail_files/4/4471_PIA16063_NewNavPerspective-full2.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg","page_url":"https://science.nasa.gov/resource/still-life-with-rover/","alt_ru":"Автопортрет марсохода Curiosity в кратере Гейл","caption_ru":"Curiosity исследует геологическую историю кратера Гейл и оценивает, существовали ли там пригодные для микробной жизни условия.","credit":"NASA/JPL-Caltech"},
       "georeferencing": {
         "method": "PDS ODE catalogue landing-site coordinate",
         "reported_decimal_places": {
@@ -317,6 +324,7 @@
         "longitude": "135.623° E"
       },
       "description_ru": "Стационарная геофизическая лаборатория InSight изучала внутреннее строение Марса с помощью сейсмометра.",
+      "image": {"url":"https://science.nasa.gov/wp-content/uploads/2008/02/insight.jpg","page_url":"https://science.nasa.gov/mission/insight/","alt_ru":"Посадочный аппарат InSight на поверхности Марса","caption_ru":"InSight измерял марсотрясения, тепловой поток и вращение планеты, исследуя её внутреннее строение.","credit":"NASA/JPL-Caltech"},
       "georeferencing": {
         "method": "NASA-hosted peer-reviewed landing site research",
         "reported_decimal_places": {
@@ -355,6 +363,7 @@
         "longitude": "77.45088° E"
       },
       "description_ru": "Perseverance сел в кратере Езеро для исследования древних условий и сбора образцов пород.",
+      "image": {"url":"https://assets.science.nasa.gov/content/dam/science/cds/general/images/2024/07/pia26344-figa-2500x.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg","page_url":"https://science.nasa.gov/mission/mars-2020-perseverance/","alt_ru":"Марсоход Perseverance на поверхности кратера Езеро","caption_ru":"Perseverance ищет признаки древней микробной жизни и собирает образцы пород и реголита в кратере Езеро.","credit":"NASA/JPL-Caltech/MSSS"},
       "georeferencing": {
         "method": "NASA Langley EDL reconstructed landing coordinate",
         "reported_decimal_places": {

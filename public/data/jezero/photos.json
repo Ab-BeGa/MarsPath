@@ -175,6 +175,102 @@
         "image": "https://science.nasa.gov/resource/perseverance-explores-the-jezero-crater-delta/",
         "coordinates": null
       }
+    },
+    {
+      "id": "pia24264-sol-3-first-mastcam-z-360",
+      "title": "Mastcam-Z's First 360-Degree Panorama",
+      "caption": "A 360-degree landing-site panorama stitched from 142 Mastcam-Z images acquired on Sol 3.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Mastcam-Z",
+      "acquisition": { "sols": [3], "earth_dates": ["2021-02-21"] },
+      "credit": "NASA/JPL-Caltech/MSSS/ASU",
+      "page_url": "https://science.nasa.gov/photojournal/mastcam-zs-first-360-degree-panorama/",
+      "image_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia24/pia24264/PIA24264.jpg?fit=clip&w=4096",
+      "thumbnail_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia24/pia24264/PIA24264.jpg?fit=clip&w=1280",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.444627146,
+        "longitude_deg": 77.450885729,
+        "localization_sol": 0,
+        "note": "Approximate landing-site PLACES localization preceding the Sol 3 panorama; no exact panorama SCLK match is claimed."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/photojournal/mastcam-zs-first-360-degree-panorama/",
+        "image": "https://science.nasa.gov/photojournal/mastcam-zs-first-360-degree-panorama/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
+    },
+    {
+      "id": "pia26815-sols-933-944-turquoise-bay-360",
+      "title": "Perseverance's View of Turquoise Bay",
+      "caption": "A natural-color 360-degree Mastcam-Z panorama assembled from 818 images acquired on Sols 933–944.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Mastcam-Z",
+      "acquisition": { "sols": [933, 944], "earth_dates": ["2023-10-05", "2023-10-16"] },
+      "credit": "NASA/JPL-Caltech/MSSS",
+      "page_url": "https://www.jpl.nasa.gov/images/pia26815-perseverances-view-of-turquoise-bay/",
+      "image_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26815/PIA26815.jpg?fit=clip&w=4096",
+      "thumbnail_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26815/PIA26815.jpg?fit=clip&w=1280",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.488714636,
+        "longitude_deg": 77.347043424,
+        "localization_sol": 933,
+        "note": "Approximate marker from the PLACES rover localization on the first acquisition sol; the panorama spans Sols 933–944."
+      },
+      "sources": {
+        "metadata": "https://www.jpl.nasa.gov/images/pia26815-perseverances-view-of-turquoise-bay/",
+        "image": "https://www.jpl.nasa.gov/images/pia26815-perseverances-view-of-turquoise-bay/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
+    },
+    {
+      "id": "pia26816-sol-1155-neretva-vallis-360",
+      "title": "Perseverance Views Dust at Neretva Vallis",
+      "caption": "A 360-degree enhanced-color panorama stitched from 217 Mastcam-Z images acquired on Sol 1155.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Mastcam-Z",
+      "acquisition": { "sols": [1155], "earth_dates": ["2024-05-20"] },
+      "credit": "NASA/JPL-Caltech/ASU/MSSS",
+      "page_url": "https://science.nasa.gov/photojournal/nasas-perseverance-views-dust-at-neretva-vallis/",
+      "image_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26816/PIA26816_low_res.jpg?fit=clip&w=4096",
+      "thumbnail_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26816/PIA26816_low_res.jpg?fit=clip&w=1280",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.490777902,
+        "longitude_deg": 77.31347247,
+        "localization_sol": 1156,
+        "note": "Nearest published PLACES rover localization is Sol 1156, one sol after acquisition; the marker is approximate."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/photojournal/nasas-perseverance-views-dust-at-neretva-vallis/",
+        "image": "https://science.nasa.gov/photojournal/nasas-perseverance-views-dust-at-neretva-vallis/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
+    },
+    {
+      "id": "pia26644-sol-1516-falbreen-360",
+      "title": "Perseverance Rover at Falbreen",
+      "caption": "A 360-degree enhanced-color Mastcam-Z panorama assembled from 96 images acquired on Sol 1516.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Mastcam-Z",
+      "acquisition": { "sols": [1516], "earth_dates": ["2025-05-26"] },
+      "credit": "NASA/JPL-Caltech/ASU/MSSS",
+      "page_url": "https://www.jpl.nasa.gov/images/pia26644-nasas-perseverance-rover-at-falbreen/",
+      "image_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26644/PIA26644.jpg?fit=clip&w=4096",
+      "thumbnail_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26644/PIA26644.jpg?fit=clip&w=1280",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.452555778,
+        "longitude_deg": 77.253724158,
+        "localization_sol": 1518,
+        "note": "Nearest published PLACES rover localization is Sol 1518, two sols after acquisition; the marker is approximate."
+      },
+      "sources": {
+        "metadata": "https://www.jpl.nasa.gov/images/pia26644-nasas-perseverance-rover-at-falbreen/",
+        "image": "https://www.jpl.nasa.gov/images/pia26644-nasas-perseverance-rover-at-falbreen/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
     }
   ]
 }

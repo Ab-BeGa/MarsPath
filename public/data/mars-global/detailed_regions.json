@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "coordinate_reference": "IAU Mars 2000; planetocentric latitude; east-positive longitude",
+  "regions": [
+    {
+      "id": "jezero-west-delta",
+      "name": "Jezero / western delta",
+      "latitude_deg": 18.45616697,
+      "longitude_east_deg": 77.40974302,
+      "coverage_km": [7.5, 7.5],
+      "detail_status": "available",
+      "detail_target": "#map",
+      "dem_resolution_m": 20,
+      "optical_resolution_m": 5,
+      "metadata": "/data/jezero/metadata.json"
+    }
+  ]
+}

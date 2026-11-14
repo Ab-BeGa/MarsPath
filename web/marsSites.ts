@@ -12,6 +12,13 @@ export type MarsPositionPrecision = {
   latitude_definition: string
   notes_ru: string
 }
+export type MarsSiteImage = {
+  url: string
+  page_url: string
+  alt_ru: string
+  caption_ru: string
+  credit: string
+}
 export type MarsSite = {
   id: string
   category: 'landing_site' | 'science_event'
@@ -24,6 +31,7 @@ export type MarsSite = {
   longitude_east_deg: number
   as_published: MarsCoordinateText
   description_ru: string
+  image?: MarsSiteImage
   georeferencing: MarsPositionPrecision
   sources: MarsSiteSource[]
   anchor_site_id?: string
@@ -90,6 +98,14 @@ export function parseMarsSites(raw: unknown): MarsSitesCatalog {
     ids.add(id)
     if (s.category !== 'landing_site' && s.category !== 'science_event') throw new Error('Invalid site category')
     for (const key of ['name', 'type', 'mission', 'region', 'description_ru', 'date_utc']) nonempty(s[key], id + '.' + key)
+    if (s.category === 'landing_site') {
+      const image = record(s.image, id + '.image')
+      for (const key of ['url', 'page_url', 'alt_ru', 'caption_ru', 'credit']) nonempty(image[key], id + '.image.' + key)
+      for (const key of ['url', 'page_url']) {
+        const url = image[key] as string
+        if (!/^https:\/\//.test(url) || !new URL(url).hostname.endsWith('nasa.gov')) throw new Error(`Invalid NASA image ${key} for ${id}`)
+      }
+    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(s.date_utc as string) ||
         !Number.isFinite(Date.parse(s.date_utc as string))) throw new Error(`Invalid date for ${id}`)
     position(s.latitude_deg, s.longitude_east_deg, id)

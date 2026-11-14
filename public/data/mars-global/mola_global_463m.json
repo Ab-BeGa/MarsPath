@@ -19,6 +19,25 @@
       "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/0/0/1.jpg"
     ]
   },
+  "globe_textures": {
+    "relief": {
+      "files": ["mola-col0.jpg", "mola-col1.jpg"],
+      "title": "MOLA colorized shaded relief",
+      "source_layer": "Mars_MGS_MOLA_ClrShade_merge_global_463m"
+    },
+    "satellite": {
+      "files": ["moc-col0.png", "moc-col1.png"],
+      "sha256": ["014f5a30f4c40f8add4b23d71f2fa6833263138aa49c16f63d1e25f594e07915", "30720afa92b7210f16f28789985b085c6d785dcd4e079fef8ee7511000ef72f2"],
+      "title": "MGS MOC Atlas visible-light mosaic",
+      "source_layer": "msss_atlas_simp_clon"
+    },
+    "color": {
+      "files": ["viking-col0.jpg", "viking-col1.jpg"],
+      "sha256": ["df9a4f812ff9e74c4bd5a62fa2b955b14e95b14bebd9cfbc16c06f2f82acf9e1", "7f83e5d015481bc907f9e8b88c630e0edf24c02a9ddf9be16bd3d8a8ae6fc92f"],
+      "title": "Viking VIS MDIM 2.1 global color mosaic",
+      "source_layer": "Mars_Viking_MDIM21_ClrMosaic_global_232m"
+    }
+  },
   "interactive_tiles": {
     "service": "NASA Mars Trek WMTS 1.0.0",
     "capabilities_url": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/WMTSCapabilities.xml",
