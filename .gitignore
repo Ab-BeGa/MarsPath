@@ -11,3 +11,6 @@ route_traversability.csv
 
 node_modules/
 dist/
+# Temporary exported route profiles; published slope results are tracked separately.
+/results/direct/
+/results/detour/
