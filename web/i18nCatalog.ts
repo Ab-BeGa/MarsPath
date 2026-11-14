@@ -24,6 +24,7 @@ export const catalog = {
   'globe.mode': ['Режим глобальной карты', 'Global map mode', 'Ғаламдық карта режимі'],
   'globe.mode.3d': ['3D-сфера', '3D globe', '3D шар'],
   'globe.mode.flat': ['Плоская карта', 'Flat map', 'Жазық карта'],
+  'globe.return3d': ['Вернуться к 3D-сфере', 'Return to 3D globe', '3D шарға оралу'],
   'globe.flatNote': ['При максимальном приближении 3D-сфера автоматически раскрывается в плоскую карту с дополнительными слоями и всеми карточками объектов.', 'At maximum zoom, the 3D globe automatically unfolds into the flat map with additional layers and every site card.', 'Ең жоғары масштабта 3D шар қосымша қабаттар мен барлық нысан карточкалары бар жазық картаға автоматты түрде ашылады.'],
   'globe.error': ['Не удалось загрузить сферу', 'Could not load the globe', 'Шарды жүктеу мүмкін болмады'],
   'globe.accessibility': ['Вращаемая сфера Марса. Перетаскивайте для вращения, используйте колесо или жест двумя пальцами для масштаба.', 'Rotatable Mars globe. Drag to rotate; use the wheel or a two-finger gesture to zoom.', 'Айналмалы Марс шары. Айналдыру үшін сүйреңіз, масштабтау үшін дөңгелекті немесе екі саусақты қолданыңыз.'],

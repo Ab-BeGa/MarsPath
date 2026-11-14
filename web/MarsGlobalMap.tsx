@@ -35,7 +35,7 @@ function constrainPan(camera: Camera, size: Size): Camera {
   return { ...camera, panX: clamp(camera.panX, -limitX, limitX), panY: clamp(camera.panY, -limitY, limitY) }
 }
 
-export function MarsGlobalMap({ onOpenRegion }: { onOpenRegion: () => void }) {
+export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: () => void; onReturnGlobe?: () => void }) {
   const { t } = useI18n()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLElement>(null)
@@ -368,6 +368,7 @@ export function MarsGlobalMap({ onOpenRegion }: { onOpenRegion: () => void }) {
           <p>{t('map.global.description')}</p>
         </div>
         <div className="global-map-actions">
+          {onReturnGlobe && <button type="button" className="global-map-detail" onClick={onReturnGlobe}>{t('globe.return3d')}</button>}
           <button type="button" className="global-map-jump" onClick={zoomToJezero}>{t('map.global.zoomJezero')}</button>
           <button type="button" className="global-map-detail" onClick={onOpenRegion}>{t('map.global.jump')}</button>
         </div>
