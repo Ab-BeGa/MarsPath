@@ -33,6 +33,7 @@ from rasterio.windows import from_bounds, bounds as window_bounds
 from route_geometry import (nearest_segment_index, route_samples,
                             profile_index_at_distance, route_index_near_xy)
 from route_metrics import calculate_route_metrics
+from route_export import write_profile_csv, save_elevation_png
 from traversability import SlopeThresholds, analyze_traversability
 from detour_planner import plan_detour, NoDetourError
 from terrain_sampling import sample_dem_points
@@ -672,13 +673,9 @@ class RouteEditor:
         output = self.output
         output.mkdir(parents=True, exist_ok=True)
         lon, lat = self.terrain.to_lonlat.transform(profile.xy[:, 0], profile.xy[:, 1])
-        with (output / "route_profile.csv").open("w", newline="", encoding="utf-8") as file:
-            writer = csv.writer(file)
-            writer.writerow(["distance_m", "elevation_m", "x_projected", "y_projected", "latitude_n", "longitude_e", "dem_status"])
-            for d, z, xy, la, lo, state in zip(profile.distance_m, profile.elevation_m,
-                                                profile.xy, lat, lon, profile.sample_status):
-                writer.writerow([f"{d:.3f}", f"{z:.3f}" if np.isfinite(z) else "",
-                                 f"{xy[0]:.3f}", f"{xy[1]:.3f}", f"{la:.8f}", f"{lo:.8f}", str(state)])
+        write_profile_csv(output / "route_profile.csv", profile,
+                          latitude_n=lat, longitude_e=lon,
+                          interval_slope_deg=risks.interval_slope_deg)
         with (output / "route_traversability.csv").open("w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
             writer.writerow(["interval_start_m", "interval_end_m", "length_m", "measured_slope_deg", "slope_band"])
@@ -713,11 +710,13 @@ class RouteEditor:
         }
         (output / "route_waypoints.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
         self.fig.savefig(output / "route_profile.png", dpi=170, facecolor=self.fig.get_facecolor())
+        save_elevation_png(output / "elevation_profile.png", profile, risks.interval_slope_deg)
         self.last_message = f"EXPORTED CSV / JSON / PNG  →  {output}"
         self.refresh()
         print(f"Route exported: {output / 'route_profile.csv'}")
         print(f"Waypoints exported: {output / 'route_waypoints.json'}")
         print(f"Dashboard: {output / 'route_profile.png'}")
+        print(f"Elevation profile: {output / 'elevation_profile.png'}")
         print(f"Experimental slope bands: {output / 'route_traversability.csv'}")
 
 
