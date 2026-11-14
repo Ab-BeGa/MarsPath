@@ -16,12 +16,12 @@ async function readExport(file: File): Promise<unknown> {
   catch { throw new Error(`Не удалось прочитать JSON из файла «${file.name}».`) }
 }
 
-function RouteComparisonPanel() {
+function RouteComparisonPanel({ onComparison }: { onComparison: (value: RouteComparison | null) => void }) {
   const [result, setResult] = useState<RouteComparison | null>(null)
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
 
-  function clearResult() { setResult(null); setError('') }
+  function clearResult() { setResult(null); setError(''); onComparison(null) }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
@@ -32,7 +32,9 @@ function RouteComparisonPanel() {
     setPending(true)
     try {
       const inputs = await Promise.all([readExport(direct), readExport(detour)])
-      setResult(compareRoutes(...inputs))
+      const comparison = compareRoutes(...inputs)
+      setResult(comparison)
+      onComparison(comparison)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Не удалось сравнить маршруты.')
     } finally { setPending(false) }
@@ -87,6 +89,7 @@ function RouteComparisonPanel() {
 }
 
 function App() {
+  const [comparison, setComparison] = useState<RouteComparison | null>(null)
   const [terrain, setTerrain] = useState<MarsTerrain | null>(null)
   const [mapError, setMapError] = useState('')
   useEffect(() => {
@@ -96,6 +99,10 @@ function App() {
     })
     return () => { active = false }
   }, [])
+
+  const mapSourceMatches = Boolean(terrain && comparison?.demVerified &&
+    comparison.source.demHash === terrain.metadata.source.source_sha256 &&
+    comparison.source.crs === terrain.metadata.crs_wkt)
 
   return (
     <div className="site-shell">
@@ -131,8 +138,9 @@ function App() {
         {!terrain && !mapError && <section className="load-state" role="status" aria-live="polite">
           <div className="loading-ring" aria-hidden="true"/><p>Загрузка геопривязанной DEM Езеро…</p>
         </section>}
-        {terrain && <MarsMap terrain={terrain}/>}
-        <RouteComparisonPanel/>
+        {terrain && <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}/>}
+        {comparison && terrain && !mapSourceMatches && <p className="alert" role="status">Маршруты не показаны на карте: не подтверждено совпадение исходной DEM и марсианской проекции. Сравнение чисел ниже остаётся доступным.</p>}
+        <RouteComparisonPanel onComparison={setComparison}/>
         <footer className="page-footer"><span>JEZERO TRAVERSE © 2026</span>
           <span>DEMONSTRATION ONLY · NOT AN EVA SAFETY SYSTEM</span>
           <a href="https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.tif" target="_blank" rel="noopener noreferrer">Источник USGS ↗</a>

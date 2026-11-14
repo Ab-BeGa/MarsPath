@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { cellAtGrid, cellAtProjected, type MarsTerrain, type TerrainCell } from './marsTerrain.ts'
+import { routeToGrid, type RoutePair } from './routeMap.ts'
 import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
 
 type Camera = { zoom: number; panX: number; panY: number }
@@ -82,11 +83,12 @@ function toGridPosition(screenX: number, screenY: number, m: ReturnType<typeof m
   return { col: (screenX - m.ox) / m.scale, row: (screenY - m.oy) / m.scale }
 }
 
-export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
+export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: RoutePair }) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [size, setSize] = useState<Size>({ width: 920, height: 570 })
   const [camera, setCamera] = useState<Camera>({ zoom: 1, panX: 0, panY: 0 })
+  const [activeRoute, setActiveRoute] = useState<'direct' | 'detour'>('direct')
   const cameraRef = useRef(camera)
   const [hovered, setHovered] = useState<TerrainCell | null>(null)
   const [optical, setOptical] = useState<CtxOpticalLayer | null>(null)
@@ -189,10 +191,12 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
     ctx.fillStyle = '#21171d'
     ctx.fillRect(p.ox, p.oy, iw, ih)
     ctx.restore()
-    // Optical PNG covers the same exact projected Mars DEM bounds.
-    // No image is ever approximated from a non-georeferenced browse JPEG.
+    // Visual smoothing only: the source DEM still contains 20 m cells.
+    // CTX is a genuine 5 m orthomosaic aligned to the exact projected DEM
+    // bounds; route overlays below stay in the same Mars CRS/camera.
     const showCtx = activeLayer === 'ctx' && optical !== null
-    ctx.imageSmoothingEnabled = showCtx
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
     ctx.drawImage(showCtx ? optical.image : relief, p.ox, p.oy, iw, ih)
     ctx.strokeStyle = 'rgba(241,214,165,.8)'
     ctx.lineWidth = 1.2
@@ -205,6 +209,38 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
       for (let row = 0; row <= grid.height; row += 5) {
         ctx.beginPath(); ctx.moveTo(p.ox, p.oy + row * p.scale); ctx.lineTo(p.ox + iw, p.oy + row * p.scale); ctx.stroke()
       }
+    }
+
+
+    // Overlay both exported routes on the *same* DEM affine and camera as the relief.
+    // Never substitute Earth WGS84 coordinates or interpolate elevations here.
+    if (routes) {
+      const ordered = activeRoute === 'direct'
+        ? (['detour', 'direct'] as const)
+        : (['direct', 'detour'] as const)
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(p.ox, p.oy, iw, ih)
+      ctx.clip()
+      for (const routeId of ordered) {
+        const vertices = routeToGrid(routes[routeId], grid.transform)
+        ctx.beginPath()
+        for (let i = 0; i < vertices.length; i++) {
+          const px = p.ox + vertices[i].col * p.scale
+          const py = p.oy + vertices[i].row * p.scale
+          if (i === 0) ctx.moveTo(px, py)
+          else ctx.lineTo(px, py)
+        }
+        ctx.strokeStyle = routeId === 'direct' ? '#55efc4' : '#ffad5a'
+        ctx.lineWidth = routeId === activeRoute ? 5.5 : 3
+        ctx.globalAlpha = routeId === activeRoute ? 1 : 0.65
+        ctx.lineJoin = 'round'
+        ctx.lineCap = 'round'
+        ctx.shadowColor = '#07121e'
+        ctx.shadowBlur = 5
+        ctx.stroke()
+      }
+      ctx.restore()
     }
 
     const marker = (x: number, y: number, name: string, color: string, id: string) => {
@@ -256,7 +292,7 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
       ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 16)
       ctx.stroke()
     }
-  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, activeLayer, optical])
+  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical])
 
   function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
     if (event.button !== 0) return
@@ -343,7 +379,8 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
             onClick={() => setActiveLayer('relief')}>Рельеф DEM</button>
           <button type="button" aria-pressed={activeLayer === 'ctx'}
             className={activeLayer === 'ctx' ? 'selected' : ''}
-            disabled={!optical} title={!optical ? 'Ожидается геопривязанный CTX-ортофотоплан' : 'Орбитальная фотография CTX · 5 м/пиксель'}
+            disabled={!optical}
+            title={!optical ? 'Не загружен геопривязанный CTX-ортофотоплан' : 'Оптический CTX · 5 м/пиксель'}
             onClick={() => { if (optical) setActiveLayer('ctx') }}>CTX · 5 м</button>
         </div>
       </div>
@@ -390,6 +427,20 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
               <span className="checkpoint-arrow">↗</span>
             </button>)}
           </div>
+          {routes && <div className="telemetry-block route-switcher">
+            <span className="telemetry-label">АКТИВНЫЙ МАРШРУТ</span>
+            <div className="route-switcher-buttons" role="group" aria-label="Выбор активного маршрута">
+              <button type="button" className="route-switcher-direct"
+                aria-pressed={activeRoute === 'direct'} onClick={() => setActiveRoute('direct')}>
+                Прямой
+              </button>
+              <button type="button" className="route-switcher-detour"
+                aria-pressed={activeRoute === 'detour'} onClick={() => setActiveRoute('detour')}>
+                Обходной
+              </button>
+            </div>
+            <span className="telemetry-muted">На карте показаны оба пути. Выбранный выделен толщиной.</span>
+          </div>}
           <div className="telemetry-block bottom">
             <div className="coord-pair"><span>Область</span><strong>1,5 × 1,5 км</strong></div>
             <div className="coord-pair"><span>Ячейки</span><strong>{grid.width} × {grid.height}</strong></div>
@@ -405,7 +456,7 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
             ? activeLayer === 'ctx'
               ? 'CTX: настоящий ортофотоплан USGS, геопривязка подтверждена метаданными · 5 м/пиксель'
               : 'CTX-ортофотоплан доступен: переключитесь на спутниковый снимок'
-            : 'CTX ещё не подготовлен: для включения слоя нужен официальный геопривязанный GeoTIFF USGS'}
+            : 'CTX ещё не загружен на сайт: необходимы официальный оптический PNG и метаданные геопривязки'}
       </div>
       <div className="map-footer">
         <div className="legend-title">RELIEF ELEVATION <span>LOW</span></div>
@@ -415,8 +466,8 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
       </div>
       <p className="scientific-disclaimer">
         {activeLayer === 'ctx' && optical
-          ? 'Оптический ортофотоплан CTX показывает отражённый свет в оттенках серого; высоты и координаты по-прежнему берутся из DEM. Оптический слой не подтверждает безопасность EVA.'
-          : 'Цветной рельеф построен из высот DEM, это не орбитальная фотография. Разрешение 20 м/пиксель не показывает небольшие препятствия и не подтверждает безопасность EVA.'}
+          ? 'Оптический CTX показывает отражённый свет в оттенках серого; координаты и высоты берутся из DEM. Подложка не подтверждает безопасность выхода астронавтов.'
+          : 'Цветной рельеф построен из высот DEM, это не орбитальная фотография. Разрешение 20 м/пиксель не показывает мелкие препятствия и не подтверждает безопасность EVA.'}
       </p>
     </section>
   )

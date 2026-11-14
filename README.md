@@ -276,6 +276,7 @@ npm.cmd run dev
 дем-данных), `web/MarsMap.tsx` (Canvas/React карта),
 `web/marsTerrain.test.ts` (тесты координат, бинарных данных, маски и валидации).
 CI для веб-интерфейса проверяет TypeScript, тесты Node и production-сборку.
+
 ## Оптический слой CTX (Task #18)
 
 Источник: USGS Astrogeology, Mars 2020 Science Investigation CTX orthomosaic 5 м/пиксель, совмещённый с CTX DEM:

@@ -201,6 +201,20 @@ thead { background: #132734; color: #afc9d4; }
   .loading-ring { animation: none; }
 }
 
+
+/* Task #19: route controls on the Mars DEM map. */
+.route-switcher-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.route-switcher-buttons button {
+  flex: 1; min-width: 95px; padding: 11px 9px; border: 1px solid #3c5563;
+  border-radius: 7px; background: #102b39; color: #eaf3f7; font-size: 12px; font-weight: 750;
+}
+.route-switcher-direct { border-left: 4px solid #55efc4 !important; }
+.route-switcher-detour { border-left: 4px solid #ffad5a !important; }
+.route-switcher-buttons button[aria-pressed="true"] {
+  background: #204348; border-color: #b5e6e0; box-shadow: inset 0 0 0 1px #c6efe3;
+}
+.route-switcher .telemetry-muted { display: block; line-height: 1.5; margin-top: 10px; }
+
 /* Task 18: only enable a real CTX orthoimage after verifying its CRS/DEM manifest. */
 .layer-select {
   display: inline-flex; gap: 3px; align-items: center; border: 1px solid #34515d;
