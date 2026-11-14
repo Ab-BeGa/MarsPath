@@ -40,7 +40,10 @@ test('scientific parser errors are translated only at UI boundary', () => {
   assert.equal(localizeErrorMessage('Пороги уклонов различаются', 'en'), 'Route grade thresholds do not match')
   assert.equal(localizeErrorMessage('Пороги уклонов различаются', 'kk'), 'Бағыттардың еңіс шектері сәйкес емес')
   assert.equal(localizeErrorMessage('Пороги уклонов различаются', 'ru'), 'Пороги уклонов различаются')
-  assert.ok(localizeErrorMessage('CTX и DEM не совпадают по границам', 'en').startsWith('CTX and DEM differ'))
+  assert.equal(localizeErrorMessage('CTX и DEM не совпадают по границам участка', 'en'),
+    'CTX and DEM differ in study area bounds')
+  assert.equal(localizeErrorMessage('CTX и DEM не совпадают по шагу X', 'kk'),
+    'CTX пен DEM сәйкес келмейді: X қадамы')
   assert.ok(localizeErrorMessage('Неверные метаданные DEM: root', 'kk').startsWith('DEM метадеректері'))
   assert.equal(localizeErrorMessage('Не удалось прочитать JSON из файла «myfile.json».', 'en'),
     'Could not read JSON from “myfile.json”.')
