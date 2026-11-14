@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useI18n } from './i18n.tsx'
 import {
   SLOPE_COLORS, validateSlopeThresholds,
   type SlopeBand, type SlopeReport, type SlopeThresholds,
@@ -10,13 +11,12 @@ const L = 80
 const R = 28
 const T = 23
 const B = 62
-const format = new Intl.NumberFormat('ru', { maximumFractionDigits: 1 })
-const categories: { band: SlopeBand; name: string }[] = [
-  { band: 'gentle', name: 'Пологий' },
-  { band: 'moderate', name: 'Умеренный' },
-  { band: 'steep', name: 'Крутой' },
-  { band: 'very_steep', name: 'Очень крутой' },
-  { band: 'unknown', name: 'Нет данных' },
+const categories: { band: SlopeBand; key: string }[] = [
+  { band: 'gentle', key: 'slope.gentle' },
+  { band: 'moderate', key: 'slope.moderate' },
+  { band: 'steep', key: 'slope.steep' },
+  { band: 'very_steep', key: 'slope.verySteep' },
+  { band: 'unknown', key: 'slope.unknownBand' },
 ]
 
 export function RouteSlopePanel({
@@ -29,6 +29,7 @@ export function RouteSlopePanel({
   highlightEnabled: boolean
   onToggle: (next: boolean) => void
 }) {
+  const {t, format, meters, error: localizeError} = useI18n()
   const [draft, setDraft] = useState<[string, string, string]>([
     String(thresholds.gentle_max_deg),
     String(thresholds.moderate_max_deg),
@@ -66,26 +67,26 @@ export function RouteSlopePanel({
     <section className="slope-panel" aria-labelledby="slope-panel-title">
       <div className="slope-panel-heading">
         <div>
-          <span className="section-kicker">ROUTE SLOPE ANALYSIS / EXPERIMENTAL</span>
-          <h3 id="slope-panel-title">Крутизна маршрута · {routeName === 'direct' ? 'прямой путь' : 'обход A*'}</h3>
-          <p>Высотный профиль по реальным ячейкам DEM. Цвет каждого измеренного интервала отражает продольный уклон, а не безопасность прохождения.</p>
+          <span className="section-kicker">{t('slope.kicker')}</span>
+          <h3 id="slope-panel-title">{t('slope.title')} · {routeName === 'direct' ? t('route.direct.path') : t('route.detour.path')}</h3>
+          <p>{t('slope.description')}</p>
         </div>
         <label className="slope-toggle">
           <input type="checkbox" checked={highlightEnabled} onChange={e => onToggle(e.currentTarget.checked)}/>
-          <span>Подсветка на карте</span>
+          <span>{t('slope.toggle')}</span>
         </label>
       </div>
 
       <div className="slope-statistics">
-        <div><span>Длина маршрута</span><strong>{format.format(report.total_m)} м</strong></div>
-        <div><span>Крутые (более {thresholds.moderate_max_deg}°)</span>
-          <strong className="slope-orange">{format.format(report.difficult_m)} м</strong></div>
-        <div><span>Без данных</span><strong>{format.format(report.unknown_m)} м</strong></div>
-        <div><span>Интервалы</span><strong>{report.intervals.length}</strong></div>
+        <div><span>{t('slope.length')}</span><strong>{meters(report.total_m)}</strong></div>
+        <div><span>{t('slope.steepLonger', {threshold:thresholds.moderate_max_deg})}</span>
+          <strong className="slope-orange">{meters(report.difficult_m)}</strong></div>
+        <div><span>{t('slope.unknown')}</span><strong>{meters(report.unknown_m)}</strong></div>
+        <div><span>{t('slope.intervals')}</span><strong>{report.intervals.length}</strong></div>
       </div>
 
       <svg viewBox={'0 0 ' + W + ' ' + H} className="slope-profile-chart" role="img"
-        aria-label="Высотный профиль выбранного маршрута. Цветные сегменты показывают измеренный продольный уклон; серые метки означают отсутствие данных.">
+        aria-label={t('slope.aria')}>
         <rect x={L} y={T} width={chartW} height={chartH} fill="#0a1c29"/>
         {[0, .5, 1].map(f => {
           const z = low + f * (high - low)
@@ -93,7 +94,7 @@ export function RouteSlopePanel({
             <line x1={L} x2={W-R} y1={y(z)} y2={y(z)}
               stroke="#3d5563" strokeDasharray="5 7" opacity=".7"/>
             <text x={L-12} y={y(z)+4} textAnchor="end" fill="#b5cad4" fontSize="12">
-              {format.format(z)}
+              {format(z)}
             </text>
           </g>
         })}
@@ -101,38 +102,38 @@ export function RouteSlopePanel({
           <line x1={x(report.total_m*f)} x2={x(report.total_m*f)}
             y1={T} y2={H-B} stroke="#3e5360" strokeWidth="1" opacity=".4"/>
           <text x={x(report.total_m*f)} y={H-28} textAnchor="middle"
-            fill="#b5cad4" fontSize="12">{format.format(report.total_m*f)} м</text>
+            fill="#b5cad4" fontSize="12">{meters(report.total_m*f)}</text>
         </g>)}
-        <text x={10} y={15} fill="#b5cad4" fontSize="12">Высота DEM, м</text>
+        <text x={10} y={15} fill="#b5cad4" fontSize="12">{t('slope.height')}</text>
         {report.intervals.map((segment, i) =>
           segment.band === 'unknown'
             ? <rect key={i} x={x(segment.from.distance_m)}
                 y={H-B-6} width={Math.max(1, x(segment.to.distance_m)-x(segment.from.distance_m))}
                 height={6} fill={SLOPE_COLORS.unknown}>
-                <title>Нет высотных данных · {format.format(segment.distance_m)} м</title>
+                <title>{t('slope.noHeights')} · {meters(segment.distance_m)}</title>
               </rect>
             : <line key={i} x1={x(segment.from.distance_m)} y1={y(segment.from.elevation_m!)}
                 x2={x(segment.to.distance_m)} y2={y(segment.to.elevation_m!)}
                 stroke={SLOPE_COLORS[segment.band]} strokeWidth="4" strokeLinecap="round">
-                <title>{format.format(segment.grade_deg!)}° · {format.format(segment.distance_m)} м</title>
+                <title>{format(segment.grade_deg!)}° · {meters(segment.distance_m)}</title>
               </line>
         )}
       </svg>
 
-      <div className="slope-legend" aria-label="Легенда продольных уклонов">
-        {categories.map(({band, name}) => <div key={band} className="slope-legend-entry">
+      <div className="slope-legend" aria-label={t('slope.legend')}>
+        {categories.map(({band, key}) => <div key={band} className="slope-legend-entry">
           <i aria-hidden="true" style={{ backgroundColor: SLOPE_COLORS[band] }}/>
-          <span>{name}</span><strong>{format.format(report.distances_m[band])} м</strong>
+          <span>{t(key)}</span><strong>{meters(report.distances_m[band])}</strong>
         </div>)}
       </div>
 
       <form className="slope-settings" onSubmit={apply}>
         <fieldset>
-          <legend>Настраиваемые границы категорий, градусы</legend>
-          {(['Пологий ≤', 'Умеренный ≤', 'Крутой ≤'] as const).map((name, i) =>
-            <label key={name}>{name}
+          <legend>{t('slope.settings')}</legend>
+          {(['slope.gentleLimit', 'slope.moderateLimit', 'slope.steepLimit'] as const).map((name, i) =>
+            <label key={name}>{t(name)}
               <input type="number" inputMode="decimal" step="0.1" min="0.1" max="89.9"
-                aria-label={name} value={draft[i]}
+                aria-label={t(name)} value={draft[i]}
                 onChange={e => setDraft(prev => {
                   const updated = [...prev] as [string,string,string]
                   updated[i] = e.currentTarget.value
@@ -140,7 +141,7 @@ export function RouteSlopePanel({
                 })}/>
             </label>
           )}
-          <button type="submit">Применить пороги</button>
+          <button type="submit">{t('slope.apply')}</button>
           <button type="button" className="slope-preset"
             onClick={() => {
               const defaults = {gentle_max_deg: 5, moderate_max_deg: 10, steep_max_deg: 15}
@@ -149,9 +150,9 @@ export function RouteSlopePanel({
               onThresholdsChange(defaults)
             }}>5° / 10° / 15°</button>
         </fieldset>
-        {error && <p role="alert" className="slope-validation-error">{error}</p>}
+        {error && <p role="alert" className="slope-validation-error">{localizeError(error)}</p>}
       </form>
-      <p className="slope-science-note">Пороги — экспериментальные, не спецификация NASA. Оценён только продольный уклон между отсчётами по DEM 20 м/пиксель. Боковой уклон, мелкие камни и пригодность маршрута для EVA не определяются. Неизвестные участки не считаются пологими.</p>
+      <p className="slope-science-note">{t('slope.note')}</p>
     </section>
   )
 }
