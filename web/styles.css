@@ -581,3 +581,92 @@ thead { background: #132734; color: #afc9d4; }
 .science-photos img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: #07121e; }
 .science-photos figcaption { padding-top: .5rem; }
 .science-photos small, .science-photos a { display: block; }
+
+
+/* NASA Mars landing places and instrument-anchored science events. */
+.global-site-controls {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid #29424c; background: #0d2230; padding: 9px 12px;
+}
+.global-site-filters { display: flex; flex-wrap: wrap; gap: 5px; }
+.global-site-filters button {
+  border: 1px solid #395866; border-radius: 6px; padding: 8px 11px;
+  background: #122d3b; color: #bfd2da; font-size: 11px; font-weight: 700;
+}
+.global-site-filters button[aria-pressed="true"] {
+  border-color: #55efc4; background: #174b4b; color: #e8fff8;
+}
+.global-site-picker { display: flex; align-items: center; gap: 9px; color: #a9c5cf; font-size: 11px; }
+.global-site-picker select {
+  max-width: min(300px, 74vw); min-width: 180px; border: 1px solid #406373;
+  padding: 8px; border-radius: 6px; color: #eff8fc; background: #102b39;
+}
+.global-site-picker option { background: #102b39; }
+.global-site-loading { color: #a8c0cc; font-size: 11px; }
+.global-site-error { color: #ffafa3; font-size: 11px; overflow-wrap: anywhere; }
+.global-site-markers { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.global-site-pin {
+  position: absolute; width: 29px; height: 29px; transform: translate(-50%, -50%);
+  display: grid; place-items: center; border: 2px solid #071522; border-radius: 50%;
+  box-shadow: 0 0 0 1px #f1f8f5, 0 3px 12px #0009;
+  color: #071522; font-size: 13px; font-weight: 900; cursor: pointer;
+  pointer-events: auto; touch-action: manipulation;
+}
+.global-site-pin--landing { background: #55efc4; }
+.global-site-pin--event { background: #ffad5a; }
+.global-site-pin--mixed { background: #c7a3fc; }
+.global-site-pin:hover, .global-site-pin[aria-pressed="true"] {
+  box-shadow: 0 0 0 3px white, 0 0 16px #55efc4bb; transform: translate(-50%, -50%) scale(1.1);
+}
+.global-site-pin:focus-visible { outline: 3px solid white; outline-offset: 4px; }
+.global-site-popup {
+  position: absolute; z-index: 10; right: 12px; top: 10px; width: min(390px, calc(100% - 24px));
+  max-height: calc(100% - 20px); overflow: auto; touch-action: pan-y; padding: 16px;
+  border: 1px solid #5b8090; border-radius: 10px; background: #081927f5;
+  box-shadow: 0 12px 32px #000b; color: #e7f2f5; font-size: 12px; line-height: 1.55;
+}
+.global-site-popup h4 { font-size: 20px; margin: 8px 0 14px; line-height: 1.3; color: #f6fbfb; }
+.global-site-popup h5 { color: #a5dace; font-size: 12px; margin: 12px 0 5px; }
+.global-site-popup p { margin: 8px 0; overflow-wrap: anywhere; }
+.global-site-popup-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.global-site-category { color: #a7f4dd; font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+.global-site-category--science_event { color: #ffc994; }
+.global-site-popup-close {
+  width: 32px; height: 32px; border: 1px solid #476676; background: #143142;
+  color: white; font-size: 23px; line-height: 1; border-radius: 6px; cursor: pointer;
+}
+.global-site-popup-close:focus-visible, .global-site-group-options button:focus-visible,
+.global-site-picker select:focus-visible, .global-site-filters button:focus-visible {
+  outline: 2px solid #55efc4; outline-offset: 2px;
+}
+.global-site-facts { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 6px 10px; margin: 6px 0 15px; }
+.global-site-facts dt { color: #8cb4c0; }
+.global-site-facts dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.global-site-precision, .global-site-alternative { border-top: 1px solid #335161; padding-top: 4px; }
+.global-site-precision-note { color: #ffc994; }
+.global-site-caution { color: #ffcf88; border-left: 3px solid #ffad5a; padding-left: 9px; }
+.global-site-sources ul { margin: 6px 0 0; padding-left: 18px; }
+.global-site-sources li { margin: 5px 0; overflow-wrap: anywhere; }
+.global-site-sources a { color: #7cf4d9; }
+.global-site-sources a:hover { text-decoration: underline; }
+.global-site-group { border-bottom: 1px solid #335161; padding-bottom: 9px; }
+.global-site-group p { color: #bdcdd5; font-weight: 700; }
+.global-site-group-options { display: flex; flex-wrap: wrap; gap: 5px; }
+.global-site-group-options button {
+  background: #1b3848; color: #c8e4eb; border: 1px solid #3c6070;
+  border-radius: 5px; padding: 5px 8px; font-size: 11px;
+}
+.global-site-group-options button.selected, .global-site-group-options button[aria-pressed="true"] {
+  background: #225b54; color: #fff; border-color: #65dfc6;
+}
+.global-site-legend, .global-site-caption {
+  padding: 7px 12px; color: #a7bdc8; line-height: 1.5; font-size: 11px;
+}
+.global-site-caption { border-top: 1px solid #2b444f; color: #849fae; }
+@media (max-width: 660px) {
+  .global-site-controls { align-items: stretch; flex-direction: column; }
+  .global-site-picker { align-items: stretch; flex-direction: column; gap: 4px; }
+  .global-site-picker select { max-width: none; width: 100%; }
+  .global-site-popup { right: 6px; top: 6px; max-height: calc(100% - 12px); width: min(340px, calc(100% - 12px)); padding: 12px; }
+  .global-site-facts { grid-template-columns: 90px minmax(0, 1fr); }
+}
