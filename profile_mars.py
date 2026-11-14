@@ -29,6 +29,7 @@ from rasterio.windows import from_bounds, bounds as window_bounds
 
 from route_geometry import (nearest_segment_index, route_samples,
                             profile_index_at_distance, route_index_near_xy)
+from route_metrics import calculate_route_metrics
 from terrain_sampling import sample_dem_points
 
 ROOT = Path(__file__).resolve().parent
@@ -168,16 +169,25 @@ class RouteEditor:
             spine.set_color(BORDER)
         self.sidebar.text(.10, .949, "ROUTE CONTROL", color=TEXT, fontsize=14, fontweight="bold")
         self.sidebar.text(.10, .912, "THREE FORKS → WILDCAT RIDGE", color=MUTED, fontsize=8.5)
-        self.metric_length = self.sidebar.text(.10, .817, "—", color=TEAL, fontsize=26, fontweight="bold")
-        self.sidebar.text(.10, .777, "PATH DISTANCE", color=MUTED, fontsize=8)
-        self.metric_points = self.sidebar.text(.10, .692, "—", color=TEXT, fontsize=22, fontweight="bold")
-        self.sidebar.text(.10, .651, "ROUTE NODES (BASE + SCIENCE)", color=MUTED, fontsize=8)
-        self.metric_coverage = self.sidebar.text(.10, .570, "—", color=GOLD, fontsize=22, fontweight="bold")
-        self.sidebar.text(.10, .530, "VALID DEM SAMPLES", color=MUTED, fontsize=8)
-        self.sidebar.plot([.08, .92], [.494, .494], color=BORDER, lw=1)
-        for y, title in [(0.460, "LEFT CLICK  /  ADD POINT"), (.425, "DRAG  /  ADJUST POINT"),
-                         (.390, "RIGHT CLICK  /  REMOVE"), (.355, "CTRL+Z  /  UNDO")]:
-            self.sidebar.text(.10, y, title, color=MUTED, fontsize=8.3)
+        self.metric_length = self.sidebar.text(.10, .825, "—", color=TEAL, fontsize=25, fontweight="bold")
+        self.sidebar.text(.10, .785, "PATH DISTANCE", color=MUTED, fontsize=8)
+        self.metric_points = self.sidebar.text(.10, .710, "—", color=TEXT, fontsize=19, fontweight="bold")
+        self.sidebar.text(.10, .678, "ROUTE NODES", color=MUTED, fontsize=7.5)
+        self.metric_coverage = self.sidebar.text(.55, .710, "—", color=TEAL, fontsize=19, fontweight="bold")
+        self.sidebar.text(.55, .678, "DEM VALID", color=MUTED, fontsize=7.5)
+        self.sidebar.plot([.08, .92], [.647, .647], color=BORDER, lw=1)
+        self.metric_ascent = self.sidebar.text(.10, .590, "—", color=TEAL, fontsize=17, fontweight="bold")
+        self.sidebar.text(.10, .557, "ASCENT  /  m", color=MUTED, fontsize=7.5)
+        self.metric_descent = self.sidebar.text(.55, .590, "—", color=GOLD, fontsize=17, fontweight="bold")
+        self.sidebar.text(.55, .557, "DESCENT  /  m", color=MUTED, fontsize=7.5)
+        self.metric_net = self.sidebar.text(.10, .479, "—", color=TEXT, fontsize=17, fontweight="bold")
+        self.sidebar.text(.10, .447, "NET CHANGE  /  m", color=MUTED, fontsize=7.5)
+        self.metric_slope = self.sidebar.text(.55, .479, "—", color=BAD, fontsize=17, fontweight="bold")
+        self.sidebar.text(.55, .447, "MAX MEAS. SLOPE", color=MUTED, fontsize=7.1)
+        self.metric_warning = self.sidebar.text(.10, .407, "20m DEM  /  SAMPLE-BASED", color=MUTED, fontsize=7.1)
+        self.sidebar.plot([.08, .92], [.392, .392], color=BORDER, lw=1)
+        self.sidebar.text(.10, .366, "LEFT CLICK: ADD  /  DRAG: MOVE", color=MUTED, fontsize=7.6)
+        self.sidebar.text(.10, .335, "RIGHT CLICK: REMOVE  /  CTRL+Z", color=MUTED, fontsize=7.6)
         self.sidebar.text(.10, .148, "LIVE ELEVATION PROBE", color=GOLD, fontsize=8, fontweight="bold")
         self.probe_info = self.sidebar.text(.10, .116, "HOVER OVER THE PROFILE", color=TEXT, fontsize=9, fontweight="bold")
         self.probe_detail = self.sidebar.text(.10, .092, "CLICK PROFILE TO PIN", color=MUTED, fontsize=7.5)
@@ -334,6 +344,8 @@ class RouteEditor:
     def refresh(self):
         profile = self.calculate()
         self.profile = profile
+        stats = calculate_route_metrics(profile)
+        self.route_metrics = stats
         ax = self.map_ax
         ax.clear()
         ax.set_facecolor(PANEL)
@@ -424,6 +436,13 @@ class RouteEditor:
             if valid.any():
                 g.scatter(d[missing], np.full(missing.sum(), float(np.nanmin(h)) - 4),
                           marker="x", s=22, c=BAD, linewidths=1.2, zorder=5)
+        if stats.max_slope_start_m is not None:
+            # Emphasize only the steepest *measured* DEM interval, not a safe/unsafe boundary.
+            edge = int(np.searchsorted(profile.distance_m, stats.max_slope_start_m, side="left"))
+            xy = profile.xy[edge:edge+2]
+            ax.plot(xy[:, 0], xy[:, 1], color=BAD, lw=5, solid_capstyle="round", zorder=7)
+            g.axvspan(stats.max_slope_start_m, stats.max_slope_end_m,
+                      color=BAD, alpha=.20, zorder=1)
         g.set_xlim(0, max(1, profile.total_m))
         g.grid(color="white", alpha=.09, ls="--")
         g.set_title("ELEVATION PROFILE   /   SAMPLED FROM ORIGINAL DEM", loc="left", color=TEXT, fontsize=10, fontweight="bold", pad=12)
@@ -445,6 +464,15 @@ class RouteEditor:
         self.probe_info.set_text("HOVER OVER THE PROFILE")
         self.probe_detail.set_text("CLICK PROFILE TO PIN")
         self.metric_length.set_text(f"{profile.total_m:,.0f} m")
+        self.metric_ascent.set_text("—" if stats.ascent_m is None else f"+{stats.ascent_m:,.1f}")
+        self.metric_descent.set_text("—" if stats.descent_m is None else f"−{stats.descent_m:,.1f}")
+        self.metric_net.set_text("—" if stats.net_change_m is None else f"{stats.net_change_m:+,.1f}")
+        self.metric_slope.set_text("—" if stats.max_slope_deg is None else f"{stats.max_slope_deg:.1f}°")
+        self.metric_warning.set_text(
+            f"PARTIAL DATA: {stats.analyzed_pct:.0f}% ANALYZED" if stats.has_gaps
+            else "20m DEM  /  SAMPLE-BASED"
+        )
+        self.metric_warning.set_color(BAD if stats.has_gaps else MUTED)
         self.metric_points.set_text(str(len(self.waypoints)))
         self.metric_coverage.set_text(f"{profile.coverage_pct:.1f}%")
         self.metric_coverage.set_color(TEAL if profile.coverage_pct == 100 else BAD)
@@ -499,6 +527,7 @@ class RouteEditor:
 
     def export(self, _event=None):
         profile = self.calculate()
+        stats = calculate_route_metrics(profile)
         output = self.output
         output.mkdir(parents=True, exist_ok=True)
         lon, lat = self.terrain.to_lonlat.transform(profile.xy[:, 0], profile.xy[:, 1])
@@ -514,6 +543,7 @@ class RouteEditor:
             "title": "Jezero Traverse - Manual waypoint route",
             "crs_wkt": self.terrain.dem.crs.to_wkt(),
             "distance_m": round(profile.total_m, 2),
+            "route_metrics": stats.to_dict(),
             "dem_sample_step_max_m": self.step_m,
             "valid_samples_pct": round(profile.coverage_pct, 2),
             "samples_total": int(len(profile.distance_m)),
