@@ -581,3 +581,39 @@ thead { background: #132734; color: #afc9d4; }
 .science-photos img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: #07121e; }
 .science-photos figcaption { padding-top: .5rem; }
 .science-photos small, .science-photos a { display: block; }
+
+.photo-map-toolbar { margin: 1rem 0; padding: 1rem 1.1rem; border: 1px solid #315261; border-radius: 10px; background: #0b1c2a; }
+.photo-map-toolbar h3 { margin: .25rem 0; }
+.photo-map-toolbar p { margin: .35rem 0 .8rem; color: #a9c1ca; }
+.photo-filters { display: flex; flex-wrap: wrap; align-items: end; gap: .65rem; }
+.photo-filters label { display: grid; gap: .25rem; color: #9fc2cc; font-size: 11px; font-weight: 700; }
+.photo-filters select, .photo-filters input, .photo-filters button { min-height: 38px; border: 1px solid #3b5c69; border-radius: 6px; background: #102938; color: #eef8fa; padding: .45rem .65rem; }
+.photo-filters input { width: 7rem; }
+.photo-filters button { cursor: pointer; font-weight: 700; }
+.photo-filter-summary { margin-top: .75rem; color: #6de7c8; font-size: 12px; }
+.photo-marker-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.photo-marker { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; display: grid; place-items: center; width: 30px; height: 30px; border: 2px dashed #fff1bd; border-radius: 50%; background: #e38a36; color: #08131c; font-weight: 900; box-shadow: 0 2px 10px #000b; cursor: pointer; }
+.photo-marker.exact_rover { border-style: solid; background: #55efc4; }
+.photo-marker.cluster { width: 35px; height: 35px; border-style: solid; background: #66b8f2; }
+.photo-marker:hover, .photo-marker:focus-visible { z-index: 2; transform: translate(-50%, -50%) scale(1.15); outline: 3px solid #fff; outline-offset: 2px; }
+.photo-detail-card { display: grid; grid-template-columns: minmax(180px, 320px) 1fr; gap: 1.1rem; margin: 1rem 0; padding: 1rem; border: 1px solid #477080; border-radius: 10px; background: #0d2232; }
+.photo-detail-card > img { width: 100%; max-height: 270px; object-fit: contain; background: #07121e; border-radius: 7px; }
+.photo-detail-card h3 { margin: .55rem 0; }
+.photo-card-heading { display: flex; justify-content: space-between; gap: 1rem; }
+.photo-location-badge { display: inline-block; padding: .3rem .55rem; border: 1px dashed #ffd27d; border-radius: 999px; color: #ffd27d; font-size: 11px; font-weight: 800; }
+.photo-location-badge.exact_rover { border-style: solid; color: #55efc4; }
+.photo-location-badge.none { color: #a9b8be; border-color: #758993; }
+.photo-metadata { display: grid; grid-template-columns: max-content 1fr; gap: .25rem .7rem; }
+.photo-metadata dt { color: #8eb8c5; }
+.photo-metadata dd { margin: 0; }
+.photo-coordinate-note { padding: .65rem; background: #091925; border-left: 3px solid #ffd27d; color: #bfd0d7; font-size: 12px; }
+.unlocated-photos { margin: 1rem 0; padding: 1rem; border: 1px solid #344f5b; border-radius: 10px; background: #0a1926; }
+.unlocated-photos > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .7rem; }
+.unlocated-photos button { display: flex; gap: .7rem; align-items: center; border: 1px solid #385765; border-radius: 7px; background: #102938; color: #edf5f7; padding: .6rem; text-align: left; cursor: pointer; }
+.unlocated-photos img { width: 76px; height: 58px; object-fit: cover; background: #07121e; }
+.unlocated-photos small { display: block; margin-top: .25rem; color: #9eb4bc; }
+
+@media (max-width: 720px) {
+  .photo-detail-card { grid-template-columns: 1fr; }
+  .photo-filters label, .photo-filters select, .photo-filters input, .photo-filters button { width: 100%; }
+}
