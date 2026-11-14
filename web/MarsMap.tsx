@@ -5,6 +5,7 @@ import { sampleRouteElevation, selectedProfileInterval } from './routeProfile.ts
 import { ElevationProfileChart } from './ElevationProfileChart.tsx'
 import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
 import { RouteSlopePanel } from './RouteSlopePanel.tsx'
+import { useI18n } from './i18n.tsx'
 import {
   DEFAULT_SLOPE_THRESHOLDS, SLOPE_COLORS, measureRouteSlope,
   type SlopeThresholds,
@@ -14,9 +15,7 @@ type Camera = { zoom: number; panX: number; panY: number }
 type Size = { width: number; height: number }
 type Drag = { x: number; y: number; moved: boolean } | null
 
-const number = new Intl.NumberFormat('ru', { maximumFractionDigits: 1 })
 const coordinate = new Intl.NumberFormat('en-US', { minimumFractionDigits: 5, maximumFractionDigits: 5 })
-const elevation = (v: number | null) => v === null ? 'NoData' : `${number.format(v)} м`
 
 const COLOR_STOPS: [number, [number, number, number]][] = [
   [0.00, [45, 27, 32]], [0.22, [94, 53, 51]],
@@ -91,6 +90,8 @@ function toGridPosition(screenX: number, screenY: number, m: ReturnType<typeof m
 }
 
 export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain; routes?: RoutePair; routeStepM?: number }) {
+  const { t, format, meters, error: localizeError } = useI18n()
+  const elevation = (v: number | null) => v === null ? t('status.nodata') : meters(v)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const scienceButtonRef = useRef<HTMLButtonElement>(null)
@@ -234,9 +235,8 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     if (showCtx) {
       ctx.drawImage(optical.image, p.ox, p.oy, iw, ih)
     } else if (optical) {
-      // DEM stays the quantitative layer: its colors encode elevation.
-      // The aligned CTX luminance contributes genuine surface detail instead
-      // of inventing detail by upscaling the 20 m height grid.
+      // CTX luminance adds real surface texture to DEM color while preserving
+      // elevations, Mars CRS, overlay geometry, and scientific measurements.
       ctx.drawImage(optical.image, p.ox, p.oy, iw, ih)
       ctx.save()
       ctx.globalCompositeOperation = 'color'
@@ -500,57 +500,57 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     <section className="map-section" id="map" aria-labelledby="map-title">
       <div className="section-heading">
         <div>
-          <span className="section-kicker"><span className="live-dot"/> LIVE TERRAIN VIEW / MARS</span>
-          <h2 id="map-title">Западная дельта Езеро</h2>
-          <p>Рельеф кратера из настоящей цифровой модели высот NASA / USGS CTX. Область 1,5 × 1,5 км.</p>
+          <span className="section-kicker"><span className="live-dot"/> {t('map.kicker')}</span>
+          <h2 id="map-title">{t('map.title')}</h2>
+          <p>{t('map.description')}</p>
         </div>
-        <div className="layer-select" role="group" aria-label="Переключение базового слоя карты">
+        <div className="layer-select" role="group" aria-label={t('map.layer.aria')}>
           <button type="button" aria-pressed={activeLayer === 'relief'}
             className={activeLayer === 'relief' ? 'selected' : ''}
-            onClick={() => setActiveLayer('relief')}>Рельеф DEM</button>
+            onClick={() => setActiveLayer('relief')}>{t('map.layer.dem')}</button>
           <button type="button" aria-pressed={activeLayer === 'ctx'}
             className={activeLayer === 'ctx' ? 'selected' : ''}
             disabled={!optical}
-            title={!optical ? 'Не загружен геопривязанный CTX-ортофотоплан' : 'Оптический CTX · 5 м/пиксель'}
-            onClick={() => { if (optical) setActiveLayer('ctx') }}>CTX · 5 м</button>
+            title={!optical ? t('map.layer.ctxDisabled') : t('map.layer.ctxEnabled')}
+            onClick={() => { if (optical) setActiveLayer('ctx') }}>{t('map.layer.ctx')}</button>
         </div>
       </div>
       <div className="map-layout">
         <div className="map-frame">
           <div className="map-canvas-wrap" ref={wrapperRef}>
             <canvas ref={canvasRef} className="mars-map-canvas" tabIndex={0} role="application"
-              aria-label="Интерактивная карта рельефа Езеро. Стрелки для перемещения, плюс и минус для масштаба, ноль для сброса."
+              aria-label={t('map.accessibility')}
               onPointerDown={handlePointerDown} onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp} onPointerCancel={() => { dragRef.current = null }}
               onPointerLeave={() => { if (!pinned) setHovered(null) }} onKeyDown={handleKeys}/>
-            <div className="map-overlay-head"><span className="map-head-indicator"/> JEZERO / WEST DELTA <small>18.46° N · 77.41° E</small></div>
-            <div className="map-controls" aria-label="Масштабирование карты">
-              <button type="button" aria-label="Приблизить карту" onClick={() => zoomAt(1.35, size.width / 2, size.height / 2)}>+</button>
+            <div className="map-overlay-head"><span className="map-head-indicator"/> {t('map.overlay')} <small>18.46° N · 77.41° E</small></div>
+            <div className="map-controls" aria-label={t('map.zoom.aria')}>
+              <button type="button" aria-label={t('map.zoom.in')} onClick={() => zoomAt(1.35, size.width / 2, size.height / 2)}>+</button>
               <span>{Math.round(camera.zoom * 100)}%</span>
-              <button type="button" aria-label="Отдалить карту" onClick={() => zoomAt(1 / 1.35, size.width / 2, size.height / 2)}>−</button>
-              <button type="button" className="reset-map" onClick={() => { setCamera({ zoom: 1, panX: 0, panY: 0 }); setPinned(null) }}>Сброс</button>
+              <button type="button" aria-label={t('map.zoom.out')} onClick={() => zoomAt(1 / 1.35, size.width / 2, size.height / 2)}>−</button>
+              <button type="button" className="reset-map" onClick={() => { setCamera({ zoom: 1, panX: 0, panY: 0 }); setPinned(null) }}>{t('map.zoom.reset')}</button>
             </div>
             <div className="map-compass" aria-hidden="true"><b>↑</b>N</div>
-            <div className="map-scale"><span style={{ width: barWidth }} className="scale-stroke"/><span>{barMeters} м</span></div>
-            <div className="map-bottom-note">DRAG TO PAN · SCROLL TO ZOOM · CLICK TO INSPECT</div>
+            <div className="map-scale"><span style={{ width: barWidth }} className="scale-stroke"/><span>{meters(barMeters, {maximumFractionDigits:0})}</span></div>
+            <div className="map-bottom-note">{t('map.help')}</div>
           </div>
         </div>
-        <aside className="telemetry" aria-label="Информация о рельефе">
-          <div className="telemetry-title"><span className="pulse-circle"/> TELEMETRY <span>01 / SURFACE</span></div>
+        <aside className="telemetry" aria-label={t('map.telemetry.aria')}>
+          <div className="telemetry-title"><span className="pulse-circle"/> {t('map.telemetry.title')} <span>{t('map.telemetry.subtitle')}</span></div>
           <div className="telemetry-block">
-            <span className="telemetry-label">{pinned ? 'ЗАКРЕПЛЁННЫЙ ПИКСЕЛЬ' : hovered ? 'ПОД КУРСОРОМ' : 'ЦЕНТР УЧАСТКА'}</span>
+            <span className="telemetry-label">{pinned ? t('map.telemetry.pinned') : hovered ? t('map.telemetry.hover') : t('map.telemetry.center')}</span>
             <strong className="altitude">{state ? elevation(state.elevation) : '—'}</strong>
-            <span className="telemetry-muted">Высота по исходной DEM, м</span>
+            <span className="telemetry-muted">{t('map.telemetry.elevation')}</span>
           </div>
           <div className="telemetry-block">
-            <span className="telemetry-label">МАРСИАНСКИЕ КООРДИНАТЫ</span>
-            <div className="coord-pair"><span>Широта, N</span><strong>{state ? coordinate.format(state.latitude) + '°' : '—'}</strong></div>
-            <div className="coord-pair"><span>Долгота, E</span><strong>{state ? coordinate.format(state.longitude) + '°' : '—'}</strong></div>
-            <div className="coord-pair"><span>Пиксель DEM</span><strong>{state ? `${state.col}, ${state.row}` : '—'}</strong></div>
-            {pinned && <button type="button" className="text-action" onClick={() => setPinned(null)}>Снять фиксацию точки ×</button>}
+            <span className="telemetry-label">{t('map.telemetry.coordinates')}</span>
+            <div className="coord-pair"><span>{t('map.telemetry.lat')}</span><strong>{state ? coordinate.format(state.latitude) + '°' : '—'}</strong></div>
+            <div className="coord-pair"><span>{t('map.telemetry.lon')}</span><strong>{state ? coordinate.format(state.longitude) + '°' : '—'}</strong></div>
+            <div className="coord-pair"><span>{t('map.telemetry.pixel')}</span><strong>{state ? `${state.col}, ${state.row}` : '—'}</strong></div>
+            {pinned && <button type="button" className="text-action" onClick={() => setPinned(null)}>{t('map.telemetry.unpin')}</button>}
           </div>
           <div className="telemetry-block">
-            <span className="telemetry-label">НАУЧНЫЕ ОРИЕНТИРЫ</span>
+            <span className="telemetry-label">{t('map.telemetry.landmarks')}</span>
             {checkpoints.map(point => <button key={point.id} type="button" className="checkpoint"
               ref={point.id === 'science_target' ? scienceButtonRef : undefined}
               aria-expanded={point.id === 'science_target' ? scienceOpen : undefined}
@@ -558,43 +558,43 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
               onClick={() => focusPoint(point.id)}>
               <span className={point.id === 'base' ? 'point-glyph base' : 'point-glyph science'}>{point.id === 'base' ? 'A' : 'B'}</span>
               <span className="checkpoint-text"><strong>{point.id === 'base' ? 'Three Forks' : 'Wildcat Ridge'}</strong>
-                <small>{point.id === 'base' ? 'Условная база' : 'Научная остановка'}</small></span>
+                <small>{point.id === 'base' ? t('map.telemetry.base') : t('map.telemetry.science')}</small></span>
               <span className="checkpoint-arrow">↗</span>
             </button>)}
           </div>
           {routes && <div className="telemetry-block route-switcher">
-            <span className="telemetry-label">АКТИВНЫЙ МАРШРУТ</span>
-            <div className="route-switcher-buttons" role="group" aria-label="Выбор активного маршрута">
+            <span className="telemetry-label">{t('map.routes.title')}</span>
+            <div className="route-switcher-buttons" role="group" aria-label={t('map.routes.aria')}>
               <button type="button" className="route-switcher-direct"
                 aria-pressed={activeRoute === 'direct'} onClick={() => { setActiveRoute('direct'); setSelectedSample(null); setPinned(null) }}>
-                Прямой
+                {t('route.direct')}
               </button>
               <button type="button" className="route-switcher-detour"
                 aria-pressed={activeRoute === 'detour'} onClick={() => { setActiveRoute('detour'); setSelectedSample(null); setPinned(null) }}>
-                Обходной
+                {t('route.detour')}
               </button>
             </div>
-            <span className="telemetry-muted">На карте показаны оба пути. Выбранный выделен толщиной.</span>
+            <span className="telemetry-muted">{t('map.routes.help')}</span>
           </div>}
           <div className="telemetry-block bottom">
-            <div className="coord-pair"><span>Область</span><strong>1,5 × 1,5 км</strong></div>
-            <div className="coord-pair"><span>Ячейки</span><strong>{grid.width} × {grid.height}</strong></div>
-            <div className="coord-pair"><span>Действительных</span><strong className="green-text">{validPercent}%</strong></div>
-            <div className="coord-pair"><span>Высоты</span><strong>{number.format(terrain.min)}…{number.format(terrain.max)} м</strong></div>
+            <div className="coord-pair"><span>{t('map.telemetry.area')}</span><strong>{t('map.areaSize')}</strong></div>
+            <div className="coord-pair"><span>{t('map.telemetry.cells')}</span><strong>{grid.width} × {grid.height}</strong></div>
+            <div className="coord-pair"><span>{t('map.telemetry.valid')}</span><strong className="green-text">{validPercent}%</strong></div>
+            <div className="coord-pair"><span>{t('map.telemetry.heights')}</span><strong>{meters(terrain.min)}…{meters(terrain.max)}</strong></div>
           </div>
         </aside>
       </div>
       {science && (
         <section className="map-info-card" id="science-stop-card" aria-labelledby="science-stop-title" hidden={!scienceOpen}>
           <h3 id="science-stop-title">Wildcat Ridge / Hazeltop</h3>
-          <p>Демонстрационная точка B в районе Wildcat Ridge · {coordinate.format(science.latitude_deg)}° N · {coordinate.format(science.longitude_deg)}° E</p>
-          <p>Мелкозернистые осадочные породы с сульфатами помогают изучать условия древнего озера Езеро. Отложения могли сформироваться при испарении солёной воды. В обнажении Wildcat Ridge Perseverance отобрал керны Hazeltop и Bearwallow.</p>
-          <p><strong>Задача астронавта в демо.</strong> Сфотографировать обнажение с масштабом, описать видимые слои и обосновать выбор точки для отбора образца.</p>
-          <a href="https://science.nasa.gov/resource/sample-collection-and-rock-analysis-at-wildcat-ridge/">NASA · Отбор и анализ образцов Wildcat Ridge</a>
+          <p>{t('map.science.position')} · {coordinate.format(science.latitude_deg)}° N · {coordinate.format(science.longitude_deg)}° E</p>
+          <p>{t('map.science.geology')}</p>
+          <p><strong>{t('map.science.taskLabel')}</strong> {t('map.science.task')}</p>
+          <a href="https://science.nasa.gov/resource/sample-collection-and-rock-analysis-at-wildcat-ridge/">{t('map.science.link')}</a>
           <button type="button" className="text-action" onClick={() => {
             setScienceOpen(false)
             scienceButtonRef.current?.focus()
-          }}>Закрыть научную карточку</button>
+          }}>{t('map.science.close')}</button>
         </section>
       )}
       {slopeState.report && (
@@ -602,50 +602,50 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
           thresholds={slopeThresholds} onThresholdsChange={setSlopeThresholds}
           highlightEnabled={showSlopeHighlights} onToggle={setShowSlopeHighlights}/>
       )}
-      {slopeState.error && <p className="alert error-alert" role="alert">Не удалось оценить уклоны: {slopeState.error}</p>}
+      {slopeState.error && <p className="alert error-alert" role="alert">{t('map.status.slopeError', {detail:localizeError(slopeState.error)})}</p>}
       {activeProfile && <ElevationProfileChart profile={activeProfile} activeRoute={activeRoute}
         selectedIndex={safeSelectedIndex} onSelect={selectProfileSample} />}
       <div className="layer-status" role="status">
         {opticalError
-          ? 'CTX: ошибка загрузки — ' + opticalError
+          ? t('map.status.ctxError', {detail:localizeError(opticalError)})
           : optical
             ? activeLayer === 'ctx'
-              ? 'CTX: настоящий ортофотоплан USGS, геопривязка подтверждена метаданными · 5 м/пиксель'
-              : 'CTX-ортофотоплан доступен: переключитесь на спутниковый снимок'
-            : 'CTX ещё не загружен на сайт: необходимы официальный оптический PNG и метаданные геопривязки'}
+              ? t('map.status.ctxActive')
+              : t('map.status.ctxReady')
+            : t('map.status.ctxMissing')}
       </div>
       <div className="map-footer">
-        <div className="legend-title">RELIEF ELEVATION <span>LOW</span></div>
+        <div className="legend-title">{t('map.footer.relief')} <span>{t('map.footer.low')}</span></div>
         <div className="relief-gradient" aria-hidden="true" />
-        <span>HIGH</span>
-        <div className="map-source">USGS Astrogeology · CTX 20 м/пиксель · марсианская проекция, не WGS84</div>
+        <span>{t('map.footer.high')}</span>
+        <div className="map-source">{t('map.footer.source')}</div>
       </div>
       <p className="scientific-disclaimer">
         {activeLayer === 'ctx' && optical
-          ? 'Оптический CTX показывает отражённый свет. Высоты берутся из DEM. Оценка пригодности маршрута для выхода экипажа требует отдельной проверки.'
-          : `Цвет показывает высоты DEM, а детали поверхности взяты из геопривязанного CTX. Исходный шаг DEM — ${number.format(grid.pixel_size_m[0])} м.`}
+          ? t('map.note.ctx')
+          : t('map.note.dem', {size:format(grid.pixel_size_m[0])})}
       </p>
       <details className="map-info-card">
-        <summary>Источники и ограничения</summary>
-        <h3>{terrain.metadata.source.product}{(activeLayer === 'relief' || !optical) && ' · активный слой'}</h3>
+        <summary>{t('map.source.title')}</summary>
+        <h3>{terrain.metadata.source.product}{(activeLayer === 'relief' || !optical) && ' · ' + t('map.source.active')}</h3>
         <dl>
-          <dt>Миссия и прибор</dt><dd>Mars Reconnaissance Orbiter · {terrain.metadata.source.instrument}</dd>
-          <dt>Источник</dt><dd><a href={terrain.metadata.source.url}>{terrain.metadata.source.publisher} · исходный GeoTIFF</a></dd>
-          <dt>Год публикации</dt><dd>2021 по метке PDS4. Даты съёмки в метке мозаики не указаны.</dd>
-          <dt>Шаг сетки</dt><dd>{grid.pixel_size_m.map(value => number.format(value)).join(' × ')} м на пиксель</dd>
+          <dt>{t('map.source.mission')}</dt><dd>Mars Reconnaissance Orbiter · {terrain.metadata.source.instrument}</dd>
+          <dt>{t('map.source.source')}</dt><dd><a href={terrain.metadata.source.url}>{terrain.metadata.source.publisher} · {t('map.source.originalTif')}</a></dd>
+          <dt>{t('map.source.year')}</dt><dd>{t('map.source.yearValue')}</dd>
+          <dt>{t('map.source.resolution')}</dt><dd>{grid.pixel_size_m.map(value => format(value)).join(' × ')} {t('map.source.pixel')}</dd>
         </dl>
-        <p><strong>Данные DEM.</strong> Высоты взяты из исходной сетки. Цвет и затенение визуализируют рельеф.</p>
-        <p><strong>Расчёты маршрутов.</strong> Python-планировщик вычисляет уклоны из перепадов высот, присваивает категории по экспериментальным порогам и строит обход A*. Веб-карта показывает импортированные маршруты.</p>
-        <p><strong>Ограничения.</strong> Сетка не показывает отдельные камни и свойства грунта. Пригодность маршрута для выхода экипажа требует отдельной проверки.</p>
-        <a href="https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.xml">Метка продукта PDS4</a>
-        <h3>{optical?.metadata.source.product ?? 'Оптический ортофотоплан CTX'}{activeLayer === 'ctx' && optical && ' · активный слой'}</h3>
+        <p><strong>{t('map.source.demTitle')}</strong> {t('map.source.demDescription')}</p>
+        <p><strong>{t('map.source.routeTitle')}</strong> {t('map.source.routeDescription')}</p>
+        <p><strong>{t('map.source.limitsTitle')}</strong> {t('map.source.limits')}</p>
+        <a href="https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.xml">{t('map.source.pds')}</a>
+        <h3>{optical?.metadata.source.product ?? t('map.source.opticalFallback')}{activeLayer === 'ctx' && optical && ' · ' + t('map.source.active')}</h3>
         <dl>
-          <dt>Миссия и прибор</dt><dd>Mars Reconnaissance Orbiter · Context Camera (CTX)</dd>
-          <dt>Источник</dt><dd><a href={optical?.metadata.source.url ?? 'https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXortho_mosaic_5m.tif'}>{optical?.metadata.source.publisher ?? 'USGS Astrogeology Science Center'} · исходный ортофотоплан</a></dd>
-          <dt>Дата съёмки</dt><dd>В метаданных слоя не указана.</dd>
-          <dt>Шаг сетки</dt><dd>{number.format(optical?.metadata.alignment.resolution_m ?? 5)} м на пиксель</dd>
+          <dt>{t('map.source.mission')}</dt><dd>Mars Reconnaissance Orbiter · Context Camera (CTX)</dd>
+          <dt>{t('map.source.source')}</dt><dd><a href={optical?.metadata.source.url ?? 'https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXortho_mosaic_5m.tif'}>{optical?.metadata.source.publisher ?? 'USGS Astrogeology Science Center'} · {t('map.source.originalOrtho')}</a></dd>
+          <dt>{t('map.source.captureDate')}</dt><dd>{t('map.source.captureUnknown')}</dd>
+          <dt>{t('map.source.resolution')}</dt><dd>{format(optical?.metadata.alignment.resolution_m ?? 5)} {t('map.source.pixel')}</dd>
         </dl>
-        <p>Ортофотоплан показывает отражённый свет. Высоты и расчёты маршрутов по-прежнему основаны на DEM. Внешний вид поверхности сам по себе не определяет её проходимость.</p>
+        <p>{t('map.source.ctxDescription')}</p>
       </details>
     </section>
   )
