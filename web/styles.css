@@ -251,6 +251,182 @@ thead { background: #132734; color: #afc9d4; }
 .map-info-card dd { margin: 0; overflow-wrap: anywhere; }
 .map-info-card a { color: #55efc4; }
 
+/* Task 21: measured longitudinal slope classification of route intervals. */
+.slope-panel {
+  margin: 18px 0 16px;
+  padding: 22px 24px;
+  border: 1px solid #36535e;
+  border-radius: 12px;
+  background: #0c1d2a;
+}
+.slope-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+.slope-panel-heading h3 {
+  margin: 7px 0 8px;
+  color: #f0f6fa;
+  font-size: clamp(18px, 2vw, 24px);
+  letter-spacing: -.3px;
+}
+.slope-panel-heading p {
+  margin: 0;
+  max-width: 750px;
+  color: #a4bdc9;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.slope-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: #d1e6e9;
+  background: #142d39;
+  border: 1px solid #3b6470;
+  padding: 11px 13px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.slope-toggle input {
+  accent-color: #55efc4;
+  width: 16px;
+  height: 16px;
+}
+.slope-statistics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.slope-statistics > div {
+  padding: 12px 15px;
+  border: 1px solid #2a4a56;
+  background: #112a36;
+  border-radius: 8px;
+}
+.slope-statistics span {
+  display: block;
+  margin-bottom: 8px;
+  color: #95b1bf;
+  font-size: 11px;
+}
+.slope-statistics strong {
+  font-size: 19px;
+  font-weight: 800;
+  color: #eef8f8;
+  font-variant-numeric: tabular-nums;
+}
+.slope-statistics strong.slope-orange { color: #fb924d; }
+.slope-profile-chart {
+  display: block;
+  background: #091925;
+  border: 1px solid #244757;
+  width: 100%;
+  height: auto;
+  min-height: 165px;
+  border-radius: 8px;
+}
+.slope-legend {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 15px 0;
+}
+.slope-legend-entry {
+  padding: 10px 12px;
+  min-width: 0;
+  border: 1px solid #284653;
+  border-radius: 7px;
+  background: #142935;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 7px;
+  row-gap: 6px;
+}
+.slope-legend-entry i { width: 10px; height: 10px; border-radius: 50%; }
+.slope-legend-entry span { color: #bdd0d9; font-size: 11px; }
+.slope-legend-entry strong {
+  grid-column: 2;
+  color: #eff8fa;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.slope-settings fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  border: 1px solid #2d4d59;
+  border-radius: 8px;
+  padding: 13px 14px;
+  margin: 0;
+}
+.slope-settings legend {
+  font-size: 11px;
+  color: #acc6d0;
+  padding: 0 8px;
+  font-weight: 700;
+}
+.slope-settings label {
+  font-size: 11px;
+  color: #b1c8d0;
+  display: grid;
+  gap: 5px;
+}
+.slope-settings input[type=number] {
+  width: 88px;
+  border-radius: 5px;
+  border: 1px solid #395d6a;
+  background: #102534;
+  color: #effafa;
+  padding: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.slope-settings button {
+  border: 0;
+  background: #55efc4;
+  color: #061a1f;
+  border-radius: 6px;
+  padding: 11px 14px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.slope-settings button:hover { background: #91ffda; }
+.slope-settings button.slope-preset {
+  background: #284854;
+  color: #e2f4f7;
+  border: 1px solid #406271;
+}
+.slope-validation-error {
+  color: #ff9f8f;
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+.slope-science-note {
+  color: #8faebb;
+  font-size: 11px;
+  line-height: 1.65;
+  margin: 12px 0 0;
+}
+@media (max-width: 990px) {
+  .slope-legend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .slope-statistics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .slope-panel { padding: 15px 12px; }
+  .slope-panel-heading { flex-direction: column; gap: 10px; }
+  .slope-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .slope-settings fieldset { gap: 10px; }
+  .slope-toggle { width: 100%; justify-content: center; }
+}
+
 /* Task #20: linked elevation profile and selected route segment. */
 .elevation-profile-panel {
   margin: 16px 0 18px; padding: 20px 22px 16px;

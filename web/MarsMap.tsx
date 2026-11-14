@@ -4,6 +4,11 @@ import { routeToGrid, type RoutePair } from './routeMap.ts'
 import { sampleRouteElevation, selectedProfileInterval } from './routeProfile.ts'
 import { ElevationProfileChart } from './ElevationProfileChart.tsx'
 import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
+import { RouteSlopePanel } from './RouteSlopePanel.tsx'
+import {
+  DEFAULT_SLOPE_THRESHOLDS, SLOPE_COLORS, measureRouteSlope,
+  type SlopeThresholds,
+} from './routeSlopes.ts'
 
 type Camera = { zoom: number; panX: number; panY: number }
 type Size = { width: number; height: number }
@@ -93,6 +98,8 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
   const [camera, setCamera] = useState<Camera>({ zoom: 1, panX: 0, panY: 0 })
   const [activeRoute, setActiveRoute] = useState<'direct' | 'detour'>('direct')
   const [selectedSample, setSelectedSample] = useState<number | null>(null)
+  const [slopeThresholds, setSlopeThresholds] = useState<SlopeThresholds>({ ...DEFAULT_SLOPE_THRESHOLDS })
+  const [showSlopeHighlights, setShowSlopeHighlights] = useState(true)
   const cameraRef = useRef(camera)
   const [hovered, setHovered] = useState<TerrainCell | null>(null)
   const [optical, setOptical] = useState<CtxOpticalLayer | null>(null)
@@ -115,14 +122,19 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
         : { elevation_m: cell.elevation, status: 'valid' }
     })
   }, [terrain, routes, routeStepM, activeRoute])
-
-  // Route uploads can change the number of samples between React renders.
   const safeSelectedIndex = activeProfile && selectedSample !== null &&
     selectedSample >= 0 && selectedSample < activeProfile.samples.length ? selectedSample : null
   useEffect(() => { setSelectedSample(null) }, [routes])
-
   const state = pinned ?? hovered ?? cellAtGrid(terrain, Math.floor(grid.width / 2), Math.floor(grid.height / 2))
   const validPercent = (100 * terrain.validCount / terrain.heights.length).toFixed(1)
+  const slopeState = useMemo(() => {
+    if (!routes) return { report: null, error: '' }
+    try {
+      return { report: measureRouteSlope(terrain, routes[activeRoute], slopeThresholds), error: '' }
+    } catch (cause) {
+      return { report: null, error: cause instanceof Error ? cause.message : 'Не удалось рассчитать уклоны' }
+    }
+  }, [terrain, routes, activeRoute, slopeThresholds])
 
   useEffect(() => { cameraRef.current = camera }, [camera])
 
@@ -265,44 +277,33 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       ctx.restore()
     }
 
-    const marker = (x: number, y: number, name: string, color: string, id: string) => {
-      const px = p.ox + x * p.scale
-      const py = p.oy + y * p.scale
+    // Draw the route grade overlay AFTER both path strokes, BEFORE location
+    // markers. Every segment uses real DEM sample heights (not drawn pixels).
+    if (routes && slopeState.report && showSlopeHighlights) {
+      const [stepX, , left, , stepY, top] = grid.transform
+      ctx.save()
       ctx.beginPath()
-      ctx.fillStyle = 'rgba(6,16,26,.85)'
-      ctx.arc(px, py, 15, 0, 2 * Math.PI); ctx.fill()
-      ctx.beginPath()
-      ctx.fillStyle = color
-      ctx.arc(px, py, 7.5, 0, 2 * Math.PI); ctx.fill()
-      ctx.lineWidth = 2.5
-      ctx.strokeStyle = '#fff7e2'
-      ctx.stroke()
-      ctx.font = '700 11px system-ui, sans-serif'
-      ctx.fillStyle = '#fff'
-      ctx.textAlign = 'center'
-      ctx.fillText(id, px, py - 23)
-      ctx.font = '600 12px system-ui, sans-serif'
-      const measured = ctx.measureText(name).width
-      const bx = Math.max(6, Math.min(width - measured - 22, px + 18))
-      const by = Math.max(10, Math.min(height - 30, py - 15))
-      ctx.fillStyle = '#06131de8'
-      ctx.fillRect(bx, by, measured + 18, 30)
-      ctx.fillStyle = '#f1f5f9'
-      ctx.textAlign = 'left'
-      ctx.fillText(name, bx + 9, by + 19)
+      ctx.rect(p.ox, p.oy, iw, ih)
+      ctx.clip()
+      ctx.lineJoin = 'round'
+      ctx.lineCap = 'round'
+      ctx.lineWidth = 6.5
+      for (const interval of slopeState.report.intervals) {
+        ctx.strokeStyle = SLOPE_COLORS[interval.band]
+        ctx.setLineDash(interval.band === 'unknown' ? [6, 6] : [])
+        ctx.beginPath()
+        ctx.moveTo(p.ox + (interval.from.x - left) / stepX * p.scale,
+                   p.oy + (interval.from.y - top) / stepY * p.scale)
+        ctx.lineTo(p.ox + (interval.to.x - left) / stepX * p.scale,
+                   p.oy + (interval.to.y - top) / stepY * p.scale)
+        ctx.stroke()
+      }
+      ctx.restore()
     }
 
-    // Fixed points originate in the original USGS Mars-projected CRS.
-    for (const point of checkpoints) {
-      const [sx, , tx, , sy, ty] = grid.transform
-      const col = (point.projected_x_m - tx) / sx
-      const row = (point.projected_y_m - ty) / sy
-      marker(col, row, point.id === 'base' ? 'THREE FORKS' : 'WILDCAT RIDGE',
-        point.id === 'base' ? '#55efc4' : '#ffd27d', point.id === 'base' ? 'A' : 'B')
-    }
 
-    // Use the same Mars DEM affine, camera and layer transform for the selected
-    // profile interval. Unknown DEM intervals are shown as dashed, not flat.
+    // Profile selection is drawn above the experimental slope bands but uses
+    // the same Mars DEM projection and map camera.
     if (activeProfile && safeSelectedIndex !== null) {
       const { from, to } = selectedProfileInterval(activeProfile, safeSelectedIndex)
       const segment = routeToGrid([from, to], grid.transform)
@@ -338,6 +339,42 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       ctx.stroke()
       ctx.restore()
     }
+
+    const marker = (x: number, y: number, name: string, color: string, id: string) => {
+      const px = p.ox + x * p.scale
+      const py = p.oy + y * p.scale
+      ctx.beginPath()
+      ctx.fillStyle = 'rgba(6,16,26,.85)'
+      ctx.arc(px, py, 15, 0, 2 * Math.PI); ctx.fill()
+      ctx.beginPath()
+      ctx.fillStyle = color
+      ctx.arc(px, py, 7.5, 0, 2 * Math.PI); ctx.fill()
+      ctx.lineWidth = 2.5
+      ctx.strokeStyle = '#fff7e2'
+      ctx.stroke()
+      ctx.font = '700 11px system-ui, sans-serif'
+      ctx.fillStyle = '#fff'
+      ctx.textAlign = 'center'
+      ctx.fillText(id, px, py - 23)
+      ctx.font = '600 12px system-ui, sans-serif'
+      const measured = ctx.measureText(name).width
+      const bx = Math.max(6, Math.min(width - measured - 22, px + 18))
+      const by = Math.max(10, Math.min(height - 30, py - 15))
+      ctx.fillStyle = '#06131de8'
+      ctx.fillRect(bx, by, measured + 18, 30)
+      ctx.fillStyle = '#f1f5f9'
+      ctx.textAlign = 'left'
+      ctx.fillText(name, bx + 9, by + 19)
+    }
+
+    // Fixed points originate in the original USGS Mars-projected CRS.
+    for (const point of checkpoints) {
+      const [sx, , tx, , sy, ty] = grid.transform
+      const col = (point.projected_x_m - tx) / sx
+      const row = (point.projected_y_m - ty) / sy
+      marker(col, row, point.id === 'base' ? 'THREE FORKS' : 'WILDCAT RIDGE',
+        point.id === 'base' ? '#55efc4' : '#ffd27d', point.id === 'base' ? 'A' : 'B')
+    }
     if (state) {
       const cx = p.ox + (state.col + .5) * p.scale
       const cy = p.oy + (state.row + .5) * p.scale
@@ -352,14 +389,13 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 16)
       ctx.stroke()
     }
-  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical, activeProfile, safeSelectedIndex])
+  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical, slopeState, showSlopeHighlights, activeProfile, safeSelectedIndex])
 
   function selectProfileSample(index: number | null) {
     setSelectedSample(index)
     if (index === null || !activeProfile) return
     const selected = activeProfile.samples[index]
     setPinned(cellAtProjected(terrain, selected.x, selected.y))
-    // Keep the chosen location visible at the existing map zoom.
     const [stepX, , left, , stepY, top] = grid.transform
     const col = (selected.x - left) / stepX
     const row = (selected.y - top) / stepY
@@ -544,6 +580,12 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
           }}>Закрыть научную карточку</button>
         </section>
       )}
+      {slopeState.report && (
+        <RouteSlopePanel report={slopeState.report} routeName={activeRoute}
+          thresholds={slopeThresholds} onThresholdsChange={setSlopeThresholds}
+          highlightEnabled={showSlopeHighlights} onToggle={setShowSlopeHighlights}/>
+      )}
+      {slopeState.error && <p className="alert error-alert" role="alert">Не удалось оценить уклоны: {slopeState.error}</p>}
       {activeProfile && <ElevationProfileChart profile={activeProfile} activeRoute={activeRoute}
         selectedIndex={safeSelectedIndex} onSelect={selectProfileSample} />}
       <div className="layer-status" role="status">
