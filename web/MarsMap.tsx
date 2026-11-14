@@ -4,6 +4,7 @@ import { routeToGrid, type RoutePair } from './routeMap.ts'
 import { sampleRouteElevation, selectedProfileInterval } from './routeProfile.ts'
 import { ElevationProfileChart } from './ElevationProfileChart.tsx'
 import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
+import { loadThemisLayer } from './themisLayer.ts'
 import { RouteSlopePanel } from './RouteSlopePanel.tsx'
 import { useI18n } from './i18n.tsx'
 import { MarsGlobalMap } from './MarsGlobalMap.tsx'
@@ -106,7 +107,21 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
   const [hovered, setHovered] = useState<TerrainCell | null>(null)
   const [optical, setOptical] = useState<CtxOpticalLayer | null>(null)
   const [opticalError, setOpticalError] = useState('')
-  const [activeLayer, setActiveLayer] = useState<'relief' | 'ctx'>('relief')
+  const [activeLayer, setActiveLayer] = useState<'relief' | 'ctx' | 'themis'>('relief')
+  const [themis, setThemis] = useState<HTMLImageElement | null>(null)
+  const showThemis = activeLayer === 'themis' && themis !== null
+  const [themisUnavailable, setThemisUnavailable] = useState(false)
+  useEffect(() => {
+    let current = true
+    setThemis(null)
+    setThemisUnavailable(false)
+    void loadThemisLayer(terrain).then(image => {
+      if (current) setThemis(image)
+    }).catch(() => {
+      if (current) setThemisUnavailable(true)
+    })
+    return () => { current = false }
+  }, [terrain])
   const [pinned, setPinned] = useState<TerrainCell | null>(null)
   const [scienceOpen, setScienceOpen] = useState(false)
   const dragRef = useRef<Drag>(null)
@@ -233,7 +248,9 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     const showCtx = activeLayer === 'ctx' && optical !== null
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
-    if (showCtx) {
+    if (showThemis) {
+      ctx.drawImage(themis, p.ox, p.oy, iw, ih)
+    } else if (showCtx) {
       ctx.drawImage(optical.image, p.ox, p.oy, iw, ih)
     } else if (optical) {
       // CTX luminance adds real surface texture to DEM color while preserving
@@ -407,7 +424,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 16)
       ctx.stroke()
     }
-  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical, slopeState, showSlopeHighlights, activeProfile, safeSelectedIndex])
+  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical, themis, slopeState, showSlopeHighlights, activeProfile, safeSelectedIndex])
 
   function selectProfileSample(index: number | null) {
     setSelectedSample(index)
@@ -514,6 +531,9 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
             disabled={!optical}
             title={!optical ? t('map.layer.ctxDisabled') : t('map.layer.ctxEnabled')}
             onClick={() => { if (optical) setActiveLayer('ctx') }}>{t('map.layer.ctx')}</button>
+          <button type="button" aria-pressed={activeLayer === 'themis' && !!themis}
+            className={activeLayer === 'themis' && themis ? 'selected' : ''}
+            disabled={!themis} onClick={() => setActiveLayer('themis')}>{t('map.layer.themis')}</button>
         </div>
       </div>
       <MarsGlobalMap onOpenRegion={() => {
@@ -610,7 +630,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       {activeProfile && <ElevationProfileChart profile={activeProfile} activeRoute={activeRoute}
         selectedIndex={safeSelectedIndex} onSelect={selectProfileSample} />}
       <div className="layer-status" role="status">
-        {opticalError
+        {showThemis ? t('map.status.themisActive') : opticalError
           ? t('map.status.ctxError', {detail:localizeError(opticalError)})
           : optical
             ? activeLayer === 'ctx'
@@ -619,19 +639,20 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
             : t('map.status.ctxMissing')}
       </div>
       <div className="map-footer">
-        <div className="legend-title">{t('map.footer.relief')} <span>{t('map.footer.low')}</span></div>
-        <div className="relief-gradient" aria-hidden="true" />
+        <div className="legend-title">{t(showThemis ? 'map.footer.themis' : 'map.footer.relief')} <span>{t('map.footer.low')}</span></div>
+        <div className="relief-gradient" style={showThemis ? {background: 'linear-gradient(to right, #161616, #ededed)'} : undefined} aria-hidden="true" />
         <span>{t('map.footer.high')}</span>
-        <div className="map-source">{t('map.footer.source')}</div>
+        <div className="map-source">{t(showThemis ? 'map.footer.themisSource' : 'map.footer.source')}</div>
       </div>
       <p className="scientific-disclaimer">
-        {activeLayer === 'ctx' && optical
+        {activeLayer === 'themis' && themis ? t('map.source.themisNote') : activeLayer === 'ctx' && optical
           ? t('map.note.ctx')
           : t('map.note.dem', {size:format(grid.pixel_size_m[0])})}
       </p>
+      {themisUnavailable && <p className="layer-status">{t('map.layer.themisUnavailable')}</p>}
       <details className="map-info-card">
         <summary>{t('map.source.title')}</summary>
-        <h3>{terrain.metadata.source.product}{(activeLayer === 'relief' || !optical) && ' · ' + t('map.source.active')}</h3>
+        <h3>{terrain.metadata.source.product}{(activeLayer === 'relief' || (activeLayer === 'ctx' && !optical) || (activeLayer === 'themis' && !themis)) && ' · ' + t('map.source.active')}</h3>
         <dl>
           <dt>{t('map.source.mission')}</dt><dd>Mars Reconnaissance Orbiter · {terrain.metadata.source.instrument}</dd>
           <dt>{t('map.source.source')}</dt><dd><a href={terrain.metadata.source.url}>{terrain.metadata.source.publisher} · {t('map.source.originalTif')}</a></dd>
@@ -650,6 +671,14 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
           <dt>{t('map.source.resolution')}</dt><dd>{format(optical?.metadata.alignment.resolution_m ?? 5)} {t('map.source.pixel')}</dd>
         </dl>
         <p>{t('map.source.ctxDescription')}</p>
+        <h3>THEMIS Day IR · Syrtis Major{activeLayer === 'themis' && themis && ' · ' + t('map.source.active')}</h3>
+        <dl>
+          <dt>{t('map.source.mission')}</dt><dd>Mars Odyssey · Thermal Emission Imaging System</dd>
+          <dt>{t('map.source.source')}</dt><dd><a href="https://stac.astrogeology.usgs.gov/docs/data/mars/themis_controlled_mosaics/">USGS Astrogeology</a></dd>
+          <dt>{t('map.source.captureDate')}</dt><dd>{t('map.source.captureUnknown')}</dd>
+          <dt>{t('map.source.resolution')}</dt><dd>100 {t('map.source.pixel')}</dd>
+        </dl>
+        <p>{t('map.source.themisNote')}</p>
       </details>
     </section>
   )
