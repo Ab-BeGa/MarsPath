@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { useI18n } from './i18n.tsx'
+import { loadMarsSites, type MarsSite, type MarsSitesCatalog } from './marsSites.ts'
+import {
+  normalizeMarsLongitude, visibleMarsSiteClusters,
+  type SiteCategoryFilter,
+} from './marsSiteMapGeometry.ts'
+import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
 
 type Size = { width: number; height: number }
 type Camera = { zoom: number; panX: number; panY: number }
@@ -15,6 +21,7 @@ const LAYERS: Record<GlobalLayer, { id: string; extension: 'jpg' | 'png'; maxLev
 const TILE_URL_PREFIX = 'https://trek.nasa.gov/tiles/Mars/EQ'
 const MAX_CACHED_TILES = 120
 const JEZERO = { longitude: 77.40974302, latitude: 18.45616697 }
+const EMPTY_SITES: MarsSite[] = []
 const LAYER_SHORT_NAMES: Record<GlobalLayer, string> = { relief: 'MOLA', satellite: 'MOC', color: 'Viking' }
 
 function fitScale(size: Size) { return Math.min(size.width / 512, size.height / 256) }
@@ -47,10 +54,58 @@ export function MarsGlobalMap({ onOpenRegion }: { onOpenRegion: () => void }) {
   const [activeLayer, setActiveLayer] = useState<GlobalLayer>('relief')
   const [expanded, setExpanded] = useState(false)
   const [cursorCoordinates, setCursorCoordinates] = useState<{ longitude: number; latitude: number } | null>(null)
+  const [siteCatalog, setSiteCatalog] = useState<MarsSitesCatalog | null>(null)
+  const [siteError, setSiteError] = useState('')
+  const [siteFilter, setSiteFilter] = useState<SiteCategoryFilter>('all')
+  const [selectedSiteIds, setSelectedSiteIds] = useState<string[]>([])
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
+
+  const sites = siteCatalog?.sites ?? EMPTY_SITES
+  const clusters = useMemo(() =>
+    visibleMarsSiteClusters(sites, siteFilter, camera, size),
+    [sites, siteFilter, camera, size])
+  const selectedGroup = selectedSiteIds
+    .map(id => sites.find(site => site.id === id))
+    .filter((site): site is MarsSite => site !== undefined)
+
+  const closeSiteDetails = () => {
+    setSelectedSiteId(null)
+    setSelectedSiteIds([])
+  }
+  const openSiteGroup = (group: MarsSite[]) => {
+    setSelectedSiteIds(group.map(site => site.id))
+    setSelectedSiteId(group[0]?.id ?? null)
+  }
+  const focusSite = (site: MarsSite) => {
+    setSiteFilter('all')
+    setSelectedSiteIds([site.id])
+    setSelectedSiteId(site.id)
+    setCamera(current => {
+      const zoom = Math.max(4, current.zoom)
+      const worldWidth = 512 * fitScale(size) * zoom
+      const xFraction = (normalizeMarsLongitude(site.longitude_east_deg) + 180) / 360
+      const yFraction = (90 - site.latitude_deg) / 180
+      return constrainPan({
+        zoom,
+        panX: (0.5 - xFraction) * worldWidth,
+        panY: (0.5 - yFraction) * (worldWidth / 2),
+      }, size)
+    })
+  }
 
   useEffect(() => {
     cameraRef.current = camera
   }, [camera])
+
+  useEffect(() => {
+    let active = true
+    void loadMarsSites('/data/mars-global/sites.json')
+      .then(catalogue => { if (active) setSiteCatalog(catalogue) })
+      .catch(cause => {
+        if (active) setSiteError(cause instanceof Error ? cause.message : String(cause))
+      })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     const image = new Image()
@@ -64,14 +119,25 @@ export function MarsGlobalMap({ onOpenRegion }: { onOpenRegion: () => void }) {
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') setExpanded(false)
+      if (event.key !== 'Escape') return
+      if (selectedSiteId) closeSiteDetails()
+      else setExpanded(false)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [expanded])
+  }, [expanded, selectedSiteId])
+
+  useEffect(() => {
+    if (expanded || !selectedSiteId) return
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') closeSiteDetails()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [expanded, selectedSiteId])
 
   useEffect(() => {
     const element = wrapperRef.current
@@ -317,6 +383,36 @@ export function MarsGlobalMap({ onOpenRegion }: { onOpenRegion: () => void }) {
               }}>{t(`map.global.layer.${layer}`)}</button>
           ))}
         </div>
+        <div className="global-site-controls" aria-label={t('map.sites.title')}>
+          <div className="global-site-filters" role="group" aria-label={t('map.sites.title')}>
+            {([
+              ['all','map.sites.all'],
+              ['landing_site','map.sites.landing'],
+              ['science_event','map.sites.science'],
+            ] as const).map(([category,label]) => (
+              <button type="button" key={category}
+                aria-pressed={siteFilter === category}
+                onClick={() => {setSiteFilter(category); closeSiteDetails()}}>
+                {t(label)}{siteCatalog && <span> ({category === 'all' ? sites.length :
+                  sites.filter(site => site.category === category).length})</span>}
+              </button>
+            ))}
+          </div>
+          <label className="global-site-picker">
+            <span>{t('map.sites.pick')}</span>
+            <select value={selectedSiteId ?? ''} disabled={sites.length === 0}
+              onChange={event => {
+                const site = sites.find(item => item.id === event.currentTarget.value)
+                if (site) focusSite(site)
+                else closeSiteDetails()
+              }}>
+              <option value="">{t('map.sites.pickPlaceholder')}</option>
+              {sites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}
+            </select>
+          </label>
+          {!siteCatalog && !siteError && <span role="status" className="global-site-loading">{t('map.sites.loading')}</span>}
+          {siteError && <span role="alert" className="global-site-error">{t('map.sites.loadError')} {siteError}</span>}
+        </div>
         <div className="global-map-toolbar" aria-label={t('map.global.controls')}>
           <span>{t('map.global.level', { level, max: LAYERS[activeLayer].maxLevel })}</span>
           <button type="button" aria-label={t('map.zoom.in')} disabled={camera.zoom >= layerMaxZoom}
@@ -337,12 +433,35 @@ export function MarsGlobalMap({ onOpenRegion }: { onOpenRegion: () => void }) {
             onPointerDown={handlePointerDown} onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp} onPointerCancel={() => { drag.current = null }}
             onPointerLeave={() => setCursorCoordinates(null)} />
+          <div className="global-site-markers" aria-label={t('map.sites.title')}>
+            {clusters.map(cluster => {
+              const grouped = cluster.sites.length > 1
+              const event = cluster.sites[0].category === 'science_event'
+              const mixed = cluster.sites.some(site => site.category !== cluster.sites[0].category)
+              const markerClass = mixed ? 'mixed' : event ? 'event' : 'landing'
+              return <button key={cluster.id} type="button"
+                className={`global-site-pin global-site-pin--${markerClass}`}
+                style={{left:cluster.x,top:cluster.y}}
+                aria-label={grouped ? t('map.sites.pinGroup',{count:cluster.sites.length}) :
+                  t('map.sites.pin',{name:cluster.sites[0].name})}
+                aria-pressed={cluster.sites.some(site => site.id === selectedSiteId)}
+                title={cluster.sites.map(site => site.name).join(' / ')}
+                onClick={() => openSiteGroup(cluster.sites)}>
+                {grouped ? cluster.sites.length : event ? '✦' : '●'}
+              </button>
+            })}
+          </div>
+          {selectedSiteId && selectedGroup.length > 0 &&
+            <MarsSiteInfoCard sites={selectedGroup} selectedId={selectedSiteId}
+              onSelect={setSelectedSiteId} onClose={closeSiteDetails}/>}
           <div className="global-map-coordinate-note">
             <span>180°W <i>0°</i> 180°E</span>
             <span>{cursorCoordinates ? `${cursorCoordinates.latitude.toFixed(2)}° · ${cursorCoordinates.longitude.toFixed(2)}°E` : LAYER_SHORT_NAMES[activeLayer]}</span>
           </div>
         </div>
         <div className="global-map-help">{t('map.global.help')}</div>
+        <div className="global-site-legend">{t('map.sites.legend')}</div>
+        <div className="global-site-caption">{t('map.sites.catalogueNote')}</div>
       </div>
       <div className="global-map-caption" role="status">
         {tileError ? t('map.global.tileError') : t(`map.global.caption.${activeLayer}`)}

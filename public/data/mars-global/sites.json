@@ -1,0 +1,460 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-11-14",
+  "catalog_scope": "Selected NASA landing sites and stationary-instrument science events; not a complete list of Mars missions.",
+  "spatial_reference": {
+    "body": "Mars",
+    "latitude_unit": "degrees",
+    "latitude_sign": "north positive; south negative",
+    "longitude_unit": "degrees",
+    "longitude_direction": "positive east",
+    "longitude_range": "[0, 360)",
+    "latitude_definition": "not uniformly specified in the cited numeric sources; do not assume Earth WGS84 or claim a common datum without a separate check",
+    "horizontal_accuracy_policy": "Number of published decimal places is not a measured accuracy in metres. Null means that the source does not supply a supported numeric uncertainty.",
+    "event_position_policy": "For a scientific event tied to a stationary instrument, coordinates represent the instrument's landing site, not necessarily the phenomenon or a subsurface sample point."
+  },
+  "sites": [
+    {
+      "id": "viking-1",
+      "category": "landing_site",
+      "name": "Viking 1",
+      "type": "lander",
+      "mission": "NASA Viking 1",
+      "region": "Chryse Planitia",
+      "date_utc": "1976-07-20",
+      "latitude_deg": 22.269,
+      "longitude_east_deg": 312.049,
+      "as_published": {
+        "latitude": "22.269° N",
+        "longitude": "312.049° E"
+      },
+      "description_ru": "Посадочный аппарат NASA Viking 1 — первая успешная мягкая посадка аппарата США на Марс.",
+      "georeferencing": {
+        "method": "PDS ODE catalogue landing-site coordinate",
+        "reported_decimal_places": {
+          "latitude": 3,
+          "longitude": 3
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "В каталоге дана координата места посадки; численные метры погрешности не приведены."
+      },
+      "sources": [
+        {
+          "title": "NASA PDS ODE — existing landing sites",
+          "url": "https://ode.rsl.wustl.edu/mars/pagehelp/Content/Missions_Instruments/Landing_Sites.htm",
+          "role": "coordinates"
+        },
+        {
+          "title": "NASA — How We Land on Mars",
+          "url": "https://science.nasa.gov/planetary-science/programs/mars-exploration/mission-timeline/how-we-land-on-mars/",
+          "role": "context"
+        }
+      ]
+    },
+    {
+      "id": "viking-2",
+      "category": "landing_site",
+      "name": "Viking 2",
+      "type": "lander",
+      "mission": "NASA Viking 2",
+      "region": "Utopia Planitia",
+      "date_utc": "1976-09-03",
+      "latitude_deg": 47.668,
+      "longitude_east_deg": 134.28,
+      "as_published": {
+        "latitude": "47.668° N",
+        "longitude": "134.280° E"
+      },
+      "description_ru": "Viking 2 изучал грунт и атмосферу в равнине Утопия.",
+      "georeferencing": {
+        "method": "PDS ODE catalogue landing-site coordinate",
+        "reported_decimal_places": {
+          "latitude": 3,
+          "longitude": 3
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "Точность записи 0,001°, но фактическая геодезическая погрешность не опубликована здесь."
+      },
+      "sources": [
+        {
+          "title": "NASA PDS ODE — existing landing sites",
+          "url": "https://ode.rsl.wustl.edu/mars/pagehelp/Content/Missions_Instruments/Landing_Sites.htm",
+          "role": "coordinates"
+        },
+        {
+          "title": "NASA — How We Land on Mars",
+          "url": "https://science.nasa.gov/planetary-science/programs/mars-exploration/mission-timeline/how-we-land-on-mars/",
+          "role": "context"
+        }
+      ]
+    },
+    {
+      "id": "pathfinder",
+      "category": "landing_site",
+      "name": "Mars Pathfinder / Sojourner",
+      "type": "lander_and_rover",
+      "mission": "NASA Mars Pathfinder",
+      "region": "Ares Vallis",
+      "date_utc": "1997-07-04",
+      "latitude_deg": 19.095,
+      "longitude_east_deg": 326.747,
+      "as_published": {
+        "latitude": "19.095° N",
+        "longitude": "326.747° E"
+      },
+      "description_ru": "Посадочная станция Pathfinder доставила на Марс небольшой марсоход Sojourner.",
+      "georeferencing": {
+        "method": "PDS ODE catalogue landing-site coordinate",
+        "reported_decimal_places": {
+          "latitude": 3,
+          "longitude": 3
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "Это координаты посадочной станции; перемещения Sojourner в этой записи не представлены."
+      },
+      "sources": [
+        {
+          "title": "NASA PDS ODE — existing landing sites",
+          "url": "https://ode.rsl.wustl.edu/mars/pagehelp/Content/Missions_Instruments/Landing_Sites.htm",
+          "role": "coordinates"
+        },
+        {
+          "title": "NASA — How We Land on Mars",
+          "url": "https://science.nasa.gov/planetary-science/programs/mars-exploration/mission-timeline/how-we-land-on-mars/",
+          "role": "context"
+        }
+      ]
+    },
+    {
+      "id": "spirit",
+      "category": "landing_site",
+      "name": "Spirit",
+      "type": "rover",
+      "mission": "NASA Mars Exploration Rover Spirit",
+      "region": "Gusev Crater",
+      "date_utc": "2004-01-04",
+      "latitude_deg": -14.571892,
+      "longitude_east_deg": 175.47848,
+      "as_published": {
+        "latitude": "14.571892° S",
+        "longitude": "175.47848° E"
+      },
+      "description_ru": "Посадка марсохода Spirit в кратере Гусев; далее аппарат исследовал окружающий рельеф.",
+      "georeferencing": {
+        "method": "PDS ODE radiometric Doppler solution",
+        "reported_decimal_places": {
+          "latitude": 6,
+          "longitude": 5
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "В том же первоисточнике имеется другое картографическое решение; методы дают несовпадающие координаты, неопределённость в метрах не задана."
+      },
+      "sources": [
+        {
+          "title": "NASA PDS ODE — Spirit, radiometric/cartographic solutions",
+          "url": "https://ode.rsl.wustl.edu/mars/pagehelp/Content/Missions_Instruments/Landing_Sites.htm",
+          "role": "coordinates"
+        },
+        {
+          "title": "NASA — How We Land on Mars",
+          "url": "https://science.nasa.gov/planetary-science/programs/mars-exploration/mission-timeline/how-we-land-on-mars/",
+          "role": "context"
+        }
+      ],
+      "alternative_positions": [
+        {
+          "method": "PDS ODE cartographic triangulation",
+          "latitude_deg": -14.5692,
+          "longitude_east_deg": 175.4729,
+          "as_published": {
+            "latitude": "14.5692° S",
+            "longitude": "175.4729° E"
+          }
+        }
+      ]
+    },
+    {
+      "id": "opportunity",
+      "category": "landing_site",
+      "name": "Opportunity",
+      "type": "rover",
+      "mission": "NASA Mars Exploration Rover Opportunity",
+      "region": "Meridiani Planum",
+      "date_utc": "2004-01-25",
+      "latitude_deg": -1.9483,
+      "longitude_east_deg": 354.47417,
+      "as_published": {
+        "latitude": "1.9483° S",
+        "longitude": "354.47417° E"
+      },
+      "description_ru": "Посадка марсохода Opportunity в районе Meridiani Planum.",
+      "georeferencing": {
+        "method": "PDS ODE radiometric Doppler solution",
+        "reported_decimal_places": {
+          "latitude": 4,
+          "longitude": 5
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "Радиометрическая и картографическая привязки в одном каталоге несколько различаются; метрическая погрешность не задана."
+      },
+      "sources": [
+        {
+          "title": "NASA PDS ODE — Opportunity, radiometric/cartographic solutions",
+          "url": "https://ode.rsl.wustl.edu/mars/pagehelp/Content/Missions_Instruments/Landing_Sites.htm",
+          "role": "coordinates"
+        },
+        {
+          "title": "NASA — How We Land on Mars",
+          "url": "https://science.nasa.gov/planetary-science/programs/mars-exploration/mission-timeline/how-we-land-on-mars/",
+          "role": "context"
+        }
+      ],
+      "alternative_positions": [
+        {
+          "method": "PDS ODE cartographic triangulation",
+          "latitude_deg": -1.9462,
+          "longitude_east_deg": 354.4734,
+          "as_published": {
+            "latitude": "1.9462° S",
+            "longitude": "354.4734° E"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phoenix",
+      "category": "landing_site",
+      "name": "Phoenix",
+      "type": "lander",
+      "mission": "NASA Phoenix",
+      "region": "Vastitas Borealis / Green Valley",
+      "date_utc": "2008-05-25",
+      "latitude_deg": 68.22,
+      "longitude_east_deg": 234.25,
+      "as_published": {
+        "latitude": "68.22° N",
+        "longitude": "234.25° E"
+      },
+      "description_ru": "Полярный посадочный аппарат, исследовавший почву и неглубоко залегающий водяной лёд.",
+      "georeferencing": {
+        "method": "PDS ODE / NASA published landing site",
+        "reported_decimal_places": {
+          "latitude": 2,
+          "longitude": 2
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "Округление до сотых долей градуса; нельзя считать местоположение точным до пикселя."
+      },
+      "sources": [
+        {
+          "title": "NASA PDS ODE — Phoenix landing site",
+          "url": "https://ode.rsl.wustl.edu/mars/pagehelp/Content/Missions_Instruments/Landing_Sites.htm",
+          "role": "coordinates"
+        },
+        {
+          "title": "NASA — Mars Phoenix mission",
+          "url": "https://science.nasa.gov/mission/mars-phoenix/",
+          "role": "context"
+        }
+      ]
+    },
+    {
+      "id": "curiosity",
+      "category": "landing_site",
+      "name": "Curiosity / Bradbury Landing",
+      "type": "rover",
+      "mission": "NASA Mars Science Laboratory (Curiosity)",
+      "region": "Gale Crater",
+      "date_utc": "2012-08-06",
+      "latitude_deg": -4.59,
+      "longitude_east_deg": 137.44,
+      "as_published": {
+        "latitude": "4.59° S",
+        "longitude": "137.44° E"
+      },
+      "description_ru": "Посадка Curiosity в кратере Гейл для исследований геологии и условий прошлой обитаемости.",
+      "georeferencing": {
+        "method": "PDS ODE catalogue landing-site coordinate",
+        "reported_decimal_places": {
+          "latitude": 2,
+          "longitude": 2
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "Каталог даёт округлённую позицию района посадки, а не точное положение каждой последующей остановки марсохода."
+      },
+      "sources": [
+        {
+          "title": "NASA PDS ODE — MSL Gale landing site",
+          "url": "https://ode.rsl.wustl.edu/mars/pagehelp/Content/Missions_Instruments/Landing_Sites.htm",
+          "role": "coordinates"
+        },
+        {
+          "title": "NASA — MSL Curiosity",
+          "url": "https://science.nasa.gov/planetary-science/programs/mars-exploration/mission-timeline/how-we-land-on-mars/",
+          "role": "context"
+        }
+      ]
+    },
+    {
+      "id": "insight",
+      "category": "landing_site",
+      "name": "InSight / Homestead Hollow",
+      "type": "lander",
+      "mission": "NASA InSight",
+      "region": "Elysium Planitia",
+      "date_utc": "2018-11-26",
+      "latitude_deg": 4.502,
+      "longitude_east_deg": 135.623,
+      "as_published": {
+        "latitude": "4.502° N",
+        "longitude": "135.623° E"
+      },
+      "description_ru": "Стационарная геофизическая лаборатория InSight изучала внутреннее строение Марса с помощью сейсмометра.",
+      "georeferencing": {
+        "method": "NASA-hosted peer-reviewed landing site research",
+        "reported_decimal_places": {
+          "latitude": 3,
+          "longitude": 3
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "Координаты фактического места посадки приведены в работе о Homestead Hollow; значение погрешности в метрах не указано в использованном фрагменте."
+      },
+      "sources": [
+        {
+          "title": "NASA NTRS — Warner et al., InSight at Homestead Hollow",
+          "url": "https://ntrs.nasa.gov/api/citations/20205003548/downloads/Warner_impact_origin_InSight_2020_2019JE006333_optimized.pdf",
+          "role": "coordinates"
+        },
+        {
+          "title": "NASA — InSight mission",
+          "url": "https://science.nasa.gov/mission/insight/",
+          "role": "context"
+        }
+      ]
+    },
+    {
+      "id": "perseverance",
+      "category": "landing_site",
+      "name": "Perseverance / Octavia E. Butler Landing",
+      "type": "rover",
+      "mission": "NASA Mars 2020 (Perseverance)",
+      "region": "Jezero Crater",
+      "date_utc": "2021-02-18",
+      "latitude_deg": 18.44463,
+      "longitude_east_deg": 77.45088,
+      "as_published": {
+        "latitude": "18.44463° N",
+        "longitude": "77.45088° E"
+      },
+      "description_ru": "Perseverance сел в кратере Езеро для исследования древних условий и сбора образцов пород.",
+      "georeferencing": {
+        "method": "NASA Langley EDL reconstructed landing coordinate",
+        "reported_decimal_places": {
+          "latitude": 5,
+          "longitude": 5
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "Число знаков после запятой отражает форму публикации, а не опубликованный предел ошибки в метрах. Это точка посадки, не текущее положение ровера."
+      },
+      "sources": [
+        {
+          "title": "NASA NTRS — Assessment of Mars 2020 EDL Simulation",
+          "url": "https://ntrs.nasa.gov/citations/20210024644",
+          "role": "coordinates"
+        },
+        {
+          "title": "NASA — Perseverance location map",
+          "url": "https://science.nasa.gov/mission/mars-2020-perseverance/location-map/",
+          "role": "context"
+        }
+      ]
+    },
+    {
+      "id": "phoenix-water-ice",
+      "category": "science_event",
+      "name": "Phoenix: подтверждение водяного льда",
+      "type": "instrument_observation",
+      "mission": "NASA Phoenix",
+      "region": "Vastitas Borealis",
+      "date_utc": "2008-07-31",
+      "latitude_deg": 68.22,
+      "longitude_east_deg": 234.25,
+      "as_published": {
+        "latitude": "68.22° N",
+        "longitude": "234.25° E"
+      },
+      "anchor_site_id": "phoenix",
+      "description_ru": "NASA сообщило о подтверждении водяного льда по анализу образца прибором TEGA на борту Phoenix.",
+      "georeferencing": {
+        "method": "Co-located instrument/lander anchor — NOT the physical event's location",
+        "reported_decimal_places": {
+          "latitude": 2,
+          "longitude": 2
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "На карте показано опубликованное место аппарата Phoenix. Это НЕ координата отдельной траншеи/пробы. Точность наблюдения на грунте этим каталогом не устанавливается."
+      },
+      "sources": [
+        {
+          "title": "NASA — Mars Phoenix, Science Highlights",
+          "url": "https://science.nasa.gov/mission/mars-phoenix/",
+          "role": "event"
+        },
+        {
+          "title": "NASA PDS ODE — Phoenix landing site",
+          "url": "https://ode.rsl.wustl.edu/mars/pagehelp/Content/Missions_Instruments/Landing_Sites.htm",
+          "role": "anchor_coordinates"
+        }
+      ]
+    },
+    {
+      "id": "insight-first-likely-marsquake",
+      "category": "science_event",
+      "name": "InSight: первый вероятный марсотряс",
+      "type": "instrument_observation",
+      "mission": "NASA InSight / SEIS",
+      "region": "Elysium Planitia",
+      "date_utc": "2019-04-06",
+      "latitude_deg": 4.502,
+      "longitude_east_deg": 135.623,
+      "as_published": {
+        "latitude": "4.502° N",
+        "longitude": "135.623° E"
+      },
+      "anchor_site_id": "insight",
+      "description_ru": "Сейсмометр SEIS зарегистрировал первый вероятный сигнал марсотрясения 6 апреля 2019 года (sol 128); происхождение сигнала тогда ещё анализировалось.",
+      "georeferencing": {
+        "method": "Co-located instrument/lander anchor — NOT the physical event's location",
+        "reported_decimal_places": {
+          "latitude": 3,
+          "longitude": 3
+        },
+        "estimated_horizontal_error_m": null,
+        "latitude_definition": "not_stated_in_coordinate_source",
+        "notes_ru": "Точка — координаты стационарного сейсмометра InSight, НЕ эпицентр марсотрясения. Координаты источника сейсмического события не установлены этой записью."
+      },
+      "sources": [
+        {
+          "title": "NASA — InSight Detects First Likely Quake",
+          "url": "https://science.nasa.gov/missions/insight/nasas-insight-detects-first-likely-quake-on-mars/",
+          "role": "event"
+        },
+        {
+          "title": "NASA NTRS — Warner et al., InSight at Homestead Hollow",
+          "url": "https://ntrs.nasa.gov/api/citations/20205003548/downloads/Warner_impact_origin_InSight_2020_2019JE006333_optimized.pdf",
+          "role": "anchor_coordinates"
+        }
+      ]
+    }
+  ]
+}
