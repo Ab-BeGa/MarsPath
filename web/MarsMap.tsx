@@ -187,7 +187,7 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
       }
     }
 
-    function marker(x: number, y: number, name: string, color: string, id: string) {
+    const marker = (x: number, y: number, name: string, color: string, id: string) => {
       const px = p.ox + x * p.scale
       const py = p.oy + y * p.scale
       ctx.beginPath()
