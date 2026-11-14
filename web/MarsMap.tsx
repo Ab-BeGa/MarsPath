@@ -94,7 +94,7 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
   const dragRef = useRef<Drag>(null)
   const relief = useMemo(() => createRelief(terrain), [terrain])
   const checkpoints = terrain.metadata.checked_points.filter(p => ['base', 'science_target'].includes(p.id))
-  const { grid } = terrain.metadata
+  const { grid, source } = terrain.metadata
   const state = pinned ?? hovered ?? cellAtGrid(terrain, Math.floor(grid.width / 2), Math.floor(grid.height / 2))
   const validPercent = (100 * terrain.validCount / terrain.heights.length).toFixed(1)
 
@@ -426,7 +426,21 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
         <span>HIGH</span>
         <div className="map-source">USGS Astrogeology · CTX 20 м/пиксель · марсианская проекция, не WGS84</div>
       </div>
-      <p className="scientific-disclaimer">Карта показывает только высоты, а не оптический снимок. Рельеф 20 м/пиксель не раскрывает небольшие камни и не подтверждает безопасность выхода астронавтов.</p>
+      <p className="scientific-disclaimer">Цвет и затенение показывают высоты. При шаге сетки {number.format(grid.pixel_size_m[0])} м мелкие препятствия остаются за пределами разрешения карты.</p>
+      <details className="map-info-card">
+        <summary>Источники и ограничения</summary>
+        <h3>{source.product}</h3>
+        <dl>
+          <dt>Миссия и прибор</dt><dd>Mars Reconnaissance Orbiter · {source.instrument}</dd>
+          <dt>Источник</dt><dd><a href={source.url}>{source.publisher} · исходный GeoTIFF</a></dd>
+          <dt>Год публикации</dt><dd>2021 по метке PDS4. Даты съёмки в метке мозаики не указаны.</dd>
+          <dt>Шаг сетки</dt><dd>{grid.pixel_size_m.map(value => number.format(value)).join(' × ')} м на пиксель</dd>
+        </dl>
+        <p><strong>Данные DEM.</strong> Высоты взяты из исходной сетки. Цвет и затенение визуализируют рельеф.</p>
+        <p><strong>Расчёты приложения.</strong> Уклоны вычисляются из перепадов высот. Категории крутизны зависят от экспериментальных порогов. Обход A* рассчитывается из расстояния, перепадов высот и наличия данных.</p>
+        <p><strong>Ограничения.</strong> Сетка не показывает отдельные камни и свойства грунта. Пригодность маршрута для выхода экипажа требует отдельной проверки.</p>
+        <a href="https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.xml">Метка продукта PDS4</a>
+      </details>
     </section>
   )
 }
