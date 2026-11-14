@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import { compareRoutes, type RouteComparison } from './compareRoutes.ts'
+import { RouteMap } from './RouteMap.tsx'
 import './styles.css'
 
 const normal = new Intl.NumberFormat('ru', { maximumFractionDigits: 1 })
@@ -76,6 +77,7 @@ function App() {
             <p>Обход меняет длину маршрута на <strong>{format(lengthDelta, true)} м</strong>,
               а длину измеренных крутых интервалов на <strong>{format(steepDelta, true)} м</strong>.</p>
           )}
+          <RouteMap direct={result.routes.direct} detour={result.routes.detour} />
           <div className="table-scroll" tabIndex={0} role="region" aria-label="Результаты сравнения">
             <table>
               <caption>Разница рассчитана как обходной минус прямой</caption>
