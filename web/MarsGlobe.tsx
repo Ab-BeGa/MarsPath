@@ -5,10 +5,16 @@ import { MarsGlobalMap } from './MarsGlobalMap.tsx'
 import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
 import { loadMarsSites, type MarsSite } from './marsSites.ts'
 
-const TEXTURE_URL = '/data/mars-global/mola_global_overview.jpg'
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
 const JEZERO = { longitude: 77.40974302, latitude: 18.45616697 }
 const INITIAL_VIEW: GlobeView = { longitude: 58, latitude: 18, zoom: 1 }
+type GlobeLayer = 'relief' | 'satellite' | 'color'
+const TEXTURE_FILES: Record<GlobeLayer, [string, string]> = {
+  relief: ['mola-col0.jpg', 'mola-col1.jpg'],
+  satellite: ['moc-col0.png', 'moc-col1.png'],
+  color: ['viking-col0.jpg', 'viking-col1.jpg'],
+}
+const LAYER_RESOLUTION: Record<GlobeLayer, number> = { relief: 463.1, satellite: 231.55, color: 232 }
 
 type Metadata = {
   title: string
@@ -17,6 +23,7 @@ type Metadata = {
   source_product_native_resolution_m_per_pixel: number
   display_projection: string
   display_mosaic: { file: string; width: number; height: number; sha256: string }
+  globe_textures: Record<GlobeLayer, { files: [string, string]; title: string; source_layer: string }>
 }
 
 function validateMetadata(value: unknown): Metadata {
@@ -24,7 +31,8 @@ function validateMetadata(value: unknown): Metadata {
   if (data.mission !== 'Mars Global Surveyor' || !data.instrument?.includes('MOLA') ||
       data.display_mosaic?.file !== 'mola_global_overview.jpg' ||
       data.display_mosaic.width !== 512 || data.display_mosaic.height !== 256 ||
-      !data.display_projection?.includes('Equirectangular')) {
+      !data.display_projection?.includes('Equirectangular') ||
+      !data.globe_textures?.relief || !data.globe_textures?.satellite || !data.globe_textures?.color) {
     throw new Error('Invalid MOLA globe metadata')
   }
   return data as Metadata
@@ -33,15 +41,18 @@ function validateMetadata(value: unknown): Metadata {
 export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
   const { t, format } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const textureRef = useRef<ImageData | null>(null)
+  const textureRef = useRef<Partial<Record<GlobeLayer, ImageData>>>({})
   const pointersRef = useRef(new Map<number, { x: number; y: number }>())
   const dragRef = useRef<{ x: number; y: number; view: GlobeView } | null>(null)
   const pinchRef = useRef<number | null>(null)
+  const transitionTimerRef = useRef<number | null>(null)
   const [view, setView] = useState(INITIAL_VIEW)
   const [metadata, setMetadata] = useState<Metadata | null>(null)
   const [error, setError] = useState('')
   const [size, setSize] = useState(520)
   const [mode, setMode] = useState<'globe' | 'flat'>('globe')
+  const [transitioning, setTransitioning] = useState(false)
+  const [activeLayer, setActiveLayer] = useState<GlobeLayer>('relief')
   const [sites, setSites] = useState<MarsSite[]>([])
   const [siteError, setSiteError] = useState('')
   const [siteFilter, setSiteFilter] = useState<'all' | MarsSite['category']>('all')
@@ -50,27 +61,29 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
 
   useEffect(() => {
     let active = true
-    Promise.all([
-      fetch(METADATA_URL).then(response => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json() }),
-      new Promise<HTMLImageElement>((resolve, reject) => {
+    const loadImage = (file: string) => new Promise<HTMLImageElement>((resolve, reject) => {
         const image = new Image()
         image.onload = () => resolve(image)
-        image.onerror = () => reject(new Error('MOLA texture could not be loaded'))
-        image.src = TEXTURE_URL
-      }),
-    ]).then(([rawMetadata, image]) => {
+        image.onerror = () => reject(new Error(`${file} could not be loaded`))
+        image.src = `/data/mars-global/${file}`
+      })
+    Promise.all([
+      fetch(METADATA_URL).then(response => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json() }),
+      ...Object.values(TEXTURE_FILES).flat().map(loadImage),
+    ]).then(([rawMetadata, ...images]) => {
       if (!active) return
       const checked = validateMetadata(rawMetadata)
-      if (image.naturalWidth !== checked.display_mosaic.width || image.naturalHeight !== checked.display_mosaic.height) {
-        throw new Error('MOLA texture dimensions do not match metadata')
-      }
-      const source = document.createElement('canvas')
-      source.width = image.naturalWidth
-      source.height = image.naturalHeight
-      const context = source.getContext('2d', { willReadFrequently: true })
-      if (!context) throw new Error('Canvas is not available')
-      context.drawImage(image, 0, 0)
-      textureRef.current = context.getImageData(0, 0, source.width, source.height)
+      const layers = Object.keys(TEXTURE_FILES) as GlobeLayer[]
+      layers.forEach((layer, index) => {
+        const pair = images.slice(index * 2, index * 2 + 2)
+        if (pair.some(image => image.naturalWidth !== 256 || image.naturalHeight !== 256)) throw new Error(`${layer} texture dimensions do not match metadata`)
+        const source = document.createElement('canvas')
+        source.width = 512; source.height = 256
+        const context = source.getContext('2d', { willReadFrequently: true })
+        if (!context) throw new Error('Canvas is not available')
+        context.drawImage(pair[0], 0, 0); context.drawImage(pair[1], 256, 0)
+        textureRef.current[layer] = context.getImageData(0, 0, 512, 256)
+      })
       setMetadata(checked)
     }).catch(reason => { if (active) setError(reason instanceof Error ? reason.message : String(reason)) })
     return () => { active = false }
@@ -84,9 +97,22 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
     return () => { active = false }
   }, [])
 
+  const startFlatTransition = useCallback(() => {
+    if (mode !== 'globe' || transitioning) return
+    setTransitioning(true)
+    transitionTimerRef.current = window.setTimeout(() => {
+      transitionTimerRef.current = null
+      setMode('flat'); setTransitioning(false)
+    }, 460)
+  }, [mode, transitioning])
+
+  useEffect(() => () => {
+    if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
+  }, [])
+
   useEffect(() => {
-    if (mode === 'globe' && view.zoom >= 1.65) setMode('flat')
-  }, [mode, view.zoom])
+    if (mode === 'globe' && view.zoom >= 1.65) startFlatTransition()
+  }, [mode, startFlatTransition, view.zoom])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -101,7 +127,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
 
   useEffect(() => {
     const canvas = canvasRef.current
-    const texture = textureRef.current
+    const texture = textureRef.current[activeLayer]
     if (!canvas || !texture || !metadata) return
     const pixelSize = Math.min(size, 520)
     canvas.width = pixelSize
@@ -131,7 +157,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
       }
     }
     context.putImageData(output, 0, 0)
-  }, [metadata, size, view])
+  }, [activeLayer, metadata, size, view])
 
   const updateZoom = useCallback((factor: number) => setView(current => clampGlobeView({ ...current, zoom: current.zoom * factor })), [])
   const pointerPosition = (event: PointerEvent<HTMLCanvasElement>) => {
@@ -197,6 +223,9 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
   }
   const closeSite = () => { setSelectedSiteIds([]); setSelectedSiteId(null) }
   const returnToGlobe = () => {
+    if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
+    transitionTimerRef.current = null
+    setTransitioning(false)
     closeSite()
     setView(INITIAL_VIEW)
     setMode('globe')
@@ -205,17 +234,21 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
   return <section id="globe" className="mars-globe-section" aria-labelledby="globe-title">
     <div className="section-heading">
       <div><span className="section-kicker">{t('globe.kicker')}</span><h2 id="globe-title">{t('globe.title')}</h2><p>{t('globe.description')}</p></div>
-      <span className="data-pill">MOLA · 463 m/px</span>
+      <span className="data-pill">{activeLayer === 'relief' ? 'MOLA' : activeLayer === 'satellite' ? 'MOC' : 'VIKING'} · {LAYER_RESOLUTION[activeLayer]} m/px</span>
     </div>
     <div className="globe-mode-switch" role="group" aria-label={t('globe.mode')}>
       <button aria-pressed={mode === 'globe'} onClick={returnToGlobe}>{t('globe.mode.3d')}</button>
-      <button aria-pressed={mode === 'flat'} onClick={() => setMode('flat')}>{t('globe.mode.flat')}</button>
+      <button aria-pressed={mode === 'flat'} onClick={startFlatTransition}>{t('globe.mode.flat')}</button>
     </div>
     {mode === 'flat' ? <div className="globe-flat-mode">
       <p className="globe-transition-note">{t('globe.flatNote')}</p>
       <MarsGlobalMap onOpenRegion={onOpenDetail} onReturnGlobe={returnToGlobe}/>
-    </div> : <div className="mars-globe-layout">
+    </div> : <div className={`mars-globe-layout${transitioning ? ' is-unfolding' : ''}`}>
       <div className="mars-globe-stage">
+        <div className="globe-layer-switch" role="group" aria-label={t('map.global.layerSelect')}>
+          {(['relief','satellite','color'] as GlobeLayer[]).map(layer => <button key={layer}
+            aria-pressed={activeLayer === layer} onClick={() => setActiveLayer(layer)}>{t(`map.global.layer.${layer}`)}</button>)}
+        </div>
         <div className="mars-globe-sphere-wrap">
           <canvas ref={canvasRef} className="mars-globe-canvas" aria-label={t('globe.accessibility')}
             onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endPointer}
@@ -255,8 +288,8 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
           <strong>{t('globe.sphere')}</strong>
           <dl className="globe-readout">
             <div><dt>{t('globe.center')}</dt><dd>{format(view.latitude, { maximumFractionDigits: 1 })}°, {format(view.longitude, { maximumFractionDigits: 1 })}°</dd></div>
-            <div><dt>{t('globe.texture')}</dt><dd>{metadata?.instrument ?? 'MOLA'}</dd></div>
-            <div><dt>{t('globe.resolution')}</dt><dd>{metadata ? `${metadata.source_product_native_resolution_m_per_pixel} m/px` : '—'}</dd></div>
+            <div><dt>{t('globe.texture')}</dt><dd>{metadata?.globe_textures[activeLayer].title ?? '—'}</dd></div>
+            <div><dt>{t('globe.resolution')}</dt><dd>{metadata ? `${LAYER_RESOLUTION[activeLayer]} m/px` : '—'}</dd></div>
           </dl>
           <p>{t('globe.limit')}</p>
           <p className="globe-help">{t('globe.help')}</p>
