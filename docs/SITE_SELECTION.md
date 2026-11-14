@@ -21,6 +21,15 @@ NASA подтверждает, что Perseverance создал образцов
 - [NASA/JPL: места отбора образцов в дельте Езеро](https://www.jpl.nasa.gov/images/pia24924-2-perseverance-sampling-locations-in-jezeros-delta/)
 - [USGS Astrogeology: исходная мозаика CTX DEM 20 м/пиксель](https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic)
 
+## Научная карточка остановки B
+
+**Wildcat Ridge / Hazeltop · западная дельта кратера Езеро**
+
+- **Координаты точки маршрута.** 18,45863707° с. ш., 77,40588851° в. д. Проверка по DEM подтверждает покрытие точки. Точное положение места бурения по этой сетке определить нельзя.
+- **Научная цель.** Изучить мелкозернистые осадочные породы, чтобы понять условия древнего озера Езеро. В Wildcat Ridge обнаружена порода с сульфатами. По интерпретации команды Perseverance, осадки могли накопиться при испарении солёной воды. [NASA — сравнение пород дельты](https://science.nasa.gov/resource/two-abrasion-patches-from-perseverance-at-jezero-delta/) · [NASA — керны Wildcat Ridge](https://science.nasa.gov/resource/perseverance-rock-cores-from-wildcat-ridge/)
+- **Что сделал Perseverance.** Марсоход исследовал состав породы на зачищенном участке обнажения и отобрал два керна, Hazeltop и Bearwallow. [NASA — отбор и анализ образцов](https://science.nasa.gov/resource/sample-collection-and-rock-analysis-at-wildcat-ridge/)
+- **Задача астронавта в сценарии демо.** Сфотографировать обнажение с масштабом, описать видимые слои и отметить кандидатную точку отбора образца. Результат остановки — снимок и краткая полевая запись с координатами и обоснованием выбора.
+
 ## Карта и файлы
 
 Карта: [`jezero_site_points.png`](jezero_site_points.png). Рельеф взят из подготовленного участка USGS CTX DEM; цвет показывает высоту. Пунктир соединяет точки только для наглядности и не является рассчитанным маршрутом.
