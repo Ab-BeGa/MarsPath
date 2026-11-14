@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { cellAtGrid, cellAtProjected, type MarsTerrain, type TerrainCell } from './marsTerrain.ts'
+import { cellAtGrid, cellAtProjected, marsDegreesToProjected, type MarsTerrain, type TerrainCell } from './marsTerrain.ts'
 import { routeToGrid, type RoutePair } from './routeMap.ts'
 import { sampleRouteElevation, selectedProfileInterval } from './routeProfile.ts'
 import { ElevationProfileChart } from './ElevationProfileChart.tsx'
@@ -8,6 +8,8 @@ import { loadThemisLayer } from './themisLayer.ts'
 import { RouteSlopePanel } from './RouteSlopePanel.tsx'
 import { useI18n } from './i18n.tsx'
 import { MarsGlobalMap } from './MarsGlobalMap.tsx'
+import { loadPhotoCatalog, type JezeroPhoto, type PhotoCatalog } from './photoCatalog.ts'
+import { clusterPhotoPoints, filterPhotos } from './photoMap.ts'
 import {
   DEFAULT_SLOPE_THRESHOLDS, SLOPE_COLORS, measureRouteSlope,
   type SlopeThresholds,
@@ -111,6 +113,12 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
   const [themis, setThemis] = useState<HTMLImageElement | null>(null)
   const showThemis = activeLayer === 'themis' && themis !== null
   const [themisUnavailable, setThemisUnavailable] = useState(false)
+  const [photoCatalog, setPhotoCatalog] = useState<PhotoCatalog | null>(null)
+  const [photoError, setPhotoError] = useState('')
+  const [photoCamera, setPhotoCamera] = useState('')
+  const [photoSolMin, setPhotoSolMin] = useState('')
+  const [photoSolMax, setPhotoSolMax] = useState('')
+  const [selectedPhoto, setSelectedPhoto] = useState<JezeroPhoto | null>(null)
   useEffect(() => {
     let current = true
     setThemis(null)
@@ -129,6 +137,39 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
   const checkpoints = terrain.metadata.checked_points.filter(p => ['base', 'science_target'].includes(p.id))
   const science = checkpoints.find(point => point.id === 'science_target')
   const { grid } = terrain.metadata
+  useEffect(() => {
+    let current = true
+    setPhotoCatalog(null)
+    setPhotoError('')
+    void loadPhotoCatalog().then(catalog => {
+      if (current) setPhotoCatalog(catalog)
+    }).catch(error => {
+      if (current) setPhotoError(error instanceof Error ? error.message : 'Photo catalog unavailable')
+    })
+    return () => { current = false }
+  }, [])
+  const cameraOptions = useMemo(() => Array.from(new Set(photoCatalog?.records.map(photo => photo.camera) ?? [])).sort(), [photoCatalog])
+  const filteredPhotos = useMemo(() => filterPhotos(
+    photoCatalog?.records ?? [], photoCamera,
+    photoSolMin === '' ? null : Number(photoSolMin), photoSolMax === '' ? null : Number(photoSolMax),
+  ), [photoCatalog, photoCamera, photoSolMin, photoSolMax])
+  const photoPoints = useMemo(() => {
+    const measured = measure(size, terrain, camera)
+    const [stepX, , left, , stepY, top] = grid.transform
+    return filteredPhotos.flatMap(photo => {
+      if (!photo.coordinates) return []
+      const projected = marsDegreesToProjected(terrain.metadata, photo.coordinates.longitude_deg, photo.coordinates.latitude_deg)
+      const col = (projected.x - left) / stepX
+      const row = (projected.y - top) / stepY
+      if (col < 0 || row < 0 || col >= grid.width || row >= grid.height) return []
+      return [{ photo, x: measured.ox + col * measured.scale, y: measured.oy + row * measured.scale }]
+    })
+  }, [filteredPhotos, terrain, grid, size, camera])
+  const photoClusters = useMemo(() => clusterPhotoPoints(photoPoints, Math.max(18, 68 / camera.zoom)), [photoPoints, camera.zoom])
+  const mappedPhotoIds = new Set(photoPoints.map(point => point.photo.id))
+  const unlocatedPhotos = filteredPhotos.filter(photo => photo.coordinates === null)
+  const outsideMapPhotos = filteredPhotos.filter(photo => photo.coordinates !== null && !mappedPhotoIds.has(photo.id))
+  const photosWithoutMarkers = [...unlocatedPhotos, ...outsideMapPhotos]
   const activeProfile = useMemo(() => {
     if (!routes || routeStepM === undefined) return null
     return sampleRouteElevation(routes[activeRoute], routeStepM, point => {
@@ -539,6 +580,35 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       <MarsGlobalMap onOpenRegion={() => {
         document.getElementById('jezero-map-detail')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }} />
+      <section className="photo-map-toolbar" aria-labelledby="photo-map-title">
+        <div>
+          <span className="section-kicker">{t('map.photos.kicker')}</span>
+          <h3 id="photo-map-title">{t('map.photos.title')}</h3>
+          <p>{t('map.photos.description')}</p>
+        </div>
+        <div className="photo-filters">
+          <label>{t('map.photos.camera')}
+            <select value={photoCamera} onChange={event => setPhotoCamera(event.target.value)}>
+              <option value="">{t('map.photos.allCameras')}</option>
+              {cameraOptions.map(cameraName => <option key={cameraName} value={cameraName}>{cameraName}</option>)}
+            </select>
+          </label>
+          <label>{t('map.photos.solFrom')}
+            <input type="number" min="0" inputMode="numeric" value={photoSolMin}
+              onChange={event => setPhotoSolMin(event.target.value)} placeholder="0" />
+          </label>
+          <label>{t('map.photos.solTo')}
+            <input type="number" min="0" inputMode="numeric" value={photoSolMax}
+              onChange={event => setPhotoSolMax(event.target.value)} placeholder="2031" />
+          </label>
+          <button type="button" onClick={() => { setPhotoCamera(''); setPhotoSolMin(''); setPhotoSolMax('') }}>{t('map.photos.reset')}</button>
+        </div>
+        <div className="photo-filter-summary" role="status">
+          {photoError ? t('map.photos.error', {detail:photoError}) : t('map.photos.summary', {
+            shown: filteredPhotos.length, located: photoPoints.length, unlocated: unlocatedPhotos.length, outside: outsideMapPhotos.length,
+          })}
+        </div>
+      </section>
       <div className="map-layout" id="jezero-map-detail">
         <div className="map-frame">
           <div className="map-canvas-wrap" ref={wrapperRef}>
@@ -547,6 +617,25 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
               onPointerDown={handlePointerDown} onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp} onPointerCancel={() => { dragRef.current = null }}
               onPointerLeave={() => { if (!pinned) setHovered(null) }} onKeyDown={handleKeys}/>
+            <div className="photo-marker-layer" aria-label={t('map.photos.markers')}>
+              {photoClusters.map(cluster => {
+                const single = cluster.points.length === 1 ? cluster.points[0].photo : null
+                return <button key={cluster.id} type="button"
+                  className={single ? `photo-marker ${single.location_type}` : 'photo-marker cluster'}
+                  style={{ left: cluster.x, top: cluster.y }}
+                  aria-label={single ? t('map.photos.open', {title:single.title}) : t('map.photos.cluster', {count:cluster.points.length})}
+                  title={single?.title ?? t('map.photos.cluster', {count:cluster.points.length})}
+                  onPointerDown={event => event.stopPropagation()}
+                  onClick={event => {
+                    event.stopPropagation()
+                    if (single) setSelectedPhoto(single)
+                    else if (camera.zoom < 6) zoomAt(1.7, cluster.x, cluster.y)
+                    else setSelectedPhoto(cluster.points[0].photo)
+                  }}>
+                  <span aria-hidden="true">{single ? '▣' : cluster.points.length}</span>
+                </button>
+              })}
+            </div>
             <div className="map-overlay-head"><span className="map-head-indicator"/> {t('map.overlay')} <small>18.46° N · 77.41° E</small></div>
             <div className="map-controls" aria-label={t('map.zoom.aria')}>
               <button type="button" aria-label={t('map.zoom.in')} onClick={() => zoomAt(1.35, size.width / 2, size.height / 2)}>+</button>
@@ -608,6 +697,40 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
           </div>
         </aside>
       </div>
+      {selectedPhoto && <section className="photo-detail-card" aria-labelledby="selected-photo-title">
+        <img src={selectedPhoto.thumbnail_url} alt="" loading="lazy" />
+        <div>
+          <div className="photo-card-heading">
+            <span className={`photo-location-badge ${selectedPhoto.location_type}`}>
+              {t(`map.photos.location.${selectedPhoto.location_type}`)}
+            </span>
+            <button type="button" className="text-action" onClick={() => setSelectedPhoto(null)}>{t('map.photos.close')}</button>
+          </div>
+          <h3 id="selected-photo-title">{selectedPhoto.title}</h3>
+          <p>{selectedPhoto.caption}</p>
+          <dl className="photo-metadata">
+            <dt>{t('map.photos.camera')}</dt><dd>{selectedPhoto.camera}</dd>
+            <dt>{t('map.photos.sols')}</dt><dd>{selectedPhoto.acquisition.sols.join(', ')}</dd>
+            <dt>{t('map.photos.date')}</dt><dd>{selectedPhoto.acquisition.earth_dates.join(', ') || t('map.photos.unknown')}</dd>
+            <dt>{t('map.photos.credit')}</dt><dd>{selectedPhoto.credit}</dd>
+          </dl>
+          {selectedPhoto.coordinates && <p className="photo-coordinate-note">
+            {coordinate.format(selectedPhoto.coordinates.latitude_deg)}° N · {coordinate.format(selectedPhoto.coordinates.longitude_deg)}° E — {selectedPhoto.coordinates.note}
+          </p>}
+          <a href={selectedPhoto.page_url} target="_blank" rel="noreferrer">{t('map.photos.nasaSource')}</a>
+          {' · '}<a href={selectedPhoto.image_url} target="_blank" rel="noreferrer">{t('map.photos.original')}</a>
+        </div>
+      </section>}
+      {photosWithoutMarkers.length > 0 && <section className="unlocated-photos" aria-labelledby="unlocated-photos-title">
+        <h3 id="unlocated-photos-title">{t('map.photos.unlocatedTitle')}</h3>
+        <p>{t('map.photos.unlocatedDescription')}</p>
+        <div>
+          {photosWithoutMarkers.map(photo => <button type="button" key={photo.id} onClick={() => setSelectedPhoto(photo)}>
+            <img src={photo.thumbnail_url} alt="" loading="lazy" />
+            <span><strong>{photo.title}</strong><small>{t(photo.coordinates ? 'map.photos.outsideMap' : 'map.photos.noMarker')}</small></span>
+          </button>)}
+        </div>
+      </section>}
       {science && (
         <section className="map-info-card" id="science-stop-card" aria-labelledby="science-stop-title" hidden={!scienceOpen}>
           <h3 id="science-stop-title">Wildcat Ridge / Hazeltop</h3>
