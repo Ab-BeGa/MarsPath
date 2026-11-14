@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { cellAtGrid, cellAtProjected, type MarsTerrain, type TerrainCell } from './marsTerrain.ts'
 import { routeToGrid, type RoutePair } from './routeMap.ts'
+import { sampleRouteElevation, selectedProfileInterval } from './routeProfile.ts'
+import { ElevationProfileChart } from './ElevationProfileChart.tsx'
 import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
 import { RouteSlopePanel } from './RouteSlopePanel.tsx'
 import {
@@ -88,13 +90,14 @@ function toGridPosition(screenX: number, screenY: number, m: ReturnType<typeof m
   return { col: (screenX - m.ox) / m.scale, row: (screenY - m.oy) / m.scale }
 }
 
-export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: RoutePair }) {
+export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain; routes?: RoutePair; routeStepM?: number }) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const scienceButtonRef = useRef<HTMLButtonElement>(null)
   const [size, setSize] = useState<Size>({ width: 920, height: 570 })
   const [camera, setCamera] = useState<Camera>({ zoom: 1, panX: 0, panY: 0 })
   const [activeRoute, setActiveRoute] = useState<'direct' | 'detour'>('direct')
+  const [selectedSample, setSelectedSample] = useState<number | null>(null)
   const [slopeThresholds, setSlopeThresholds] = useState<SlopeThresholds>({ ...DEFAULT_SLOPE_THRESHOLDS })
   const [showSlopeHighlights, setShowSlopeHighlights] = useState(true)
   const cameraRef = useRef(camera)
@@ -109,6 +112,19 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
   const checkpoints = terrain.metadata.checked_points.filter(p => ['base', 'science_target'].includes(p.id))
   const science = checkpoints.find(point => point.id === 'science_target')
   const { grid } = terrain.metadata
+  const activeProfile = useMemo(() => {
+    if (!routes || routeStepM === undefined) return null
+    return sampleRouteElevation(routes[activeRoute], routeStepM, point => {
+      const cell = cellAtProjected(terrain, point.x, point.y)
+      if (!cell) return { elevation_m: null, status: 'outside_roi' }
+      return cell.elevation === null
+        ? { elevation_m: null, status: 'nodata' }
+        : { elevation_m: cell.elevation, status: 'valid' }
+    })
+  }, [terrain, routes, routeStepM, activeRoute])
+  const safeSelectedIndex = activeProfile && selectedSample !== null &&
+    selectedSample >= 0 && selectedSample < activeProfile.samples.length ? selectedSample : null
+  useEffect(() => { setSelectedSample(null) }, [routes])
   const state = pinned ?? hovered ?? cellAtGrid(terrain, Math.floor(grid.width / 2), Math.floor(grid.height / 2))
   const validPercent = (100 * terrain.validCount / terrain.heights.length).toFixed(1)
   const slopeState = useMemo(() => {
@@ -285,6 +301,45 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
       ctx.restore()
     }
 
+
+    // Profile selection is drawn above the experimental slope bands but uses
+    // the same Mars DEM projection and map camera.
+    if (activeProfile && safeSelectedIndex !== null) {
+      const { from, to } = selectedProfileInterval(activeProfile, safeSelectedIndex)
+      const segment = routeToGrid([from, to], grid.transform)
+      const selected = safeSelectedIndex === 0 ? segment[0] : segment[1]
+      const x0 = p.ox + segment[0].col * p.scale
+      const y0 = p.oy + segment[0].row * p.scale
+      const x1 = p.ox + segment[1].col * p.scale
+      const y1 = p.oy + segment[1].row * p.scale
+      const sx = p.ox + selected.col * p.scale
+      const sy = p.oy + selected.row * p.scale
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(p.ox, p.oy, iw, ih)
+      ctx.clip()
+      ctx.beginPath()
+      ctx.moveTo(x0, y0)
+      ctx.lineTo(x1, y1)
+      ctx.strokeStyle = '#ffe2a5'
+      ctx.lineWidth = 9
+      ctx.lineCap = 'round'
+      if (from.elevation_m === null || to.elevation_m === null) ctx.setLineDash([7, 7])
+      ctx.stroke()
+      ctx.setLineDash([])
+      ctx.beginPath()
+      ctx.arc(sx, sy, 13, 0, Math.PI * 2)
+      ctx.strokeStyle = '#07121e'
+      ctx.lineWidth = 4
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(sx, sy, 11, 0, Math.PI * 2)
+      ctx.strokeStyle = '#ffffff'
+      ctx.lineWidth = 3
+      ctx.stroke()
+      ctx.restore()
+    }
+
     const marker = (x: number, y: number, name: string, color: string, id: string) => {
       const px = p.ox + x * p.scale
       const py = p.oy + y * p.scale
@@ -334,7 +389,23 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
       ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 16)
       ctx.stroke()
     }
-  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical, slopeState, showSlopeHighlights])
+  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical, slopeState, showSlopeHighlights, activeProfile, safeSelectedIndex])
+
+  function selectProfileSample(index: number | null) {
+    setSelectedSample(index)
+    if (index === null || !activeProfile) return
+    const selected = activeProfile.samples[index]
+    setPinned(cellAtProjected(terrain, selected.x, selected.y))
+    const [stepX, , left, , stepY, top] = grid.transform
+    const col = (selected.x - left) / stepX
+    const row = (selected.y - top) / stepY
+    setCamera(current => {
+      const original = measure(size, terrain, { ...current, panX: 0, panY: 0 })
+      return { ...current,
+        panX: size.width / 2 - (original.ox + col * original.scale),
+        panY: size.height / 2 - (original.oy + row * original.scale) }
+    })
+  }
 
   function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
     if (event.button !== 0) return
@@ -478,11 +549,11 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
             <span className="telemetry-label">АКТИВНЫЙ МАРШРУТ</span>
             <div className="route-switcher-buttons" role="group" aria-label="Выбор активного маршрута">
               <button type="button" className="route-switcher-direct"
-                aria-pressed={activeRoute === 'direct'} onClick={() => setActiveRoute('direct')}>
+                aria-pressed={activeRoute === 'direct'} onClick={() => { setActiveRoute('direct'); setSelectedSample(null); setPinned(null) }}>
                 Прямой
               </button>
               <button type="button" className="route-switcher-detour"
-                aria-pressed={activeRoute === 'detour'} onClick={() => setActiveRoute('detour')}>
+                aria-pressed={activeRoute === 'detour'} onClick={() => { setActiveRoute('detour'); setSelectedSample(null); setPinned(null) }}>
                 Обходной
               </button>
             </div>
@@ -515,6 +586,8 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
           highlightEnabled={showSlopeHighlights} onToggle={setShowSlopeHighlights}/>
       )}
       {slopeState.error && <p className="alert error-alert" role="alert">Не удалось оценить уклоны: {slopeState.error}</p>}
+      {activeProfile && <ElevationProfileChart profile={activeProfile} activeRoute={activeRoute}
+        selectedIndex={safeSelectedIndex} onSelect={selectProfileSample} />}
       <div className="layer-status" role="status">
         {opticalError
           ? 'CTX: ошибка загрузки — ' + opticalError
