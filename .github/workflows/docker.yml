@@ -1,0 +1,59 @@
+name: Docker production image and smoke test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    name: Docker build / read-only container / Mars DEM and CTX
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image, run Node tests and typecheck
+        run: docker build --tag jezero-traverse:ci .
+      - name: Smoke test HTTP resources and DEM checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --detach --name jezero-smoke \
+            --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --publish 127.0.0.1:18080:8080 jezero-traverse:ci
+          trap 'docker rm --force jezero-smoke >/dev/null 2>&1 || true' EXIT
+
+          ready=false
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/_health > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = true
+
+          for asset in \
+            / /index.html /assets/main.js /assets/main.css \
+            /data/jezero/metadata.json \
+            /data/jezero/heights.f32 \
+            /data/jezero/mask.u8 \
+            /data/jezero/ctx_ortho.png \
+            /data/jezero/ctx_ortho.json \
+            /data/jezero/checksums.sha256
+          do
+            curl --fail --silent --show-error "http://127.0.0.1:18080$asset" --output /dev/null
+            echo "OK $asset"
+          done
+
+          curl --fail --silent http://127.0.0.1:18080/_health |
+            python3 -c "import json,sys; assert json.load(sys.stdin)['status'] == 'ok'"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/missing.html)" = "404"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --request POST http://127.0.0.1:18080/)" = "405"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/.env)" = "400"
+
+          docker exec jezero-smoke sh -c 'cd /app/dist/data/jezero && sha256sum -c checksums.sha256'
+          docker inspect --format='Running: {{.State.Running}}; user: {{.Config.User}}' jezero-smoke

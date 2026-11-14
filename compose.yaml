@@ -1,0 +1,23 @@
+name: jezero-traverse
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jezero-traverse:local
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('node:http').get('http://127.0.0.1:8080/_health',r=>{r.resume();process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
