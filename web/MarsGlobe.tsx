@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react'
 import { useI18n } from './i18n.tsx'
 import { clampGlobeView, marsToGlobeScreen, screenUnitToMars, texturePixel, type GlobeView } from './marsGlobe.ts'
-import { MarsGlobalMap } from './MarsGlobalMap.tsx'
+import { MarsGlobalMap, type GlobalLayer } from './MarsGlobalMap.tsx'
 import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
 import { loadMarsSites, type MarsSite } from './marsSites.ts'
 import { MolaElevationLegend } from './MolaElevationLegend.tsx'
@@ -11,7 +11,8 @@ import { PanoramaDialog } from './PanoramaDialog.tsx'
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
 const JEZERO = { longitude: 77.40974302, latitude: 18.45616697 }
 const INITIAL_VIEW: GlobeView = { longitude: 58, latitude: 18, zoom: 1 }
-type GlobeLayer = 'relief' | 'satellite' | 'color'
+const GLOBE_RENDER_SIZE = 360
+type GlobeLayer = GlobalLayer
 const TEXTURE_FILES: Record<GlobeLayer, [string, string]> = {
   relief: ['mola-col0.jpg', 'mola-col1.jpg'],
   satellite: ['moc-col0.png', 'moc-col1.png'],
@@ -54,6 +55,8 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
   const dragRef = useRef<{ x: number; y: number; view: GlobeView } | null>(null)
   const pinchRef = useRef<number | null>(null)
   const transitionTimerRef = useRef<number | null>(null)
+  const viewFrameRef = useRef<number | null>(null)
+  const pendingViewRef = useRef<GlobeView | null>(null)
   const [view, setView] = useState(INITIAL_VIEW)
   const [metadata, setMetadata] = useState<Metadata | null>(null)
   const [error, setError] = useState('')
@@ -136,6 +139,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
 
   useEffect(() => () => {
     if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
+    if (viewFrameRef.current !== null) cancelAnimationFrame(viewFrameRef.current)
   }, [])
 
   useEffect(() => {
@@ -157,7 +161,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
     const canvas = canvasRef.current
     const texture = textureRef.current[activeLayer]
     if (!canvas || !texture || !metadata) return
-    const pixelSize = Math.min(size, 520)
+    const pixelSize = Math.min(size, GLOBE_RENDER_SIZE)
     canvas.width = pixelSize
     canvas.height = pixelSize
     const context = canvas.getContext('2d')
@@ -188,6 +192,14 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
   }, [activeLayer, metadata, size, view])
 
   const updateZoom = useCallback((factor: number) => setView(current => clampGlobeView({ ...current, zoom: current.zoom * factor })), [])
+  const scheduleView = (next: GlobeView) => {
+    pendingViewRef.current = next
+    if (viewFrameRef.current !== null) return
+    viewFrameRef.current = requestAnimationFrame(() => {
+      viewFrameRef.current = null
+      if (pendingViewRef.current) setView(pendingViewRef.current)
+    })
+  }
   const pointerPosition = (event: PointerEvent<HTMLCanvasElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect()
     return { x: event.clientX - bounds.left, y: event.clientY - bounds.top }
@@ -216,7 +228,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
     const drag = dragRef.current
     if (!drag) return
     const degreesPerPixel = 115 / (Math.max(260, size) * drag.view.zoom)
-    setView(clampGlobeView({
+    scheduleView(clampGlobeView({
       ...drag.view,
       longitude: drag.view.longitude - (point.x - drag.x) * degreesPerPixel,
       latitude: drag.view.latitude + (point.y - drag.y) * degreesPerPixel,
@@ -270,7 +282,8 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
     </div>
     {mode === 'flat' ? <div className="globe-flat-mode">
       <p className="globe-transition-note">{t('globe.flatNote')}</p>
-      <MarsGlobalMap onOpenRegion={onOpenDetail} onReturnGlobe={returnToGlobe}/>
+      <MarsGlobalMap onOpenRegion={onOpenDetail} onReturnGlobe={returnToGlobe}
+        initialLayer={activeLayer} onLayerChange={setActiveLayer}/>
     </div> : <div className={`mars-globe-layout${transitioning ? ' is-unfolding' : ''}`}>
       <div className="mars-globe-stage">
         <div className="globe-layer-switch" role="group" aria-label={t('map.global.layerSelect')}>

@@ -1,12 +1,20 @@
-import { useRef, useState, type PointerEvent, type WheelEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent, type WheelEvent } from 'react'
 import { useI18n } from './i18n.tsx'
 
 export function PanoramaViewer({ imageUrl, title }: { imageUrl: string; title: string }) {
   const { t } = useI18n()
   const drag = useRef<{ x: number; yaw: number } | null>(null)
+  const frame = useRef<number | null>(null)
+  const pendingYaw = useRef(0)
   const [yaw, setYaw] = useState(0)
   const [zoom, setZoom] = useState(2.2)
   const clampYaw = (value: number) => Math.max(0, Math.min(360, value))
+  const scheduleYaw = (value: number) => {
+    pendingYaw.current = clampYaw(value)
+    if (frame.current !== null) return
+    frame.current = requestAnimationFrame(() => { frame.current = null; setYaw(pendingYaw.current) })
+  }
+  useEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current) }, [])
   const adjustZoom = (factor: number) => setZoom(value => Math.max(1, Math.min(5, value * factor)))
   const pointerDown = (event: PointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -15,7 +23,7 @@ export function PanoramaViewer({ imageUrl, title }: { imageUrl: string; title: s
   const pointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!drag.current) return
     const width = event.currentTarget.getBoundingClientRect().width || 1
-    setYaw(clampYaw(drag.current.yaw - (event.clientX - drag.current.x) / width * 300 / zoom))
+    scheduleYaw(drag.current.yaw - (event.clientX - drag.current.x) / width * 300 / zoom)
   }
   const stop = () => { drag.current = null }
   const wheel = (event: WheelEvent<HTMLDivElement>) => {

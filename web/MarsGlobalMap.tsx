@@ -13,7 +13,7 @@ import { PanoramaDialog } from './PanoramaDialog.tsx'
 type Size = { width: number; height: number }
 type Camera = { zoom: number; panX: number; panY: number }
 type Drag = { x: number; y: number; panX: number; panY: number; moved: boolean } | null
-type GlobalLayer = 'relief' | 'satellite' | 'color'
+export type GlobalLayer = 'relief' | 'satellite' | 'color'
 
 const OVERVIEW_URL = '/data/mars-global/mola_global_overview.jpg'
 const LAYERS: Record<GlobalLayer, { id: string; extension: 'jpg' | 'png'; maxLevel: number }> = {
@@ -38,7 +38,10 @@ function constrainPan(camera: Camera, size: Size): Camera {
   return { ...camera, panX: clamp(camera.panX, -limitX, limitX), panY: clamp(camera.panY, -limitY, limitY) }
 }
 
-export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: () => void; onReturnGlobe?: () => void }) {
+export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'relief', onLayerChange }: {
+  onOpenRegion: () => void; onReturnGlobe?: () => void
+  initialLayer?: GlobalLayer; onLayerChange?: (layer: GlobalLayer) => void
+}) {
   const { t } = useI18n()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLElement>(null)
@@ -54,7 +57,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
   const sizeRef = useRef(size)
   const [tileVersion, setTileVersion] = useState(0)
   const [tileError, setTileError] = useState(false)
-  const [activeLayer, setActiveLayer] = useState<GlobalLayer>('relief')
+  const [activeLayer, setActiveLayer] = useState<GlobalLayer>(initialLayer)
   const [expanded, setExpanded] = useState(false)
   const [cursorCoordinates, setCursorCoordinates] = useState<{ longitude: number; latitude: number } | null>(null)
   const [siteCatalog, setSiteCatalog] = useState<MarsSitesCatalog | null>(null)
@@ -411,6 +414,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
             <button key={layer} type="button" className={activeLayer === layer ? 'selected' : ''}
               aria-pressed={activeLayer === layer} onClick={() => {
                 setActiveLayer(layer)
+                onLayerChange?.(layer)
                 setTileError(false)
                 setCamera(current => constrainPan({ ...current, zoom: Math.min(current.zoom, 2 ** LAYERS[layer].maxLevel) }, size))
               }}>{t(`map.global.layer.${layer}`)}</button>
