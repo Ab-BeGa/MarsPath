@@ -1,0 +1,25 @@
+# Only Node/TypeScript sources and compact, committed browser assets are needed.
+.git
+.github
+.venv
+**/.venv
+**/__pycache__
+__pycache__
+.pytest_cache
+node_modules
+**/node_modules
+dist
+data
+results
+docs
+tests
+jezero_site_selection
+points
+*.tif
+*.tiff
+*.pyc
+*.part
+route_profile.csv
+route_profile.png
+route_traversability.csv
+route_waypoints.json
