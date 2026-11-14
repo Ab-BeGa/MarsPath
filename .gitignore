@@ -2,6 +2,8 @@
 *.tiff
 route_profile.csv
 route_profile.png
+route_waypoints.json
 jezero_site_selection/site_dem_preview.png
 __pycache__/
 .venv/
+.pytest_cache/
