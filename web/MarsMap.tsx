@@ -174,7 +174,9 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
     ctx.fillStyle = '#21171d'
     ctx.fillRect(p.ox, p.oy, iw, ih)
     ctx.restore()
-    ctx.imageSmoothingEnabled = false // show exactly the 20 m source pixels
+    // Visual smoothing only: the source DEM still contains 20 m cells.
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
     ctx.drawImage(relief, p.ox, p.oy, iw, ih)
     ctx.strokeStyle = 'rgba(241,214,165,.8)'
     ctx.lineWidth = 1.2
