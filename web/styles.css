@@ -58,9 +58,21 @@ a { color: inherit; }
 .section-heading p { color: #91a8b7; font-size: 13px; line-height: 1.6; margin: 0; max-width: 770px; }
 .data-pill { padding: 10px 12px; border: 1px solid #304a55; border-radius: 7px;
   font-size: 10px; font-weight: 700; color: #a9c5cc; white-space: nowrap; letter-spacing: .65px; background: #11202c; }
-.map-layout { display: grid; grid-template-columns: minmax(0, 1fr) 295px; gap: 15px; }
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 295px;
+  gap: 15px;
+  max-width: 1310px;
+  margin-inline: auto;
+}
 .map-frame, .telemetry, .comparison-card { border: 1px solid #29424c; border-radius: 12px; background: #0c1a29; overflow: hidden; }
-.map-canvas-wrap { width: 100%; height: clamp(510px, 52vw, 670px); position: relative; isolation: isolate; overflow: hidden; }
+.map-canvas-wrap {
+  width: 100%;
+  height: clamp(650px, 78vh, 790px);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
 .mars-map-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
 .mars-map-canvas:active { cursor: grabbing; }
 .map-overlay-head {
@@ -145,12 +157,12 @@ thead { background: #132734; color: #afc9d4; }
   .hero-stats > div:first-child { padding-left: 0; border: 0; }
   .map-layout { grid-template-columns: minmax(0, 1fr) 260px; }
   .telemetry-block { padding: 17px 13px; }
-  .map-canvas-wrap { height: 560px; }
+  .map-canvas-wrap { height: clamp(560px, 74vh, 720px); }
 }
 @media (max-width: 900px) {
   .header-mode { display: none; }
   .map-layout { grid-template-columns: minmax(0, 1fr); }
-  .map-canvas-wrap { height: 535px; }
+  .map-canvas-wrap { height: clamp(530px, 68vh, 660px); }
   .telemetry { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .telemetry-title { grid-column: 1 / -1; padding: 14px 18px; }
   .telemetry-block { border-right: 1px solid #29424c; }
@@ -171,7 +183,7 @@ thead { background: #132734; color: #afc9d4; }
   .hero-stats strong { font-size: 10px; }
   .hero-stats small { font-size: 8px; }
   .section-heading { flex-direction: column; align-items: start; gap: 10px; }
-  .map-canvas-wrap { height: 440px; }
+  .map-canvas-wrap { height: clamp(455px, 66vh, 570px); }
   .map-overlay-head { top: 10px; left: 10px; padding: 10px 8px; font-size: 9px; }
   .map-overlay-head small { display: block; margin: 6px 0 0; }
   .map-controls { right: 9px; top: 9px; min-width: 43px; }
