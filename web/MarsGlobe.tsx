@@ -6,7 +6,7 @@ import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
 import { loadMarsSites, type MarsSite } from './marsSites.ts'
 import { MolaElevationLegend } from './MolaElevationLegend.tsx'
 import { loadPhotoCatalog, type JezeroPhoto } from './photoCatalog.ts'
-import { PanoramaViewer } from './PanoramaViewer.tsx'
+import { PanoramaDialog } from './PanoramaDialog.tsx'
 
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
 const JEZERO = { longitude: 77.40974302, latitude: 18.45616697 }
@@ -316,15 +316,8 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
         {activeLayer === 'relief' && <MolaElevationLegend compact/>}
         {selectedSiteId && selectedSites.length > 0 && <MarsSiteInfoCard sites={selectedSites} selectedId={selectedSiteId}
           onSelect={setSelectedSiteId} onClose={closeSite}/>}
-        {selectedPanorama && <aside className="globe-panorama-card" role="dialog" aria-label={selectedPanorama.title}>
-          <button className="global-site-popup-close" onClick={() => setSelectedPanorama(null)} aria-label={t('map.photos.close')}>×</button>
-          <PanoramaViewer imageUrl={selectedPanorama.image_url} title={selectedPanorama.title}/>
-          <div><span className="section-kicker">360° · {selectedPanorama.camera}</span>
-            <h4>{selectedPanorama.title}</h4><p>{selectedPanorama.caption}</p>
-            <p className="globe-panorama-warning">{t('globe.panorama.locationNote')}</p>
-            <a href={selectedPanorama.page_url} target="_blank" rel="noopener noreferrer">{t('map.photos.nasaSource')} ↗</a>
-          </div>
-        </aside>}
+        {selectedPanorama && <PanoramaDialog panoramas={panoramas} selected={selectedPanorama}
+          onSelect={setSelectedPanorama} onClose={() => setSelectedPanorama(null)}/>}
         <div className="globe-controls" aria-label={t('globe.controls')}>
           <button onClick={() => updateZoom(1.15)} aria-label="+">+</button>
           <button onClick={() => updateZoom(1 / 1.15)} aria-label="−">−</button>

@@ -5,9 +5,9 @@ export function PanoramaViewer({ imageUrl, title }: { imageUrl: string; title: s
   const { t } = useI18n()
   const drag = useRef<{ x: number; yaw: number } | null>(null)
   const [yaw, setYaw] = useState(0)
-  const [zoom, setZoom] = useState(1)
-  const normalize = (value: number) => ((value % 360) + 360) % 360
-  const adjustZoom = (factor: number) => setZoom(value => Math.max(1, Math.min(3, value * factor)))
+  const [zoom, setZoom] = useState(2.2)
+  const clampYaw = (value: number) => Math.max(0, Math.min(360, value))
+  const adjustZoom = (factor: number) => setZoom(value => Math.max(1, Math.min(5, value * factor)))
   const pointerDown = (event: PointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId)
     drag.current = { x: event.clientX, yaw }
@@ -15,19 +15,19 @@ export function PanoramaViewer({ imageUrl, title }: { imageUrl: string; title: s
   const pointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!drag.current) return
     const width = event.currentTarget.getBoundingClientRect().width || 1
-    setYaw(normalize(drag.current.yaw - (event.clientX - drag.current.x) / width * 180 / zoom))
+    setYaw(clampYaw(drag.current.yaw - (event.clientX - drag.current.x) / width * 300 / zoom))
   }
   const stop = () => { drag.current = null }
   const wheel = (event: WheelEvent<HTMLDivElement>) => {
     event.preventDefault()
     adjustZoom(event.deltaY < 0 ? 1.12 : 1 / 1.12)
   }
-  const reset = () => { setYaw(0); setZoom(1) }
+  const reset = () => { setYaw(0); setZoom(2.2) }
 
   return <div className="panorama-viewer">
     <div className="panorama-viewport" role="application" tabIndex={0}
       aria-label={t('globe.panorama.viewer', {title})}
-      style={{ backgroundImage:`url("${imageUrl.replaceAll('"','%22')}")`, backgroundSize:`${100 * zoom}% auto`, backgroundPosition:`${50 + yaw / 360 * 100}% center` }}
+      style={{ backgroundImage:`url("${imageUrl.replaceAll('"','%22')}")`, backgroundSize:`${100 * zoom}% auto`, backgroundPosition:`${yaw / 360 * 100}% center` }}
       onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={stop} onPointerCancel={stop} onWheel={wheel}/>
     <div className="panorama-viewer-toolbar" aria-label={t('globe.panorama.controls')}>
       <span>{Math.round(yaw)}° · {Math.round(zoom * 100)}%</span>

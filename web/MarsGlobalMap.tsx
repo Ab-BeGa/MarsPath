@@ -7,6 +7,8 @@ import {
 } from './marsSiteMapGeometry.ts'
 import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
 import { MolaElevationLegend } from './MolaElevationLegend.tsx'
+import { loadPhotoCatalog, type JezeroPhoto } from './photoCatalog.ts'
+import { PanoramaDialog } from './PanoramaDialog.tsx'
 
 type Size = { width: number; height: number }
 type Camera = { zoom: number; panX: number; panY: number }
@@ -60,6 +62,9 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
   const [siteFilter, setSiteFilter] = useState<SiteCategoryFilter>('all')
   const [selectedSiteIds, setSelectedSiteIds] = useState<string[]>([])
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
+  const [panoramas, setPanoramas] = useState<JezeroPhoto[]>([])
+  const [showPanoramas, setShowPanoramas] = useState(true)
+  const [selectedPanorama, setSelectedPanorama] = useState<JezeroPhoto | null>(null)
 
   const sites = siteCatalog?.sites ?? EMPTY_SITES
   const clusters = useMemo(() =>
@@ -105,6 +110,14 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
       .catch(cause => {
         if (active) setSiteError(cause instanceof Error ? cause.message : String(cause))
       })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    loadPhotoCatalog('/data/jezero/photos.json').then(catalogue => {
+      if (active) setPanoramas(catalogue.records.filter(photo => photo.coordinates && /panorama/i.test(`${photo.title} ${photo.caption}`)))
+    }).catch(cause => { if (active) setSiteError(cause instanceof Error ? cause.message : String(cause)) })
     return () => { active = false }
   }, [])
 
@@ -370,6 +383,14 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
   }
   const detailedRegionVisible = detailedRegionMarker.x >= 0 && detailedRegionMarker.x <= size.width &&
     detailedRegionMarker.y >= 0 && detailedRegionMarker.y <= size.height
+  const panoramaMarkers = panoramas.map(panorama => {
+    const coordinates = panorama.coordinates!
+    return {
+      panorama,
+      x: markerLeft + ((normalizeMarsLongitude(coordinates.longitude_deg) + 180) / 360) * markerWorldWidth,
+      y: markerTop + ((90 - coordinates.latitude_deg) / 180) * markerWorldHeight,
+    }
+  }).filter(marker => marker.x >= 0 && marker.x <= size.width && marker.y >= 0 && marker.y <= size.height)
   return (
     <section ref={cardRef} className={`global-map-card${expanded ? ' is-expanded' : ''}`} aria-labelledby="global-map-title">
       <div className="global-map-heading">
@@ -409,6 +430,10 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
                   sites.filter(site => site.category === category).length})</span>}
               </button>
             ))}
+            <button type="button" className="global-panorama-filter" aria-pressed={showPanoramas}
+              onClick={() => { setShowPanoramas(value => !value); setSelectedPanorama(null) }}>
+              360° {t('globe.panoramas')} ({panoramas.length})
+            </button>
           </div>
           <label className="global-site-picker">
             <span>{t('map.sites.pick')}</span>
@@ -450,6 +475,12 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
             aria-label={t('globe.detail')} onClick={onOpenRegion}>
             <span>▣</span><b>Jezero</b><small>{t('globe.region.report')}</small>
           </button>}
+          {showPanoramas && <div className="global-panorama-markers" aria-label={t('globe.panoramas')}>
+            {panoramaMarkers.map(({panorama,x,y}) => <button key={panorama.id} type="button"
+              className="global-panorama-pin" style={{left:x,top:y}}
+              aria-label={t('globe.panorama.open',{title:panorama.title})} title={panorama.title}
+              onClick={() => setSelectedPanorama(panorama)}>360°</button>)}
+          </div>}
           <div className="global-site-markers" aria-label={t('map.sites.title')}>
             {clusters.map(cluster => {
               const grouped = cluster.sites.length > 1
@@ -484,6 +515,8 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
       <div className="global-map-caption" role="status">
         {tileError ? t('map.global.tileError') : t(`map.global.caption.${activeLayer}`)}
       </div>
+      {selectedPanorama && <PanoramaDialog panoramas={panoramas} selected={selectedPanorama}
+        onSelect={setSelectedPanorama} onClose={() => setSelectedPanorama(null)}/>}
     </section>
   )
 }

@@ -371,19 +371,20 @@ thead { background: #132734; color: #afc9d4; }
 .mars-globe-stage .global-site-popup { z-index: 8; max-width: min(430px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow: auto; }
 .mars-globe-stage > .mola-elevation-legend.is-compact { right: auto; left: 12px; bottom: 12px; }
 .globe-panorama-card {
-  position: absolute; z-index: 9; left: 16px; right: 16px; bottom: 16px; display: grid;
-  grid-template-columns: minmax(140px, 35%) 1fr; gap: 13px; max-height: calc(100% - 32px); overflow: auto;
-  border: 1px solid #6e5a8f; border-radius: 8px; padding: 11px; background: #0b1b28f5; box-shadow: 0 15px 45px #000b;
+  position: fixed; z-index: 1000; inset: clamp(12px, 3vw, 42px); display: grid;
+  grid-template-rows: minmax(280px, 1fr) auto; gap: 13px; overflow: hidden;
+  border: 1px solid #8b71ad; border-radius: 12px; padding: 14px; background: #071621fa;
+  box-shadow: 0 0 0 100vmax #02080dcc, 0 25px 80px #000;
 }
-.globe-panorama-card > button { position: absolute; right: 8px; top: 8px; }
+.globe-panorama-card > button { position: absolute; z-index: 4; right: 14px; top: 14px; width: 38px; height: 38px; font-size: 21px; }
 .globe-panorama-card h4 { margin: 5px 28px 5px 0; color: #fff; }
 .globe-panorama-card p { margin: 5px 0; color: #b8ccd4; font-size: 10px; line-height: 1.45; }
 .globe-panorama-card a { color: #69efd1; font-size: 11px; font-weight: 800; }
 .globe-panorama-card .globe-panorama-warning { color: #efc67a; }
-.panorama-viewer { min-width: 0; }
+.panorama-viewer { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto auto; }
 .panorama-viewport {
-  width: 100%; min-height: 190px; border: 1px solid #6d5a89; border-radius: 6px; overflow: hidden;
-  background-color: #05090d; background-repeat: repeat-x; cursor: grab; touch-action: none;
+  width: 100%; min-height: 280px; border: 1px solid #6d5a89; border-radius: 8px; overflow: hidden;
+  background-color: #05090d; background-repeat: no-repeat; cursor: grab; touch-action: none;
   box-shadow: inset 0 0 30px #000a;
 }
 .panorama-viewport:active { cursor: grabbing; }
@@ -392,6 +393,13 @@ thead { background: #132734; color: #afc9d4; }
 .panorama-viewer-toolbar span { margin-right: auto; color: #b9a3d2; font: 9px ui-monospace, monospace; }
 .panorama-viewer-toolbar button { border: 1px solid #5d5074; border-radius: 4px; padding: 4px 8px; background: #182436; color: #fff; font-size: 9px; }
 .panorama-viewer > p { margin: 4px 0 0; color: #8fa5ae; font-size: 8px; }
+.panorama-dialog-copy { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(300px, 1.4fr); column-gap: 18px; align-items: center; }
+.panorama-dialog-copy .section-kicker, .panorama-dialog-copy h4 { grid-column: 1; }
+.panorama-dialog-copy > p { grid-column: 2; }
+.panorama-dialog-copy .panorama-sequence, .panorama-dialog-copy > a { grid-column: 1; }
+.panorama-sequence { display: flex; align-items: center; gap: 7px; margin: 8px 0; }
+.panorama-sequence span { color: #acbdc5; font: 10px ui-monospace, monospace; }
+.panorama-sequence button { border: 1px solid #5c4c72; border-radius: 5px; padding: 6px 9px; background: #1b2638; color: #fff; font-size: 9px; }
 .globe-controls {
   position: absolute; z-index: 4; right: 12px; top: 12px; display: grid; overflow: hidden;
   border: 1px solid #345361; border-radius: 7px; background: #0b1e2aeb;
@@ -441,7 +449,9 @@ thead { background: #132734; color: #afc9d4; }
   .globe-mode-switch { justify-content: stretch; }
   .globe-mode-switch button { flex: 1; }
   .globe-flat-mode { padding: 5px; }
-  .globe-panorama-card { grid-template-columns: 1fr; }
+  .globe-panorama-card { inset: 6px; grid-template-rows: minmax(240px, 1fr) auto; padding: 9px; }
+  .panorama-dialog-copy { display: block; max-height: 32vh; overflow: auto; }
+  .panorama-viewport { min-height: 240px; }
   .mola-elevation-legend.is-compact { width: min(220px, calc(100% - 24px)); }
 }
 .global-map-card.is-expanded {
@@ -808,6 +818,10 @@ thead { background: #132734; color: #afc9d4; }
 .global-detailed-region-pin span { color: #6affdc; }
 .global-detailed-region-pin small { color: #bafbec; font-size: 7px; letter-spacing: .07em; }
 .global-detailed-region-pin:hover, .global-detailed-region-pin:focus-visible { background: #128273; transform: translate(-50%, -50%) scale(1.06); outline: 2px solid #6affdc; outline-offset: 2px; }
+.global-panorama-markers { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
+.global-panorama-pin { position: absolute; transform: translate(-50%, -50%); min-width: 32px; height: 23px; border: 2px solid #fff; border-radius: 12px; padding: 0 5px; background: #9c5ae5; color: #fff; box-shadow: 0 2px 9px #000b; font-size: 8px; font-weight: 900; pointer-events: auto; }
+.global-panorama-pin:hover { transform: translate(-50%, -50%) scale(1.15); background: #bf82ff; }
+.global-panorama-filter[aria-pressed="true"] { border-color: #b77dff !important; color: #e2c8ff !important; }
 .global-site-pin {
   position: absolute; width: 29px; height: 29px; transform: translate(-50%, -50%);
   display: grid; place-items: center; border: 2px solid #071522; border-radius: 50%;

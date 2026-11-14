@@ -33,6 +33,8 @@ export const catalog = {
   'globe.panorama.viewer': ['Интерактивная панорама: {title}', 'Interactive panorama: {title}', 'Интерактивті панорама: {title}'],
   'globe.panorama.controls': ['Управление панорамой', 'Panorama controls', 'Панораманы басқару'],
   'globe.panorama.help': ['Перетаскивайте для кругового обзора · колесо или кнопки изменяют масштаб.', 'Drag for a panoramic view · use the wheel or buttons to zoom.', 'Айнала шолу үшін сүйреңіз · дөңгелек немесе түймелер масштабты өзгертеді.'],
+  'globe.panorama.previous': ['Предыдущая', 'Previous', 'Алдыңғы'],
+  'globe.panorama.next': ['Следующая', 'Next', 'Келесі'],
   'globe.detailedRegions': ['Подробные участки', 'Detailed regions', 'Толық аймақтар'],
   'mola.legend.title': ['Высота MOLA', 'MOLA elevation', 'MOLA биіктігі'],
   'mola.legend.unit': ['км', 'km', 'км'],

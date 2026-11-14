@@ -47,6 +47,10 @@ test('published photo coordinates are classified against the real 7.5 km Mars DE
     const projected = marsDegreesToProjected(metadata, coordinates.longitude_deg, coordinates.latitude_deg)
     return { id: photo.id, inside: projected.x >= left && projected.x < right && projected.y >= bottom && projected.y < top }
   })
-  assert.equal(classified.filter(item => item.inside).length, 5)
-  assert.deepEqual(classified.filter(item => !item.inside).map(item => item.id), ['sol-1039-bright-rocks-jezero-rim'])
+  assert.equal(classified.filter(item => item.inside).length, 7)
+  assert.deepEqual(classified.filter(item => !item.inside).map(item => item.id), [
+    'sol-1039-bright-rocks-jezero-rim',
+    'pia26816-sol-1155-neretva-vallis-360',
+    'pia26644-sol-1516-falbreen-360',
+  ])
 })
