@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { cellAtGrid, cellAtProjected, type MarsTerrain, type TerrainCell } from './marsTerrain.ts'
+import { routeToGrid, type RoutePair } from './routeMap.ts'
 
 type Camera = { zoom: number; panX: number; panY: number }
 type Size = { width: number; height: number }
@@ -81,11 +82,12 @@ function toGridPosition(screenX: number, screenY: number, m: ReturnType<typeof m
   return { col: (screenX - m.ox) / m.scale, row: (screenY - m.oy) / m.scale }
 }
 
-export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
+export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: RoutePair }) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [size, setSize] = useState<Size>({ width: 920, height: 570 })
   const [camera, setCamera] = useState<Camera>({ zoom: 1, panX: 0, panY: 0 })
+  const [activeRoute, setActiveRoute] = useState<'direct' | 'detour'>('direct')
   const cameraRef = useRef(camera)
   const [hovered, setHovered] = useState<TerrainCell | null>(null)
   const [pinned, setPinned] = useState<TerrainCell | null>(null)
@@ -187,6 +189,38 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
       }
     }
 
+
+    // Overlay both exported routes on the *same* DEM affine and camera as the relief.
+    // Never substitute Earth WGS84 coordinates or interpolate elevations here.
+    if (routes) {
+      const ordered = activeRoute === 'direct'
+        ? (['detour', 'direct'] as const)
+        : (['direct', 'detour'] as const)
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(p.ox, p.oy, iw, ih)
+      ctx.clip()
+      for (const routeId of ordered) {
+        const vertices = routeToGrid(routes[routeId], grid.transform)
+        ctx.beginPath()
+        for (let i = 0; i < vertices.length; i++) {
+          const px = p.ox + vertices[i].col * p.scale
+          const py = p.oy + vertices[i].row * p.scale
+          if (i === 0) ctx.moveTo(px, py)
+          else ctx.lineTo(px, py)
+        }
+        ctx.strokeStyle = routeId === 'direct' ? '#55efc4' : '#ffad5a'
+        ctx.lineWidth = routeId === activeRoute ? 5.5 : 3
+        ctx.globalAlpha = routeId === activeRoute ? 1 : 0.65
+        ctx.lineJoin = 'round'
+        ctx.lineCap = 'round'
+        ctx.shadowColor = '#07121e'
+        ctx.shadowBlur = 5
+        ctx.stroke()
+      }
+      ctx.restore()
+    }
+
     const marker = (x: number, y: number, name: string, color: string, id: string) => {
       const px = p.ox + x * p.scale
       const py = p.oy + y * p.scale
@@ -236,7 +270,7 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
       ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 16)
       ctx.stroke()
     }
-  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid])
+  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute])
 
   function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
     if (event.button !== 0) return
@@ -362,6 +396,20 @@ export function MarsMap({ terrain }: { terrain: MarsTerrain }) {
               <span className="checkpoint-arrow">↗</span>
             </button>)}
           </div>
+          {routes && <div className="telemetry-block route-switcher">
+            <span className="telemetry-label">АКТИВНЫЙ МАРШРУТ</span>
+            <div className="route-switcher-buttons" role="group" aria-label="Выбор активного маршрута">
+              <button type="button" className="route-switcher-direct"
+                aria-pressed={activeRoute === 'direct'} onClick={() => setActiveRoute('direct')}>
+                Прямой
+              </button>
+              <button type="button" className="route-switcher-detour"
+                aria-pressed={activeRoute === 'detour'} onClick={() => setActiveRoute('detour')}>
+                Обходной
+              </button>
+            </div>
+            <span className="telemetry-muted">На карте показаны оба пути. Выбранный выделен толщиной.</span>
+          </div>}
           <div className="telemetry-block bottom">
             <div className="coord-pair"><span>Область</span><strong>1,5 × 1,5 км</strong></div>
             <div className="coord-pair"><span>Ячейки</span><strong>{grid.width} × {grid.height}</strong></div>
