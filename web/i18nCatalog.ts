@@ -38,6 +38,7 @@ export const catalog = {
   'globe.panorama.cluster': ['Группа из {count} панорам. Открыть список.', 'Cluster of {count} panoramas. Open the list.', '{count} панорама тобы. Тізімді ашу.'],
   'globe.panorama.list': ['Панорамы в этой точке', 'Panoramas at this location', 'Осы жердегі панорамалар'],
   'globe.panorama.loading': ['Загружается детальная панорама…', 'Loading detailed panorama…', 'Толық панорама жүктелуде…'],
+  'globe.panorama.mosaicNote': ['Это сборная мозаика: полный кадр и чёрные области без исходных снимков сохранены как в оригинале NASA.', 'This is a stitched mosaic: the full frame and black areas without source images are preserved as in the NASA original.', 'Бұл құрастырылған мозаика: толық кадр және бастапқы суреттері жоқ қара аймақтар NASA түпнұсқасындағыдай сақталған.'],
   'globe.detailedRegions': ['Подробные участки', 'Detailed regions', 'Толық аймақтар'],
   'mola.legend.title': ['Высота MOLA', 'MOLA elevation', 'MOLA биіктігі'],
   'mola.legend.unit': ['км', 'km', 'км'],
