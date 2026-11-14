@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev": "node scripts/build_web.mjs --serve",
+    "build": "tsc --noEmit && node scripts/build_web.mjs",
     "test": "node --test web/compareRoutes.test.ts"
   },
   "dependencies": {
@@ -14,7 +14,7 @@
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "~5.9.3",
-    "vite": "^7.0.0"
+    "esbuild": "^0.28.2",
+    "typescript": "~5.9.3"
   }
 }
