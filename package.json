@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/build_web.mjs --serve",
     "build": "tsc --noEmit && node scripts/build_web.mjs",
-    "test": "node --test web/compareRoutes.test.ts"
+    "test": "node --test web/compareRoutes.test.ts web/marsTerrain.test.ts"
   },
   "dependencies": {
     "react": "^19.0.0",
