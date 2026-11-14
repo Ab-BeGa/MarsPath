@@ -284,6 +284,58 @@ thead { background: #132734; color: #afc9d4; }
 .global-map-coordinate-note i { margin: 0 8px; font-style: normal; }
 .global-map-help { padding: 7px 10px; color: #91a8b7; font-size: 10px; }
 .global-map-caption { margin-top: 10px; color: #849ca8; font-size: 10px; line-height: 1.5; }
+
+.mars-globe-section { margin: 22px 0 28px; scroll-margin-top: 78px; }
+.mars-globe-layout {
+  display: grid; grid-template-columns: minmax(320px, 1fr) minmax(250px, 330px); gap: 14px;
+  border: 1px solid #294653; border-radius: 10px; padding: 16px; background: #091925;
+}
+.mars-globe-stage {
+  position: relative; display: grid; place-items: center; min-height: 430px; overflow: hidden;
+  border: 1px solid #294653; border-radius: 8px;
+  background: radial-gradient(circle at 50% 50%, #18303d 0, #091722 54%, #06111b 75%);
+}
+.mars-globe-stage::before {
+  content: ''; position: absolute; inset: 0; opacity: .22; pointer-events: none;
+  background-image: linear-gradient(#284451 1px, transparent 1px), linear-gradient(90deg, #284451 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.mars-globe-canvas {
+  z-index: 1; display: block; width: min(100%, 560px); aspect-ratio: 1; cursor: grab; touch-action: none;
+  filter: drop-shadow(0 22px 28px #000a);
+}
+.mars-globe-canvas:active { cursor: grabbing; }
+.globe-loading { position: absolute; z-index: 2; color: #a6c4cf; font: 11px ui-monospace, monospace; }
+.globe-jezero-marker {
+  position: absolute; z-index: 3; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 7px;
+  border: 1px solid #58edca; border-radius: 16px; padding: 5px 9px 5px 6px; background: #071722e8;
+  color: #f1fffb; box-shadow: 0 0 0 4px #06212db8; font: 800 10px ui-monospace, monospace;
+}
+.globe-jezero-marker i { width: 9px; height: 9px; border-radius: 50%; background: #58edca; box-shadow: 0 0 12px #58edca; }
+.globe-jezero-marker:hover { background: #15443f; }
+.globe-controls {
+  position: absolute; z-index: 4; right: 12px; top: 12px; display: grid; overflow: hidden;
+  border: 1px solid #345361; border-radius: 7px; background: #0b1e2aeb;
+}
+.globe-controls button { min-width: 42px; border: 0; border-bottom: 1px solid #345361; padding: 9px; background: transparent; color: #ecf7fa; font-weight: 800; }
+.globe-controls button:last-child { border-bottom: 0; font-size: 10px; }
+.globe-controls button:hover { background: #194251; }
+.globe-panel { border: 1px solid #294653; border-radius: 8px; padding: 20px; background: #0c202d; color: #b8ccd4; }
+.globe-panel > strong { display: block; margin: 7px 0 18px; color: #58edca; font-size: 18px; line-height: 1.35; }
+.globe-panel > p { font-size: 11px; line-height: 1.55; }
+.globe-readout { margin: 0 0 18px; }
+.globe-readout div { display: grid; grid-template-columns: 1fr; gap: 3px; padding: 9px 0; border-bottom: 1px solid #284552; }
+.globe-readout dt { color: #83aab9; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.globe-readout dd { margin: 0; color: #eff8fa; font: 700 11px ui-monospace, monospace; overflow-wrap: anywhere; }
+.globe-help { color: #84a0ab; }
+.globe-detail-button { width: 100%; margin-top: 10px; border: 1px solid #58edca; border-radius: 6px; padding: 10px; background: #17463f; color: #f5fffc; font-weight: 800; }
+.globe-detail-button:hover { background: #1f5b51; }
+
+@media (max-width: 760px) {
+  .mars-globe-layout { grid-template-columns: 1fr; padding: 9px; }
+  .mars-globe-stage { min-height: 300px; }
+  .globe-panel { padding: 15px; }
+}
 .global-map-card.is-expanded {
   position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; gap: 10px;
   margin: 0; padding: 16px 20px; border: 0; border-radius: 0; overflow: auto; background: #07121e;
