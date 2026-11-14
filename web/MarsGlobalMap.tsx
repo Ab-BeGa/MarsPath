@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, 
 import { useI18n } from './i18n.tsx'
 import { loadMarsSites, type MarsSite, type MarsSitesCatalog } from './marsSites.ts'
 import {
-  normalizeMarsLongitude, projectGlobalSite, visibleMarsSiteClusters,
+  normalizeMarsLongitude, visibleMarsSiteClusters,
   type SiteCategoryFilter,
 } from './marsSiteMapGeometry.ts'
 import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
