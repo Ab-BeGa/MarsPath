@@ -33,6 +33,7 @@ from route_geometry import (nearest_segment_index, route_samples,
                             profile_index_at_distance, route_index_near_xy)
 from route_metrics import calculate_route_metrics
 from traversability import SlopeThresholds, analyze_traversability
+from detour_planner import plan_detour, NoDetourError
 from terrain_sampling import sample_dem_points
 
 ROOT = Path(__file__).resolve().parent
@@ -145,6 +146,10 @@ class RouteEditor:
         self.step_m = step_m
         self.output = output
         self.thresholds = thresholds or SlopeThresholds()
+        self.detour_plan = None
+        self.detour_reference = None
+        self.detour_penalty = 12.0
+        self.detour_max_grade = None
         self.waypoints = terrain.fixed_points.copy()
         self.history = []
         self.dragging = None
@@ -195,17 +200,18 @@ class RouteEditor:
         self.metric_warning = self.sidebar.text(.10, .407, "20m DEM  /  SAMPLE-BASED", color=MUTED, fontsize=7.1)
         self.sidebar.plot([.08, .92], [.392, .392], color=BORDER, lw=1)
         self.sidebar.text(.10, .373, "TEST SLOPE LIMITS / DEGREES", color=GOLD, fontsize=7.6)
-        self.sidebar.text(.10, .148, "LIVE ELEVATION PROBE", color=GOLD, fontsize=8, fontweight="bold")
-        self.probe_info = self.sidebar.text(.10, .116, "HOVER OVER THE PROFILE", color=TEXT, fontsize=9, fontweight="bold")
-        self.probe_detail = self.sidebar.text(.10, .092, "CLICK PROFILE TO PIN", color=MUTED, fontsize=7.5)
-        self.sidebar.text(.1, .052, "DEMONSTRATION ONLY", color=BAD, fontsize=8.5, fontweight="bold")
-        self.sidebar.text(.1, .025, "Not a validated safe route", color=MUTED, fontsize=7.5)
+        self.sidebar.text(.10, .102, "LIVE ELEVATION PROBE", color=GOLD, fontsize=8, fontweight="bold")
+        self.probe_info = self.sidebar.text(.10, .080, "HOVER OVER THE PROFILE", color=TEXT, fontsize=9, fontweight="bold")
+        self.probe_detail = self.sidebar.text(.10, .060, "CLICK PROFILE TO PIN", color=MUTED, fontsize=7.5)
+        self.sidebar.text(.1, .039, "DEMONSTRATION ONLY", color=BAD, fontsize=8.5, fontweight="bold")
+        self.sidebar.text(.1, .016, "Not a validated safe route", color=MUTED, fontsize=7.5)
 
         self.buttons = []
         for label, rect, callback, color in [
             ("UNDO", [.796, .285, .073, .038], self.undo, BORDER),
             ("RESET", [.878, .285, .073, .038], self.reset, BORDER),
             ("EXPORT ROUTE", [.796, .225, .155, .049], self.export, "#17685c"),
+            ("AUTO DETOUR (A*)", [.796, .184, .155, .035], self.auto_detour, "#28495c"),
         ]:
             ax = self.fig.add_axes(rect, facecolor=color)
             button = Button(ax, label, color=color, hovercolor="#265e65")
@@ -260,6 +266,8 @@ class RouteEditor:
             index = self._nearest_waypoint(xy)
             if index is not None and 0 < index < len(self.waypoints) - 1:
                 self.history.append(self.waypoints.copy())
+                self.detour_plan = None
+                self.detour_reference = None
                 self.waypoints = np.delete(self.waypoints, index, axis=0)
                 self.last_message = f"WAYPOINT {index} REMOVED"
                 self.refresh()
@@ -270,6 +278,8 @@ class RouteEditor:
         if index is not None:
             if 0 < index < len(self.waypoints) - 1:
                 self.history.append(self.waypoints.copy())
+                self.detour_plan = None
+                self.detour_reference = None
                 self.dragging = index
             return
         if not self.terrain.is_valid(xy):
@@ -280,6 +290,8 @@ class RouteEditor:
             return
         index = nearest_segment_index(xy, self.waypoints)
         self.history.append(self.waypoints.copy())
+        self.detour_plan = None
+        self.detour_reference = None
         self.waypoints = np.insert(self.waypoints, index + 1, xy, axis=0)
         self.last_message = f"WAYPOINT {index + 1} ADDED"
         self.refresh()
@@ -308,6 +320,8 @@ class RouteEditor:
         if np.min(np.linalg.norm(neighbors - xy, axis=1)) < 1e-7:
             return
         self.waypoints[self.dragging] = xy
+        self.detour_plan = None
+        self.detour_reference = None
         self.last_message = f"MOVING WAYPOINT {self.dragging}"
         self.refresh()
 
@@ -332,6 +346,8 @@ class RouteEditor:
         elif key == "backspace" and len(self.waypoints) > 2:
             self.history.append(self.waypoints.copy())
             self.waypoints = np.delete(self.waypoints, -2, axis=0)
+            self.detour_plan = None
+            self.detour_reference = None
             self.last_message = "LAST INTERMEDIATE POINT REMOVED"
             self.refresh()
 
@@ -339,6 +355,8 @@ class RouteEditor:
         if self.history:
             self.waypoints = self.history.pop()
             self.dragging = None
+            self.detour_plan = None
+            self.detour_reference = None
             self.last_message = "UNDO COMPLETE"
             self.refresh()
         else:
@@ -349,9 +367,46 @@ class RouteEditor:
         if len(self.waypoints) > 2:
             self.history.append(self.waypoints.copy())
         self.waypoints = self.terrain.fixed_points.copy()
+        self.detour_plan = None
+        self.detour_reference = None
         self.dragging = None
         self.last_message = "RESET TO DIRECT LINE"
         self.refresh()
+
+    def auto_detour(self, _event=None):
+        """A* candidate over real DEM cells; never equate slope cost to safety."""
+        try:
+            t = self.terrain
+            detour = plan_detour(
+                t.grid, t.dem.window_transform(t.window),
+                t.fixed_points[0], t.fixed_points[1],
+                valid_mask=t.has_data, roi_bounds=t.xy_bounds,
+                meters_per_unit=t.meters_per_unit,
+                penalty_weight=self.detour_penalty,
+                max_slope_deg=self.detour_max_grade,
+            )
+            candidate = route_samples(detour.waypoints_xy, t.sample_with_status,
+                                      meters_per_unit=t.meters_per_unit, step_m=self.step_m)
+            if candidate.missing_count:
+                raise NoDetourError(f"{candidate.missing_count} missing DEM samples along candidate route")
+            direct = route_samples(t.fixed_points, t.sample_with_status,
+                                   meters_per_unit=t.meters_per_unit, step_m=self.step_m)
+        except (NoDetourError, ValueError) as exc:
+            self.last_message = "AUTO DETOUR FAILED: " + str(exc)
+            self.status_text.set_text("●  " + self.last_message)
+            self.status_text.set_color(BAD)
+            self.fig.canvas.draw_idle()
+            print(self.last_message)
+            return False
+        self.history.append(self.waypoints.copy())
+        self.waypoints = detour.waypoints_xy.copy()
+        self.detour_plan = detour
+        self.detour_reference = direct
+        self.last_message = (f"A* DETOUR: {candidate.total_m:.0f}m   /   "
+                             f"DIRECT: {direct.total_m:.0f}m   /   NOT SAFETY-VALIDATED")
+        self.refresh()
+        print(self.last_message)
+        return True
 
     def calculate(self):
         return route_samples(self.waypoints, self.terrain.sample_with_status,
@@ -380,6 +435,10 @@ class RouteEditor:
         shade[~self.terrain.has_data, 3] = 0
         ax.imshow(shade, extent=(x0, x1, y0, y1), origin="upper", interpolation="nearest")
         route = self.waypoints
+        if self.detour_plan is not None:
+            direct_line = self.terrain.fixed_points
+            ax.plot(direct_line[:, 0], direct_line[:, 1], color=TEXT, lw=1.8,
+                    ls="--", alpha=.75, zorder=3, label="DIRECT REFERENCE")
         ax.plot(route[:, 0], route[:, 1], color="#051b29", lw=8, solid_capstyle="round", zorder=4)
         bands = self.traversability.interval_bands
         sample_pairs = np.stack([profile.xy[:-1], profile.xy[1:]], axis=1)
@@ -400,7 +459,10 @@ class RouteEditor:
         if len(route) > 2:
             ax.scatter(route[1:-1, 0], route[1:-1, 1], s=82, c=GOLD,
                        edgecolors=BG, linewidths=1.9, zorder=8)
+            show_every = max(1, int(np.ceil((len(route) - 2) / 10)))
             for i, (x, y) in enumerate(route[1:-1], 1):
+                if i % show_every != 0:
+                    continue
                 ax.text(x, y + self._point_tolerance() * 1.25, str(i),
                         color=TEXT, fontsize=9, ha="center", fontweight="bold", zorder=9)
         for i, (name, color) in enumerate([("A  /  BASE", TEAL), ("B  /  SCIENCE", GOLD)]):
@@ -584,6 +646,8 @@ class RouteEditor:
         if not all(self.terrain.is_valid(p) for p in pts):
             raise ValueError("Imported route contains point(s) outside valid DEM")
         self.history.append(self.waypoints.copy())
+        self.detour_plan = None
+        self.detour_reference = None
         self.waypoints = pts
         self.last_message = f"LOADED {len(pts)} ROUTE NODES"
         self.refresh()
@@ -616,6 +680,14 @@ class RouteEditor:
             "distance_m": round(profile.total_m, 2),
             "route_metrics": stats.to_dict(),
             "experimental_traversability": risks.to_dict(),
+            "detour_planning": (
+                {**self.detour_plan.as_dict(),
+                 "reference_direct_route_length_m": self.detour_reference.total_m,
+                 "final_sampled_route_length_m": profile.total_m,
+                 "length_difference_m": profile.total_m - self.detour_reference.total_m,
+                 "final_sampled_max_slope_deg": stats.max_slope_deg}
+                if self.detour_plan is not None else None
+            ),
             "dem_sample_step_max_m": self.step_m,
             "valid_samples_pct": round(profile.coverage_pct, 2),
             "samples_total": int(len(profile.distance_m)),
@@ -640,6 +712,9 @@ def main():
     parser.add_argument("--dem", help="Path to original USGS Jezero DEM (.tif)")
     parser.add_argument("--config", type=Path, default=SITE / "site_config.json")
     parser.add_argument("--step", type=float, default=20.0, help="Maximum sample spacing (meters)")
+    parser.add_argument("--auto-detour", action="store_true", help="Build an A* experimental detour from fixed endpoints")
+    parser.add_argument("--detour-penalty", type=float, default=12.0, help="Penalty for DEM-derived longitudinal grade")
+    parser.add_argument("--detour-max-grade", type=float, default=None, help="Optional strict maximum DEM grid-edge grade (degrees)")
     parser.add_argument("--slope-bands", nargs=3, type=float, default=[5, 10, 15],
                         metavar=("LOW", "MOD", "HIGH"),
                         help="Experimental upper bounds in degrees: 0 < LOW < MOD < HIGH < 90")
@@ -649,6 +724,10 @@ def main():
     args = parser.parse_args()
     if args.step <= 0:
         parser.error("--step must be positive")
+    if not np.isfinite(args.detour_penalty) or args.detour_penalty < 0:
+        parser.error("--detour-penalty must be nonnegative")
+    if args.detour_max_grade is not None and not (0 < args.detour_max_grade < 90):
+        parser.error("--detour-max-grade must be between 0 and 90 degrees")
     dem_path = locate_dem(args.dem)
     try:
         thresholds = SlopeThresholds(*args.slope_bands)
@@ -657,6 +736,12 @@ def main():
     terrain = Terrain(dem_path, args.config)
     try:
         editor = RouteEditor(terrain, step_m=args.step, output=args.output, thresholds=thresholds)
+        editor.detour_penalty = args.detour_penalty
+        editor.detour_max_grade = args.detour_max_grade
+        if args.auto_detour and args.load:
+            parser.error("--auto-detour and --load cannot be used together")
+        if args.auto_detour and not editor.auto_detour():
+            raise SystemExit(2)
         if args.load:
             editor.load(args.load)
         if args.export_only:
