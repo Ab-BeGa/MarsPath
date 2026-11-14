@@ -72,6 +72,26 @@ class CtxPreparationTests(unittest.TestCase):
         self.assertTrue((output / "ctx_ortho.json").exists())
         self.assertEqual(json.loads((output / "ctx_ortho.json").read_text())["kind"], "real_ctx_orthomosaic")
 
+    def test_accepts_mars_sphere_when_crs_has_generic_unknown_name(self):
+        # The official CTX GeoTIFF may use a valid Mars-radius spherical CRS
+        # without literally naming the planet 'Mars' in the embedded WKT.
+        unnamed_crs = CRS.from_string(
+            "+proj=eqc +lat_ts=18.4663 +lat_0=0 +lon_0=0 "
+            "+R=3396190 +units=m +no_defs"
+        )
+        self.assertNotIn("Mars", unnamed_crs.to_wkt())
+        source = self.make_source(crs=unnamed_crs)
+        output = self.path / "unknown_crs_out"
+        result = generate_ctx_tile(source, DEM_METADATA, output)
+        self.assertEqual(result["alignment"]["width"], 300)
+        self.assertEqual(result["alignment"]["height"], 300)
+        self.assertTrue((output / "ctx_ortho.png").exists())
+
+    def test_rejects_projected_earth_crs_even_if_crs_name_is_generic(self):
+        source = self.make_source(crs=CRS.from_epsg(3857))
+        with self.assertRaisesRegex(ValueError, "Mars-sized ellipsoid"):
+            generate_ctx_tile(source, DEM_METADATA, self.path / "earth_out")
+
     def test_rejects_earth_projection(self):
         source = self.make_source(crs=CRS.from_epsg(4326))
         with self.assertRaisesRegex(ValueError, "projected Mars CRS"):
