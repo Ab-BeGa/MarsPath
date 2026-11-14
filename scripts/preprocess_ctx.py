@@ -21,6 +21,7 @@ from rasterio.crs import CRS
 from rasterio.enums import Resampling
 from rasterio.transform import from_origin
 from rasterio.vrt import WarpedVRT
+from pyproj import CRS as PyprojCRS
 
 ROOT = Path(__file__).resolve().parents[1]
 CTX_SOURCE_URL = (
@@ -70,16 +71,41 @@ def download_geo_tiff(target: Path) -> None:
         partial.unlink(missing_ok=True)
 
 
+
+def _mars_radius(crs: CRS) -> float:
+    """Read the physical ellipsoid from WKT, independent of its *name*.
+
+    Official CTX products may describe the Mars sphere as 'unknown' in their
+    CRS metadata. Reject Earth and other planetary radii instead of requiring
+    an exact, inconsistent text label.
+    """
+    try:
+        ellipsoid = PyprojCRS.from_wkt(crs.to_wkt()).ellipsoid
+        a = float(ellipsoid.semi_major_metre)
+        b = float(ellipsoid.semi_minor_metre)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Invalid planetary ellipsoid in GeoTIFF CRS") from exc
+    if not (np.isfinite(a) and np.isfinite(b)
+            and 3_300_000 <= a <= 3_500_000
+            and abs(a - b) <= 1.0):
+        raise ValueError(
+            f"Expected a spherical Mars-sized ellipsoid, got axes {a:.3f}/{b:.3f} m"
+        )
+    return a
+
+
 def _mars_crs(crs: CRS | None, *, label: str) -> CRS:
     if crs is None or not crs.is_projected:
         raise ValueError(f"{label}: projected Mars CRS is required")
-    params = crs.to_dict()
-    wkt = crs.to_wkt()
-    if params.get("proj") != "eqc" or "Mars" not in wkt:
-        raise ValueError(f"{label}: expected the Mars 2000 spherical equirectangular CRS")
-    radius = float(params.get("R", 0))
-    if radius < 3_000_000 or radius > 4_000_000:
-        raise ValueError(f"{label}: Mars spherical radius is missing/invalid")
+    _, factor = crs.linear_units_factor
+    if not np.isclose(factor, 1.0, rtol=0, atol=1e-9):
+        raise ValueError(f"{label}: projected coordinates must be in metres")
+    _mars_radius(crs)
+    # Only the original DEM is required to be equirectangular. The CTX
+    # orthomosaic can have a different valid projection/standard parallel;
+    # WarpedVRT will reproject it into the DEM's target Mars CRS.
+    if label == "DEM" and crs.to_dict().get("proj") != "eqc":
+        raise ValueError("DEM: expected Mars equirectangular target CRS")
     return crs
 
 
@@ -123,8 +149,10 @@ def generate_ctx_tile(
         if ds.count < 1:
             raise ValueError("USGS CTX image has no bands")
         # Reject implausibly mismatched Mars models rather than warping an Earth raster.
-        dem_r = float(dem_crs.to_dict()["R"])
-        ctx_r = float(ds.crs.to_dict()["R"])
+        dem_r = _mars_radius(dem_crs)
+        ctx_r = _mars_radius(ds.crs)
+        print(f"CTX source: {ds.width}×{ds.height} px, projection={ds.crs.to_dict().get('proj')}, "
+              f"Mars radius={ctx_r:.1f} m, DEM radius={dem_r:.1f} m")
         if abs(dem_r - ctx_r) > 100:
             raise ValueError("DEM and CTX use incompatible Mars spherical radii")
         with WarpedVRT(
@@ -156,7 +184,7 @@ def generate_ctx_tile(
         src_resolution = list(ds.res)
     output_dir.mkdir(parents=True, exist_ok=True)
     image_path = output_dir / "ctx_ortho.png"
-    Image.fromarray(rgba, mode="RGBA").save(image_path, optimize=True)
+    Image.fromarray(rgba).save(image_path, optimize=True)
     result = {
         "schema_version": 1,
         "kind": "real_ctx_orthomosaic",
