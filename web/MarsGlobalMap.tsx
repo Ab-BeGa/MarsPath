@@ -360,6 +360,16 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
   }, [zoomAt])
 
   const level = tileLevel(camera.zoom, LAYERS[activeLayer].maxLevel)
+  const markerWorldWidth = 512 * fitScale(size) * camera.zoom
+  const markerWorldHeight = markerWorldWidth / 2
+  const markerLeft = size.width / 2 + camera.panX - markerWorldWidth / 2
+  const markerTop = size.height / 2 + camera.panY - markerWorldHeight / 2
+  const detailedRegionMarker = {
+    x: markerLeft + ((JEZERO.longitude + 180) / 360) * markerWorldWidth,
+    y: markerTop + ((90 - JEZERO.latitude) / 180) * markerWorldHeight,
+  }
+  const detailedRegionVisible = detailedRegionMarker.x >= 0 && detailedRegionMarker.x <= size.width &&
+    detailedRegionMarker.y >= 0 && detailedRegionMarker.y <= size.height
   return (
     <section ref={cardRef} className={`global-map-card${expanded ? ' is-expanded' : ''}`} aria-labelledby="global-map-title">
       <div className="global-map-heading">
@@ -435,6 +445,11 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
             onPointerDown={handlePointerDown} onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp} onPointerCancel={() => { drag.current = null }}
             onPointerLeave={() => setCursorCoordinates(null)} />
+          {detailedRegionVisible && <button type="button" className="global-detailed-region-pin"
+            style={{left:detailedRegionMarker.x,top:detailedRegionMarker.y}}
+            aria-label={t('globe.detail')} onClick={onOpenRegion}>
+            <span>▣</span><b>Jezero</b><small>{t('globe.region.report')}</small>
+          </button>}
           <div className="global-site-markers" aria-label={t('map.sites.title')}>
             {clusters.map(cluster => {
               const grouped = cluster.sites.length > 1
