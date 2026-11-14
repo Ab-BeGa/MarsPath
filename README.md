@@ -1,458 +1,188 @@
-# MarsPath — данные рельефа Езеро
+# Jezero Traverse — Mars Mission Planning System
 
-Текущий этап — подготовка рельефа Езеро и проверка марсианских координат перед подключением данных к веб-планировщику. Это пока не оценка безопасности маршрута.
+[![Web CI](https://github.com/Ab-BeGa/jezero-traverse/actions/workflows/web-tests.yml/badge.svg)](https://github.com/Ab-BeGa/jezero-traverse/actions/workflows/web-tests.yml)
+[![Python CI](https://github.com/Ab-BeGa/jezero-traverse/actions/workflows/python-tests.yml/badge.svg)](https://github.com/Ab-BeGa/jezero-traverse/actions/workflows/python-tests.yml)
+[![Docker CI](https://github.com/Ab-BeGa/jezero-traverse/actions/workflows/docker.yml/badge.svg)](https://github.com/Ab-BeGa/jezero-traverse/actions/workflows/docker.yml)
 
-Python здесь используется для разовой подготовки и проверки файлов рельефа на компьютере. Это не сервер и не backend приложения: будущий интерфейс на React/TypeScript сможет читать компактные файлы из `public/data/jezero/`.
+**NASA Space Apps Challenge 2026 · Jezero crater, Mars · Research demonstration**
 
-## Что подготовлено
+Jezero Traverse explores a **1.5 × 1.5 km** area in Jezero crater's western delta using genuine NASA/USGS terrain data. The web app has an interactive **20 m CTX DEM** map, georeferenced **5 m CTX optical** layer, demo base/science landmarks, direct and experimental A* detour routes, elevation profiles, longitudinal slope bands, route comparison, and **Russian / English / Kazakh** interface localization. Language selection persists after a page reload.
 
-- Исходный USGS Mars 2020 Science Investigation CTX DEM Mosaic, 20 м/пиксель.
-- Скрипт [`scripts/preprocess_dem.py`](scripts/preprocess_dem.py), который проверяет растр, координаты проектных точек и экспортирует локальный участок 1,5 × 1,5 км.
-- Компактный набор для браузера: `heights.f32`, `mask.u8`, `metadata.json` и контрольные суммы в `public/data/jezero/`.
-- Координаты базы и научной остановки выведены на карту: [`docs/jezero_site_points.png`](docs/jezero_site_points.png).
-- Проверки координат, пикселей и расстояния описаны в [`docs/COORDINATE_VALIDATION.md`](docs/COORDINATE_VALIDATION.md); сведения о выбранных точках — в [`docs/SITE_SELECTION.md`](docs/SITE_SELECTION.md).
+> **Not an EVA safety system.** A 20 m DEM grid cannot resolve individual rocks, material strength, cross-slope or astronaut constraints. No experimental slope class or A* result proves traversability. Three Forks and Wildcat Ridge/Hazeltop are demonstration reference areas; their route coordinates are not certified landing or fieldwork positions.
 
-Исходный GeoTIFF исключён из Git через `.gitignore`; скачивайте его на локальный компьютер. В `sources/` проектного зеркала ничего не сохраняйте и не меняйте.
+## Quick start: see the map in minutes
 
-## Повторить подготовку
+The **large original GeoTIFF is not needed** to run the website: compact DEM, metadata and CTX optical files are committed to Git.
 
-Требуется Python и зависимости из [`requirements.txt`](requirements.txt). В PowerShell из корня репозитория:
+### Node.js (Windows, macOS and Linux)
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-New-Item -ItemType Directory -Force data | Out-Null
-Invoke-WebRequest `
-  -Uri "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.xml" `
-  -OutFile "data/M20_JezeroCrater_CTXDEM_20m.xml"
-.\.venv\Scripts\python.exe scripts\preprocess_dem.py --download
-```
+Install **Git and Node.js 22**. Python is not required just to browse.
 
-`--download` скачает исходный GeoTIFF, если его нет. Точки берутся из [`points/jezero_points.csv`](points/jezero_points.csv). Результат содержит 75 × 75 ячеек при исходном шаге 20 м, отдельную маску пропусков, CRS, границы, NoData, высоты точек и SHA-256. Скрипт остановится с ошибкой, если CRS, шаг сетки, NoData или покрытие точек не соответствуют ожиданиям.
+~~~bash
+git clone https://github.com/Ab-BeGa/jezero-traverse.git
+cd jezero-traverse
+npm ci
+npm test
+npm run build
+npm run dev
+~~~
 
-## Ограничения
+Open the **local URL shown in the terminal** (usually http://127.0.0.1:8000/). Do not open the HTML via file://. Press Ctrl+C to stop.
 
-- DEM описывает рельеф на масштабе своей сетки и не обнаруживает отдельные небольшие камни.
-- Модельное время движения и любые пороги проходимости должны быть добавлены отдельно и обозначены как допущения команды.
-- Этот продукт не сертифицирует EVA и не гарантирует безопасность.
-- Точки базы и научной остановки заданы таблицей задач; названия точек не проверены этим DEM-скриптом.
+**Windows PowerShell:** if script execution policy blocks npm, replace npm with npm.cmd: npm.cmd ci, npm.cmd test, npm.cmd run build, npm.cmd run dev.
 
-Источник и подробная запись — [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md).
+### Docker: no local Node.js or Python needed
 
-## Данные для веб-планировщика
+Install **Docker Desktop / Docker Engine and Compose V2**; from the repository root:
 
-Чтобы получить компактную локальную сетку `public/data/jezero/` (массивы высот Float32, отдельная NoData-маска, JSON-метаданные и контрольные суммы), из корня репозитория выполните:
+~~~bash
+docker compose up --build -d
+docker compose ps
+~~~
 
-```powershell
-python -m pip install -r requirements.txt
-python scripts/preprocess_dem.py --download
-python -m unittest discover -s tests -v
-```
+Open **http://localhost:8080/**. Health endpoint: **http://localhost:8080/_health**.
 
-`data/M20_JezeroCrater_CTXDEM_20m.tif` — скачанный исходный GeoTIFF (не хранится в Git). `public/data/jezero/heights.f32` и `mask.u8` — компактные файлы для чтения сетки в браузере. Сетка сохраняет исходный шаг 20 м и марсианскую проекцию; координаты не переводятся в земную WGS84.
+~~~bash
+docker compose logs --tail=100
+docker compose down
+~~~
 
-## Интерактивные маршруты с поворотами
+Rebuild after updates with git pull --ff-only origin main and docker compose up --build -d. Port already occupied? Edit the **host port** in compose.yaml to 8081:8080, then open http://localhost:8081/.
 
-Объединённый модуль: `profile_mars.py` показывает реальный участок NASA/USGS DEM, позволяет добавлять и перетаскивать промежуточные точки, строит профиль высот и экспортирует маршрут. Две конечные точки (условная база и научная остановка) фиксированы. Код геометрии вынесен в `route_geometry.py`, тесты — в `tests/test_route_geometry.py`.
+**Docker runs only the built static React/TypeScript application**, including existing DEM and CTX assets. It is not a Python backend; to create custom route JSON, run the Python editor separately. See [Docker operations](docs/DOCKER.md).
 
-**Используется тот же исходный DEM, что и в пайплайне подготовки:** `data/M20_JezeroCrater_CTXDEM_20m.tif` (скачивается отдельно, в Git не хранится). Если файл лежит в `jezero_site_selection/`, программа тоже найдёт его.
+## 5-minute demo for a teammate or jury
 
-Из корня репозитория:
+1. Open the site and choose **Русский / English / Қазақша** in the header. Refresh and verify the choice is remembered.
+2. Open **Surface map**. Pan, zoom, inspect coordinates/elevation in the 75 × 75 original CTX DEM cells (20 m posting), and focus reference markers A (Three Forks) and B (vicinity of Wildcat Ridge).
+3. Switch the **DEM relief** and **CTX 5 m optical** layers. The optical image shows finer *visual* surface detail; **elevation measurements are still based on the 20 m DEM**. Open the science stop and source/limitations panels.
+4. Scroll to **Route comparison**. Upload one direct and one detour **route_waypoints.json** from the Python steps below. Both exports must have identical original DEM SHA-256, Mars CRS, start/end points, grade limits and sample step.
+5. Compare measured distances, ascents, maximum measured grade, difficult intervals and missing DEM coverage; switch the active route on the map.
+6. Click a sample in the elevation profile to highlight that location on the map; review color-coded steepness and the threshold settings. Experiment with 4°/9°/14° and restore defaults.
+7. Explain the scientific caveat: a detour might reduce the steep measured segments but the grid alone cannot certify human or rover safety.
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe profile_mars.py
-```
+Without route exports, **the terrain map, optical CTX and science cards still work**; the website does not invent missing routes.
 
-Управление: клик ЛКМ — добавить промежуточную точку в ближайший сегмент; перетаскивание ЛКМ — переместить; ПКМ — удалить; `Ctrl+Z` — отмена; `R` — сброс; `E` — экспорт. Файлы `route_profile.csv`, `route_waypoints.json`, `route_profile.png` сохраняются в корне проекта и исключены из Git.
+## Generate compatible route exports with Python
 
-Повторно загрузить сохранённый маршрут:
+Install **Python 3.11**, an Internet connection for the **initial** NASA/USGS download, and dependencies from requirements.txt. Always run commands from the repository root.
 
-```powershell
-.\.venv\Scripts\python.exe profile_mars.py --load route_waypoints.json
-```
+### Windows PowerShell
 
-Проверить модульные тесты:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-```
-
-`jezero_site_selection/site_config.json` хранит исходные точки и границы для настольного редактора; `points/jezero_points.csv` и `public/data/jezero/metadata.json` остаются источниками входных точек/экспорта для ETL и будущего браузерного интерфейса. Координаты двух точек согласованы, но при дальнейших изменениях их нужно синхронизировать.
-
-**Ограничение:** 20 м/пиксель не позволяет доказать безопасность передвижения. Маршрут с поворотами — демонстрационная геометрия, а не сертифицированный расчёт EVA.
-
-
-## Высоты и статусы отсчётов — задача №7
-
-Маршрут с поворотами разбивается на сегменты. Каждый сегмент считывается по исходной модели USGS CTX DEM с шагом **не более 20 м**, включая начальную/конечную точки и без повторения соседних контрольных точек.
-
-Отсчёты сохраняют непрерывное расстояние от базы, проецированные координаты X/Y, марсианские широту/долготу и высоту. Для каждого отсчёта указан `dem_status`:
-
-- `valid` — исходный пиксель DEM содержит конечную высоту;
-- `nodata` — исходная маска DEM/NoData или отсутствующее числовое значение;
-- `outside_roi` — точка внутри исходного DEM, но за пределами выбранного участка;
-- `outside_dem` — точка за пределами самого GeoTIFF;
-- `invalid_xy` — координата не является конечным числом.
-
-**Пропуски не интерполируются.** Высота остаётся пустой в `route_profile.csv`, а на графике появляется разрыв. В `route_waypoints.json` записываются `samples_total`, `samples_missing` и `dem_status_counts`. `valid_samples_pct` показывает долю измерений, но не является показателем безопасности.
-
-Быстрая проверка и экспорт без открытия окна:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe profile_mars.py --export-only
-```
-
-В обычном режиме можно добавлять и перемещать промежуточные точки и следить за изменением доли валидных измерений. Для реальной проверки нужен исходный GeoTIFF в `data/`; модульные тесты используют небольшую **синтетическую** модель для проверки NoData и границ.
-
-## Интерактивный профиль высот — задача №8
-
-В **Jezero Traverse / Mission Control** карта и профиль высот синхронизированы:
-
-- **Наведи курсор на график:** жёлтый маркер покажет соответствующую точку на карте.
-- **Наведи курсор на линию маршрута на карте:** график выделит ближайший реально измеренный отсчёт.
-- **Нажми левой кнопкой на графике:** закрепи выбранный отсчёт, чтобы прочитать расстояние, высоту и статус DEM; повторное нажатие на точку снимает закрепление.
-- На графике обозначены **A (база)**, **B (научная цель)** и промежуточные контрольные точки маршрута. При большом числе близких поворотов подписи прореживаются, чтобы не перекрываться.
-- При NoData высота **не интерполируется**, выводится предупреждение `NODATA`; исходный разрыв профиля сохраняется.
-- После добавления, удаления или перетаскивания контрольных точек профиль и метки перестраиваются. Перемещение курсора не запускает повторное чтение GeoTIFF — используются готовые отсчёты.
-
-В PowerShell, из корня репозитория:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe profile_mars.py
-```
-
-Автоматические проверки интерактивного режима в `tests/test_profile_interaction.py` работают на **синтетическом** марсианском GeoTIFF. Окончательная визуальная проверка проводится на локально скачанной оригинальной USGS DEM. Этот график помогает исследовать рельеф, но не гарантирует проходимость или безопасность EVA.
-
-## Метрики рельефа и маршрута — задача №9
-
-В правой панели **Mission Control** автоматически пересчитываются следующие параметры для текущей линии с поворотами:
-
-- **PATH DISTANCE** — суммарная длина по горизонтальным проецированным координатам Марса;
-- **ASCENT** — сумма всех положительных изменений высоты между соседними **действительными** отсчётами DEM;
-- **DESCENT** — сумма модулей всех отрицательных изменений;
-- **NET CHANGE** — разность конечной и начальной высот, если обе точки имеют данные;
-- **MAX MEAS. SLOPE** — максимальный модуль измеренного продольного уклона между соседними отсчётами, в градусах: arctan(abs(Δh)/Δs).
-
-Самый крутой *измеренный* интервал подсвечен оранжевым на карте и на графике. Показатели сохраняются в блоке `route_metrics` файла `route_waypoints.json`. Числовые характеристики получаются из тех же отсчётов, что и график.
-
-### Интерпретация пропусков
-
-Если какой-то отсчёт имеет статус `nodata` / `outside_roi` / `outside_dem`, два интервала, прилегающие к нему, **исключаются** из анализа подъёма, спуска и крутизны. Пропуски не интерполируются. В UI появляется **PARTIAL DATA: X% ANALYZED**; в JSON сохраняется доля проанализированной длины и признак неполного покрытия. Если ни одного действительного интервала нет, подъём, спуск и максимальный уклон представлены как `null` (а в UI — «—»), а не как нулевые показатели.
-
-### Ограничения метода
-
-- Исходный USGS CTX DEM имеет шаг сетки 20 м. Шаг выбора точек по маршруту — не более 20 м; оценка уклона относится только к последовательным измеренным отсчётам, **не** к точной физической крутизне каждого метра пути.
-- Повторные значения одного пикселя, отсутствие камней меньшего размера и возможная неопределённость DEM ограничивают практическую точность оценок.
-- Ни длина, ни оценка уклона сами по себе не подтверждают безопасный маршрут для астронавта.
-- Для честного сравнения двух маршрутов требуется одна исходная модель высот, одинаковая методика выборки и явно зафиксированные пропуски.
-
-Из корня репозитория в PowerShell:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe profile_mars.py
-```
-
-Для безоконного экспорта показателей с оригинальной скачанной DEM: `python profile_mars.py --export-only`. Тесты `tests/test_route_metrics.py` и `tests/test_route_metrics_dashboard.py` используют **синтетические** DEM и профили с известными результатами.
-
-## Экспериментальная оценка сложности рельефа — задача №11
-
-Модуль `traversability.py` классифицирует **продольный уклон последовательных измеренных отрезков выбранного маршрута**. Он не требует будущего модуля двумерных локальных уклонов, над которым параллельно работает другой участник.
-
-### Настраиваемые категории (не стандарты NASA)
-
-| Категория | Диапазон с исходными настройками |
-|---|---|
-| GENTLE | 0–5° |
-| MODERATE | более 5° до 10° |
-| STEEP | более 10° до 15° |
-| VERY STEEP | более 15° |
-| NO DATA | высота неизвестна у хотя бы одной конечной точки интервала |
-
-Три числовых поля **TEST SLOPE LIMITS / DEGREES** на правой панели позволяют изменять экспериментальные верхние границы (по возрастанию, строго от 0 до 90°; нажмите Enter). Система тут же перерасчитывает цветовые отрезки карты и графика и доли маршрута, соответствующие категориям. Такие же границы можно задать при запуске: `python profile_mars.py --slope-bands 4 9 14`.
-
-На карте подсвечиваются измеренные участки маршрута: бирюзовый / жёлтый / оранжевый / розовый. Неизвестные интервалы отображаются **серым пунктиром**, а не считаются пологими. В нижней строке показаны общая длина категорий STEEP + VERY STEEP и неизвестная длина. Маркер «x» отдельно отмечает максимальный **измеренный** уклон — независимо от категории.
-
-При **EXPORT ROUTE** создаётся отдельный `route_traversability.csv` со строкой для каждого интервала (расстояния начала/конца, длина, измеренный уклон, категория). JSON `route_waypoints.json` содержит `experimental_traversability`, использованные пороги, длину по категориям и предупреждение об ограничениях.
-
-**Ограничение:** это классификация только по продольному уклону, измеренному из DEM 20 м/пиксель. Она не учитывает мелкие камни, рыхлый грунт, боковой уклон, погоду и фактические ограничения экипажа. Даже зелёная категория **не означает безопасный или гарантированно проходимый маршрут**. Отдельная карта уклонов всей площади будет интегрирована после выполнения задачи №10.
-
-Проверить:
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe profile_mars.py
-```
-
-## Обходной маршрут A* — задача №13
-
-Автоматический экспериментальный обход от **Three Forks (A)** до **Wildcat Ridge (B)**. Кнопка **AUTO DETOUR (A*)** в Mission Control строит вариант, учитывающий расстояние, измеренный перепад высот между соседними ячейками исходного USGS CTX DEM и доступность данных. После расчёта прямая A→B показана белым пунктиром для визуального сравнения, а цветной обход можно изменять вручную; **RESET** возвращает прямую линию, **UNDO** отменяет действие.
-
-- Используется A* по 8 соседним ячейкам модели высот. Стоимость перехода: `distance × (1 + penalty × (measured_grade_deg / 10)^2)` (по умолчанию penalty = 12).
-- Ячейки NoData, участки вне исследуемой области и диагональные срезания через углы недоступных ячеек исключаются. Неизвестная высота не приравнивается к ровному участку.
-- По умолчанию действует **мягкий штраф**, а не жёсткий запрет по градусам: если более пологий обход недоступен, маршрут может всё равно проходить по крутым ячейкам. По желанию можно включить экспериментальное ограничение `--detour-max-grade 20`, при невозможности прохода будет явная ошибка.
-- Первая и последняя точки совпадают с исходной парой A/B. Внутри построенного пути остаются поворотные узлы сеточного маршрута (без пересечения пропусков). После расчёта фактический профиль заново считывается из оригинальной DEM; если высотные данные отсутствуют, результат не принимается.
-- Показатели пути считаются теми же функциями, что у ручного и прямого маршрутов. Длина обхода **не обязана быть меньше**, а максимальный измеренный уклон **не гарантированно ниже** — A* минимизирует определённую модельную стоимость, а не обеспечивает проверенную безопасность.
-
-### Запуск на Windows
-
-Из корня репозитория после скачивания USGS GeoTIFF в `data/`:
-
-```powershell
-$py = "..\jezero_site_selection\.venv\Scripts\python.exe"
-& $py -m unittest discover -s tests -v
-& $py profile_mars.py
-```
-
-Нажмите кнопку **AUTO DETOUR (A*)**. Для автоматической генерации и экспорта без открытия окна:
-
-```powershell
-& $py profile_mars.py --auto-detour --export-only --output .\detour_results
-```
-
-Можно настроить штраф: `--detour-penalty 20`, либо экспериментальный жёсткий предел: `--detour-max-grade 25`. Если путь не существует при указанных ограничениях, программа сообщает об этом и **не заменяет** текущий ручной маршрут.
-
-После экспорта:
-- `route_waypoints.json` — точные координаты A/B, найденные поворотные точки и блок `detour_planning` с параметрами A*, ценой поиска и разницей длин с прямой;
-- `route_profile.csv` — измеренные высоты;
-- `route_traversability.csv` — категории экспериментальных уклонов;
-- `route_profile.png` — изображение панели.
-
-Для повторного открытия проложенного обхода используйте `profile_mars.py --load .\detour_results\route_waypoints.json`. После загрузки путь редактируется вручную, а автоматическое происхождение маршрута повторно не утверждается.
-
-**Важное ограничение:** CTX DEM 20 м/пиксель не выявляет локальные валуны, трещины, рыхлые грунты, боковой уклон, погодные и радиационные риски. Это прототип планирования пути, **не разрешение на EVA**. Сравнение метрик как отдельную конкурсную функцию разрабатывает Арыслан (задача №14). Тесты `test_detour_planner.py` и `test_detour_dashboard.py` используют синтетическую DEM и не заменяют проверку на настоящем GeoTIFF.
-
-## Основной экран карты (Task #17)
-
-Теперь браузерный интерфейс открывается сразу с настоящей **75×75-пиксельной
-моделью высот западной дельты Jezero**, подготовленной командой из исходной
-USGS CTX DEM. Источник в репозитории:
-
-- `public/data/jezero/metadata.json` — система координат, точки A/B, размеры,
-  привязка, происхождение и SHA-256 источника;
-- `public/data/jezero/heights.f32` — 32-битные высоты с little-endian кодировкой;
-- `public/data/jezero/mask.u8` — маска действительных пикселей.
-
-Для визуализации используется рельефная цветовая шкала с вычисленным
-освещением (hillshade). Это **не ортофотоплан**; подключение оптического CTX
-оставлено для отдельной задачи №18. Цифровая модель 20 м/пиксель не разрешает
-мелкие препятствия.
-
-### Запуск на Windows
-
-```powershell
-cd "$env:USERPROFILE\Desktop\NASA-Jezero\jezero-traverse"
-git switch main
-git pull --ff-only origin main
-npm.cmd ci
-npm.cmd test
-npm.cmd run build
-npm.cmd run dev
-```
-
-Открой адрес из терминала (обычно `http://127.0.0.1:8000` или другой выданный
-локальным сервером порт). **Не открывай `index.html` через `file://`**:
-бинарные данные загружаются через HTTP из `dist/data/jezero/`.
-
-Возможности экрана:
-
-- перемещение зажатой ЛКМ или стрелками после фокусировки на карте;
-- приближение колесом мыши или кнопкой `+`, отдаление `−`, сброс масштаба `0`;
-- координаты Mars 2000 planetocentric N / positive-east E и высота исходного
-  пикселя DEM под указателем; клик фиксирует точку, Escape снимает фиксацию;
-- интерактивные ориентиры A: Three Forks (условная база) и B: Wildcat Ridge
-  (научная цель) с кнопками быстрого приближения;
-- визуальный масштаб, легенда высот, значения min/max и покрытие NoData;
-- адаптивное расположение карты и телеметрии для телефона и компьютера.
-
-**Сравнение маршрутов Арыслана** из `web/compareRoutes.ts` сохранено ниже
-карты без изменения алгоритма проверки DEM, концов маршрутов и порогов.
-Отображение двух линий поверх карты, интерактивный профиль и подсветка
-маршрутов будут реализованы по самостоятельным задачам №19–21.
-
-Новые файлы: `web/marsTerrain.ts` (декодирование и проверка исходных
-дем-данных), `web/MarsMap.tsx` (Canvas/React карта),
-`web/marsTerrain.test.ts` (тесты координат, бинарных данных, маски и валидации).
-CI для веб-интерфейса проверяет TypeScript, тесты Node и production-сборку.
-
-## Оптический слой CTX (Task #18)
-
-Источник: USGS Astrogeology, Mars 2020 Science Investigation CTX orthomosaic 5 м/пиксель, совмещённый с CTX DEM:
-https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic
-
-Это настоящий оптический снимок орбитального аппарата Mars Reconnaissance Orbiter, а не раскрашенная высотная DEM или неподтверждённый browse-JPEG.
-
-### Подготовка слоя из официального GeoTIFF
-
-В Windows PowerShell из корня репозитория:
-
-```powershell
-$py = "..\jezero_site_selection\.venv\Scripts\python.exe"
+~~~powershell
+py -3.11 -m venv .venv
+$py = ".\.venv\Scripts\python.exe"
 & $py -m pip install -r requirements.txt
-& $py scripts/preprocess_ctx.py --download
-```
 
-Параметр --download загружает ПОЛНЫЙ официальный GeoTIFF, который может быть очень большим. Он сохраняется в data/M20_JezeroCrater_CTXortho_mosaic_5m.tif и не коммитится в Git.
-Если исходный файл уже скачан, укажи его через --source вместо --download.
+# Download/check original 20 m Mars GeoTIFF once (large transfer).
+& $py scripts/preprocess_dem.py --download
 
-Скрипт проверяет подлинную Mars CRS и сопоставимость её радиуса с DEM, берёт ровно 1,5×1,5 км участка из metadata.json, и через rasterio.WarpedVRT переводит только оптические пиксели в DEM CRS и ту же границу ROI с разрешением 5 м/пиксель. DEM остаётся нетронутой.
-
-Два компактных результата:
-- public/data/jezero/ctx_ortho.png (300×300, grayscale RGBA, прозрачные NoData)
-- public/data/jezero/ctx_ortho.json (источник, SHA-256, исходная CRS, преобразование, подтверждённые границы ROI и покрытие).
-
-**Без этих файлов кнопка CTX · 5 м намеренно отключена.** Нельзя показывать декоративную картинку как реальную геопривязанную фотографию.
-
-### Добавить изображения в рабочую ветку
-
-```powershell
-git switch feature/ctx-optical-layer
-git pull --ff-only origin feature/ctx-optical-layer
-git add public/data/jezero/ctx_ortho.png public/data/jezero/ctx_ortho.json
-git commit -m "data(ctx): add true georeferenced Jezero CTX tile"
-git push origin feature/ctx-optical-layer
-```
-
-После появления подложки запустить npm.cmd test, npm.cmd run build и Python тесты; проверить изображение в браузере, затем слить PR в main.
-
-Рельеф DEM и CTX переключаются в той же карте; координаты и высоты остаются привязанными к исходной DEM. Оптический слой не доказывает безопасность EVA.
-
-## Подсветка крутых участков (задача №21)
-
-В интерфейсе Mission Control после загрузки **обоих экспортированных
-маршрутов** открой карту: у активного пути появляются цветные интервалы
-измеренного продольного уклона, интерактивная легенда и отдельный
-цветной профиль DEM. Переключай прямой и обходной пути штатной кнопкой
-из задачи №19. Пороговые значения одинаковы в графике и на карте.
-
-| Интервал | Порог по умолчанию | Цвет |
-|---|---:|---|
-| Пологий | ≤ 5° | бирюзовый |
-| Умеренный | (5°, 10°] | жёлтый |
-| Крутой | (10°, 15°] | оранжевый |
-| Очень крутой | > 15° | розовый |
-| Нет данных | нет высоты хотя бы одного конца интервала | серый пунктир |
-
-Это **экспериментальные категории** — не допуски NASA и не критерии
-безопасности EVA. Нажми «Применить пороги», чтобы изменить три значения
-(требуется 0 < первое < второе < третье < 90°).
-Кнопка «5° / 10° / 15°» возвращает исходные значения.
-Отдельный чекбокс отключает/включает цветную подсветку на карте.
-
-Внутри `web/routeSlopes.ts` маршрут дискретизируется по длине каждые
-≤20 м, высоты берутся **только из исходных DEM-пикселей**, без
-интерполяции высоты и без искусственного восстановления NoData.
-Измеренный абсолютный продольный уклон между последовательными
-действительными отсчётами рассчитывается по формуле
-`atan(abs(z2-z1)/(d2-d1)) * 180/π`. Отсутствующие отсчёты получают
-категорию `unknown`, не `gentle`.
-
-График в `web/RouteSlopePanel.tsx` и карта используют **один общий
-SlopeReport**, исключая расхождение легенды и сегментов. Он не меняет
-исходные маршруты, A*, DEM, CTX, координаты и код расчёта
-у задач №10, №11 и №20. При подключении коллегами
-интерактивного профиля №20 модуль уклонов можно использовать там же.
-
-Локальная проверка на Windows:
-
-```powershell
-git switch main
-git pull --ff-only origin main
-npm.cmd ci
-npm.cmd test
-npm.cmd run build
-npm.cmd run dev
-```
-
-Загрузи в веб-форму снизу два JSON из `results/direct` и
-`results/detour`. Должны совпасть SHA-256 исходного GeoTIFF и Mars CRS.
-Появится подсветка на карте и график крутизны. Пока JSON не загружены,
-приложение показывает исходный рельеф и научные ориентиры без
-выдуманного маршрута.
-
-## Опубликованные данные локальных уклонов (задача №10)
-
-Команда сохранила результаты расчёта локальных уклонов по исходной
-USGS CTX DEM западной дельты Езеро в `results/jezero_slopes/`.
-Это **исходные вычисленные данные**, а не уклоны конкретной EVA-траектории
-и не подтверждение безопасности передвижения.
-
-| Файл | Назначение |
-|---|---|
-| `local_max_slope_deg.f32` | Сетка 75×75, 32-bit float little-endian, порядок строк DEM; максимальный измеренный угол к действительным 8 соседям для каждой ячейки; `NaN` — нет измерения |
-| `local_slopes.png` | Научная иллюстрация распределения локальных уклонов и положения наиболее крутого измеренного перехода |
-| `slope_summary.json` | Метод, размеры пикселей, покрытие, максимальный измеренный угол и ограничения |
-
-Метод: для каждой пары соседних пикселей считаем
-`atan2(abs(z2 - z1), distance_xy) * 180/pi` и сохраняем наибольший
-из допустимых углов по восьми направлениям. Внешний источник DEM — USGS;
-`terrain_slopes.py` не интерполирует NoData, а визуальное изображение
-не добавляет новых физических измерений.
-
-Проверенное значение для участка: **22 052** действительных соседних
-перехода; максимум измеренного локального угла **31,14°**. Это
-локальный уклон на DEM, **не** максимальный продольный уклон вдоль
-прямого или обходного маршрута (последние рассчитываются отдельно).
-
-Для повторного вычисления на Windows:
-
-```powershell
-$py = "..\\jezero_site_selection\\.venv\\Scripts\\python.exe"
-& $py terrain_slopes.py
+# Verify terrain algorithms and stored compact assets.
 & $py -m unittest discover -s tests -v
-```
 
-`tests/test_published_slope_results.py` независимо пересчитывает уклоны
-по сохранённой DEM, проверяет каждое значение Float32 и `NaN`, параметры
-JSON и корректность PNG. Исходный огромный GeoTIFF не включён в Git:
-воспроизводимость обеспечивается подготовленной DEM и её метаданными
-в `public/data/jezero/`.
+# Create both comparison inputs with matching limits and step.
+& $py profile_mars.py --export-only --output results/direct
+& $py profile_mars.py --auto-detour --export-only --output results/detour
+~~~
 
-## Схема сравнения маршрутов
+Upload **results/direct/route_waypoints.json** and **results/detour/route_waypoints.json** through the website form. The route-profile CSV/PNG files are optional browser inputs.
 
-Отдельный адаптированный компонент `web/RouteOverview.tsx` использует геометрию из исходной ветки `feature/route-display-switcher`. Он размещён **внизу панели сравнения**, а не заменяет основную карту Jezero, CTX или проекции DEM. Позволяет независимо видеть оба загруженных маршрута целиком на обзорной схеме, менять активную линию и видеть общие A/B. Размеры, направление север-юг и совпадение концов проверяются тестами `web/routeOverviewGeometry.test.ts`. Контрольная схема не является орбитальной фотографией или оценкой безопасности EVA.
+### Linux / macOS
 
-## Локализация сайта / Website localization (задача №39)
+~~~bash
+python3.11 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python scripts/preprocess_dem.py --download
+.venv/bin/python -m unittest discover -s tests -v
+MPLBACKEND=Agg .venv/bin/python profile_mars.py --export-only --output results/direct
+MPLBACKEND=Agg .venv/bin/python profile_mars.py --auto-detour --export-only --output results/detour
+~~~
 
-Веб-интерфейс Jezero Traverse поддерживает **Русский / English / Қазақша**.
-Переключатель языка размещён в верхней панели и работает без перезагрузки,
-включая маршрутную карту, аналитику, данные телеметрии, научную карточку
-Wildcat Ridge, оптический слой CTX, два высотных профиля, уклоны и легенды.
-Выбранный язык сохраняется в `localStorage` под ключом
-`jezero-traverse:locale:v1`; при следующем открытии восстанавливается.
-Если storage недоступен, сайт продолжает работать, а при первом входе
-используется поддерживаемый язык браузера или русский.
-Атрибут `<html lang>` и заголовок вкладки обновляются при смене языка.
+For the **interactive desktop waypoint editor**, run Python profile_mars.py from the virtual environment (without --export-only): left click to add a waypoint, drag to move, right click to delete, Ctrl+Z undo, R reset, E export. Choose an alternate output directory with --output PATH, an explicit original DEM with --dem PATH, or slope limits with --slope-bands 4 9 14. Apply the **same** settings to both route exports; otherwise browser comparison deliberately rejects them. The --auto-detour mode invokes the experimental A* planner.
 
-Архитектура:
-- `web/i18nCatalog.ts` — утверждённые RU/EN/KK тексты с плейсхолдерами;
-- `web/i18n.tsx` — React Context, переключатель, сохранение, числовые
-  форматы `ru-RU`, `en-US`, `kk-KZ`;
-- `web/localizedErrors.ts` — только **отображение** ошибок валидаторов
-  на выбранном языке: внутренние сообщения и алгоритмы не изменены;
-- `web/i18n.test.ts` — тесты словаря, плейсхолдеров, смены языковых тегов,
-  перевода ошибок и полноты видимых JSX-подписей.
+**DEM source:** [USGS Mars 2020 CTX DEM 20 m GeoTIFF](https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.tif). The original file is approximately **90 MB** and stays in the locally ignored **data/M20_JezeroCrater_CTXDEM_20m.tif**. Do not add it to Git.
 
-При добавлении панорамы, 3D-глобуса или нового научного объекта нужно
-добавить сообщения на три языка в каталог и вызывать `useI18n().t(key)`
-для всех текстов, включая подсказки, ARIA и ошибки. Для всех трёх языков
-нельзя изменять научные значения, исходные названия миссий и пород,
-координаты, URL NASA/USGS или сохраняемые файлы JSON/GeoTIFF.
+**Optional optical CTX reproduction:** the repository **already contains** the processed optical PNG and metadata. To re-create them from the separate (potentially much larger) [USGS 5 m CTX orthomosaic GeoTIFF](https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXortho_mosaic_5m.tif), run the Python command below. This step is **not needed for Docker or the browser**.
 
-Запуск после merge:
-```powershell
-git switch main
-git pull --ff-only origin main
-npm.cmd ci
-npm.cmd test
-npm.cmd run build
-npm.cmd run dev
-```
+~~~bash
+python scripts/preprocess_ctx.py --download
+~~~
 
-Критерий приёмки: выбрать каждый язык; пройти сценарий DEM ↔ CTX,
-импорт обоих маршрутов, профиль, категории крутизны, карточку Wildcat Ridge,
-спровоцировать неверный JSON и сравнить локализованную ошибку, затем
-перезагрузить браузер и убедиться, что выбранный язык сохранился.
-Экспорт JSON и расчёт уклонов остаются идентичными на всех языках.
+## Architecture
+
+| Layer | Source | Responsibility |
+|---|---|---|
+| Entry/UI | web/main.tsx, web/MarsMap.tsx, web/styles.css | React/TypeScript, map, controls and telemetry |
+| Localization | web/i18n.tsx, web/i18nCatalog.ts, web/localizedErrors.ts | Russian, English, Kazakh; language storage and UI error copy |
+| Mars data | web/marsTerrain.ts, web/ctxOptical.ts | DEM/CTX asset loading and Mars georeferencing validation |
+| Route views | web/routeMap.ts, web/RouteOverview.tsx, web/ElevationProfileChart.tsx | Projected-Mars overlays and linked profile |
+| Slope display | web/routeSlopes.ts, web/RouteSlopePanel.tsx | Experimental grades and unknown-data intervals |
+| Route comparison | web/compareRoutes.ts | Validate direct/detour JSON against matching source DEM |
+| Python planner | profile_mars.py, detour_planner.py, route_geometry.py | Manual waypoints, experimental A*, export |
+| Scientific analysis | terrain_slopes.py, route_metrics.py, traversability.py | DEM-derived slopes, ascent and interval statistics |
+| Preprocessing | scripts/preprocess_dem.py, scripts/preprocess_ctx.py | Validate official Mars GeoTIFF and prepare compact browser assets |
+| Builds/deployment | scripts/build_web.mjs, scripts/serve_static.mjs, Dockerfile, compose.yaml | Static site build and self-contained web runtime |
+| Verification | web/*.test.ts, tests/, .github/workflows/ | Frontend/algorithm tests, Docker smoke checks |
+
+The **web application is fully static**: there is **no database, backend API or secret key**. Preprocessing and route calculation are performed separately with Python. Docker needs no mounts, credentials or external NASA services at runtime.
+
+~~~text
+Official Mars CTX DEM GeoTIFF [local only] ─┐
+                                           ├─ Python preprocessing → public/data/jezero/
+USGS CTX optical GeoTIFF [optional, local] ─┘                         ├─ heights.f32
+                                                                    ├─ mask.u8
+                                                                    ├─ metadata.json + checksums.sha256
+                                                                    └─ ctx_ortho.png + ctx_ortho.json
+
+Python profile_mars.py → direct/route_waypoints.json ──┐
+                       detour/route_waypoints.json ────┼─ Browser upload
+Browser reads public/data/jezero/ ──────────────────────┴─ React map + analytics
+~~~
+
+After **npm run build**, the served **dist/** directory contains index.html, assets/main.js, assets/main.css and data/jezero/. Docker uses this exact production build.
+
+### Scientific data shipped in Git
+
+- **public/data/jezero/heights.f32** — 75×75 Float32 LE heights in metres, **20 m source cell posting**.
+- **public/data/jezero/mask.u8** — separate valid/NoData mask. Missing elevations are *never* interpolated as valid terrain.
+- **public/data/jezero/metadata.json** and **checksums.sha256** — original USGS source, grid shape, WKT projection, reference points, SHA-256 provenance.
+- **public/data/jezero/ctx_ortho.png** and **ctx_ortho.json** — **5 m optical** imagery aligned to DEM ROI, not a new elevation product.
+- **results/jezero_slopes/** — local 8-neighbor grade raster/visualization, **not** route longitudinal grades.
+- **points/jezero_points.csv** — project demonstration coordinates of A/B.
+
+**Coordinates:** planetocentric latitude north and east-positive longitude in the actual product **Mars 2000 spherical equirectangular CRS**, with WKT radius **3,396,190 m**. Do **not** use Earth's EPSG:4326/WGS84 for the projected Mars XY routes.
+
+Further material: [Official source references](docs/DATA_SOURCES.md) · [Selection and scientific context](docs/SITE_SELECTION.md) · [Coordinate validation](docs/COORDINATE_VALIDATION.md) · [DEM preparation details](docs/DEM_HANDOFF.md) · [A* assumptions](docs/ASTAR_ALGORITHM.md). The [historical development diary](docs/IMPLEMENTATION_HISTORY.md) retains the previous detailed README.
+
+## Testing and troubleshooting
+
+Run in the repository root:
+
+~~~bash
+npm ci
+npm test
+npm run build
+python -m unittest discover -s tests -v
+docker compose build
+docker compose up -d
+~~~
+
+GitHub Actions runs **Web CI**, **Python CI** and **Docker build/smoke CI** for pull requests and pushes to main.
+
+| Symptom | Solution |
+|---|---|
+| PowerShell blocks npm | Use npm.cmd instead of npm |
+| Blank map / 404 for heights.f32 | Use the dev server URL, **not file://**; verify public/data/jezero/ and dist/data/jezero/ |
+| Optical CTX toggle disabled | Verify the **already committed** ctx_ortho.png and ctx_ortho.json files are available |
+| Routes do not appear | Both exports must match DEM SHA-256, Mars CRS, endpoints, sample step and slope thresholds |
+| Python cannot find GeoTIFF | Run Python scripts/preprocess_dem.py --download or pass --dem PATH |
+| No possible A* path | Grid or optional grade constraints may exclude all routes; do not invent a path |
+| Old language/labels | Refresh (Ctrl+F5), update main and check the saved locale in browser |
+| Docker can't bind port 8080 | Change host port in compose.yaml (for example 8081:8080) |
+| Docker cannot access NASA site | The image does **not** download USGS data; published compact rasters are packaged during build |
+
+**Handoff acceptance:** a new teammate should clone the repository, start Node or Docker without a GeoTIFF, inspect a real DEM+CTX map and A/B science stop, select three languages, optionally generate the two Python routes and compare them. No personal paths, access tokens, credentials or additional undocumented manual files are required.
+
+## Attribution
+
+This is a student/research **prototype for NASA Space Apps Challenge**, not an official NASA mission-control product. The included DEM and optical data are attributed to **NASA / USGS Astrogeology, MRO Context Camera (CTX)**. Full scientific data limitations, instrument descriptions and links are in [DATA_SOURCES.md](docs/DATA_SOURCES.md).
