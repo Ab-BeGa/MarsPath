@@ -1,4 +1,4 @@
-type Point = { x: number; y: number }
+export type Point = { x: number; y: number }
 type Metric = number | null
 
 export type ComparisonRow = {
@@ -13,6 +13,7 @@ export type RouteComparison = {
   rows: ComparisonRow[]
   coverage: { direct: number; detour: number; partial: boolean }
   demVerified: boolean
+  routes: { direct: Point[]; detour: Point[] }
 }
 
 function object(value: unknown): Record<string, unknown> {
@@ -147,5 +148,6 @@ export function compareRoutes(directInput: unknown, detourInput: unknown): Route
     rows,
     coverage: { direct: direct.coverage, detour: detour.coverage, partial: direct.partial || detour.partial },
     demVerified,
+    routes: { direct: direct.points, detour: detour.points },
   }
 }
