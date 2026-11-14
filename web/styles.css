@@ -123,6 +123,13 @@ a { color: inherit; }
 .legend-title span, .map-footer > span { color: #97aebb; font-size: 10px; }
 .relief-gradient { width: min(240px, 32vw); height: 8px; border-radius: 3px; background: linear-gradient(to right, #2d1b20, #5e3533, #995741, #cb9063, #ebcba0); }
 .map-source { margin-left: auto; color: #728f9c; font-size: 10px; text-align: right; }
+.map-info-card { margin: 1rem 0; padding: 1rem; border: 1px solid #395169; border-radius: .5rem; background: #102031; }
+.map-info-card summary { cursor: pointer; font-weight: 700; }
+.map-info-card h3 { margin: .6rem 0; }
+.map-info-card dl { display: grid; grid-template-columns: minmax(7rem, auto) minmax(0, 1fr); gap: .4rem 1rem; }
+.map-info-card dt { color: #aebfcb; }
+.map-info-card dd { margin: 0; overflow-wrap: anywhere; }
+.map-info-card a { color: #55efc4; }
 .scientific-disclaimer { color: #96aab5; font-size: 11px; line-height: 1.65; margin: 10px 0 0; }
 .comparison-section { padding-top: 10px; }
 .comparison-card { padding: 25px; }

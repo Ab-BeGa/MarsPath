@@ -487,9 +487,31 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
       </div>
       <p className="scientific-disclaimer">
         {activeLayer === 'ctx' && optical
-          ? 'Оптический CTX показывает отражённый свет в оттенках серого; координаты и высоты берутся из DEM. Подложка не подтверждает безопасность выхода астронавтов.'
-          : 'Цветной рельеф построен из высот DEM, это не орбитальная фотография. Разрешение 20 м/пиксель не показывает мелкие препятствия и не подтверждает безопасность EVA.'}
+          ? 'Оптический CTX показывает отражённый свет. Высоты берутся из DEM. Оценка пригодности маршрута для выхода экипажа требует отдельной проверки.'
+          : `Цвет и затенение показывают высоты DEM. При шаге сетки ${number.format(grid.pixel_size_m[0])} м мелкие препятствия остаются за пределами разрешения карты.`}
       </p>
+      <details className="map-info-card">
+        <summary>Источники и ограничения</summary>
+        <h3>{terrain.metadata.source.product}{(activeLayer === 'relief' || !optical) && ' · активный слой'}</h3>
+        <dl>
+          <dt>Миссия и прибор</dt><dd>Mars Reconnaissance Orbiter · {terrain.metadata.source.instrument}</dd>
+          <dt>Источник</dt><dd><a href={terrain.metadata.source.url}>{terrain.metadata.source.publisher} · исходный GeoTIFF</a></dd>
+          <dt>Год публикации</dt><dd>2021 по метке PDS4. Даты съёмки в метке мозаики не указаны.</dd>
+          <dt>Шаг сетки</dt><dd>{grid.pixel_size_m.map(value => number.format(value)).join(' × ')} м на пиксель</dd>
+        </dl>
+        <p><strong>Данные DEM.</strong> Высоты взяты из исходной сетки. Цвет и затенение визуализируют рельеф.</p>
+        <p><strong>Расчёты маршрутов.</strong> Python-планировщик вычисляет уклоны из перепадов высот, присваивает категории по экспериментальным порогам и строит обход A*. Веб-карта показывает импортированные маршруты.</p>
+        <p><strong>Ограничения.</strong> Сетка не показывает отдельные камни и свойства грунта. Пригодность маршрута для выхода экипажа требует отдельной проверки.</p>
+        <a href="https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.xml">Метка продукта PDS4</a>
+        <h3>{optical?.metadata.source.product ?? 'Оптический ортофотоплан CTX'}{activeLayer === 'ctx' && optical && ' · активный слой'}</h3>
+        <dl>
+          <dt>Миссия и прибор</dt><dd>Mars Reconnaissance Orbiter · Context Camera (CTX)</dd>
+          <dt>Источник</dt><dd><a href={optical?.metadata.source.url ?? 'https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXortho_mosaic_5m.tif'}>{optical?.metadata.source.publisher ?? 'USGS Astrogeology Science Center'} · исходный ортофотоплан</a></dd>
+          <dt>Дата съёмки</dt><dd>В метаданных слоя не указана.</dd>
+          <dt>Шаг сетки</dt><dd>{number.format(optical?.metadata.alignment.resolution_m ?? 5)} м на пиксель</dd>
+        </dl>
+        <p>Ортофотоплан показывает отражённый свет. Высоты и расчёты маршрутов по-прежнему основаны на DEM. Внешний вид поверхности сам по себе не определяет её проходимость.</p>
+      </details>
     </section>
   )
 }
