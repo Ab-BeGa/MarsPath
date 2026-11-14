@@ -1,0 +1,27 @@
+{
+  "source": "Mars 2020 Science Investigation CTX DEM Mosaic",
+  "grid_shape_rows_cols": [
+    75,
+    75
+  ],
+  "pixel_size_m_xy": [
+    20.0,
+    20.0
+  ],
+  "method": "Max absolute 8-neighbor edge slope, degrees; atan2(|dz|, horizontal_distance)",
+  "nodata_policy": "NaN if no neighboring valid measurement; no interpolation",
+  "valid_neighbor_edges": 22052,
+  "cells_with_measured_slope": 5625,
+  "max_measured_slope_deg": 31.14494985911153,
+  "steepest_edge_row_col": [
+    [
+      9,
+      73
+    ],
+    [
+      9,
+      74
+    ]
+  ],
+  "limitations": "20 m DEM scale; cannot establish actual EVA safety or small-obstacle presence"
+}
