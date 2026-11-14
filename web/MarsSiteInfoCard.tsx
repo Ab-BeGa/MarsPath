@@ -14,7 +14,7 @@ export function MarsSiteInfoCard({
   const closeRef = useRef<HTMLButtonElement>(null)
   const selected = sites.find(site => site.id === selectedId) ?? sites[0]
 
-  useEffect(() => { closeRef.current?.focus() }, [selected.id])
+  useEffect(() => { closeRef.current?.focus() }, [selected?.id])
 
   if (!selected) return null
 
