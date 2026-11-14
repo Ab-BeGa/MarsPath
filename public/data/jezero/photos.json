@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "catalog_id": "perseverance_jezero_verified",
+  "title": "Verified Perseverance images from Jezero Crater",
+  "last_verified": "2026-11-14",
+  "coordinate_reference": "IAU Mars 2000; planetocentric latitude; east-positive longitude",
+  "location_type_definitions": {
+    "exact_rover": "The rover position at image acquisition is verified from a matching PDS localization.",
+    "approximate_area": "Coordinates are a nearby rover localization and must not be interpreted as the photographed target.",
+    "none": "No defensible single coordinate is published for this catalog item."
+  },
+  "records": [
+    {
+      "id": "pia23727-sol-4-first-high-resolution-panorama",
+      "title": "Perseverance's Mastcam-Z First High-Resolution Panorama",
+      "caption": "A 360-degree panorama assembled from 79 right-eye Mastcam-Z images at the Jezero landing site.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Mastcam-Z right eye, 110 mm zoom",
+      "acquisition": { "sols": [4], "earth_dates": ["2021-02-22"] },
+      "credit": "NASA/JPL-Caltech/ASU/MSSS",
+      "page_url": "https://www.jpl.nasa.gov/images/pia23727-perseverances-mastcam-z-first-high-resolution-panorama/",
+      "image_url": "https://d2pn8kiwq2w21t.cloudfront.net/original_images/jpegPIA23727.jpg",
+      "thumbnail_url": "https://d2pn8kiwq2w21t.cloudfront.net/original_images/jpegPIA23727.jpg",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.444627146,
+        "longitude_deg": 77.450885729,
+        "localization_sol": 0,
+        "note": "Landing-site localization preceding the Sol 4 panorama; this is the rover area, not a target coordinate."
+      },
+      "sources": {
+        "metadata": "https://www.jpl.nasa.gov/images/pia23727-perseverances-mastcam-z-first-high-resolution-panorama/",
+        "image": "https://www.jpl.nasa.gov/images/pia23727-perseverances-mastcam-z-first-high-resolution-panorama/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
+    },
+    {
+      "id": "pia25736-sol-693-three-forks-sample-depot",
+      "title": "Perseverance's Portrait of the Sample Depot",
+      "caption": "A natural-color panorama of the completed sample depot at Three Forks, assembled from 368 Mastcam-Z images.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Mastcam-Z",
+      "acquisition": { "sols": [693], "earth_dates": ["2023-01-31"] },
+      "credit": "NASA/JPL-Caltech/ASU/MSSS",
+      "page_url": "https://science.nasa.gov/resource/perseverances-portrait-of-the-sample-depot/",
+      "image_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/mars/downloadable_items/4/8/48330_PIA25736-FigureD.png",
+      "thumbnail_url": "https://assets.science.nasa.gov/content/dam/science/psd/mars/resources/detail_files/2/7/27307_27307_PIA25736-web1.jpg",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.454176279,
+        "longitude_deg": 77.408447833,
+        "localization_sol": 693,
+        "note": "A Sol 693 PLACES rover localization; the exact panorama SCLK was not matched, so the point is intentionally approximate."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/resource/perseverances-portrait-of-the-sample-depot/",
+        "image": "https://science.nasa.gov/resource/perseverances-portrait-of-the-sample-depot/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
+    },
+    {
+      "id": "sol-579-mageik-amalik-outcrop",
+      "title": "Mageik Sample at Amalik Outcrop",
+      "caption": "Right Mastcam-Z view of the Mageik sedimentary rock sample collected at the Amalik outcrop.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Right Mastcam-Z",
+      "acquisition": { "sols": [579], "earth_dates": ["2022-10-06"] },
+      "credit": "NASA/JPL-Caltech/ASU",
+      "page_url": "https://science.nasa.gov/blog/perseverance-activities-at-amalik-outcrop/",
+      "image_url": "https://assets.science.nasa.gov/content/dam/science/psd/mars/images/mepjpl/Mars_Perseverance_ZR0_0579_0718352376_348EBY_N0290000ZCAM05068_1100LMJ-web.jpg",
+      "thumbnail_url": "https://assets.science.nasa.gov/content/dam/science/psd/mars/images/mepjpl/Mars_Perseverance_ZR0_0579_0718352376_348EBY_N0290000ZCAM05068_1100LMJ-web.jpg",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.450726308,
+        "longitude_deg": 77.401440293,
+        "localization_sol": 565,
+        "note": "Nearest earlier published PLACES localization; not the exact camera pose or the coordinate of Mageik."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/blog/perseverance-activities-at-amalik-outcrop/",
+        "image": "https://science.nasa.gov/blog/perseverance-activities-at-amalik-outcrop/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
+    },
+    {
+      "id": "sol-377-atsah-crater-floor-sample",
+      "title": "Atsah Crater Floor Sample",
+      "caption": "Left Mastcam-Z image of the Atsah rock core before transfer to the rover's Adaptive Caching Assembly.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Left Mastcam-Z",
+      "acquisition": { "sols": [377], "earth_dates": [] },
+      "credit": "NASA/JPL-Caltech/ASU",
+      "page_url": "https://science.nasa.gov/blog/sample-tally-for-the-crater-floor-campaign/",
+      "image_url": "https://assets.science.nasa.gov/content/dam/science/psd/mars/images/mepjpl/ZL0_0377_0700414353_613EBY_N0110108ZCAM05068_1100LMJ01-web.jpg",
+      "thumbnail_url": "https://assets.science.nasa.gov/content/dam/science/psd/mars/images/mepjpl/ZL0_0377_0700414353_613EBY_N0110108ZCAM05068_1100LMJ01-web.jpg",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.443901625,
+        "longitude_deg": 77.45243445,
+        "localization_sol": 362,
+        "note": "Nearest earlier published PLACES localization; not the exact camera pose or the coordinate of Atsah."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/blog/sample-tally-for-the-crater-floor-campaign/",
+        "image": "https://science.nasa.gov/blog/sample-tally-for-the-crater-floor-campaign/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
+    },
+    {
+      "id": "sol-424-enchanted-lake",
+      "title": "Rocks at Enchanted Lake",
+      "caption": "Right Mastcam-Z image of rocks examined at Enchanted Lake near the western Jezero delta front.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Right Mastcam-Z",
+      "acquisition": { "sols": [424], "earth_dates": [] },
+      "credit": "NASA/JPL-Caltech/ASU",
+      "page_url": "https://science.nasa.gov/blog/to-sample-or-not-to-sample/",
+      "image_url": "https://assets.science.nasa.gov/content/dam/science/psd/mars/images/mepjpl/PIA25212-web5.jpg",
+      "thumbnail_url": "https://assets.science.nasa.gov/content/dam/science/psd/mars/images/mepjpl/PIA25212-web5.jpg",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.450566324,
+        "longitude_deg": 77.401422194,
+        "localization_sol": 422,
+        "note": "Nearest earlier published PLACES localization; not the exact camera pose or a target coordinate."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/blog/to-sample-or-not-to-sample/",
+        "image": "https://science.nasa.gov/blog/to-sample-or-not-to-sample/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
+    },
+    {
+      "id": "sol-1039-bright-rocks-jezero-rim",
+      "title": "Bright Rocks on the Jezero Rim",
+      "caption": "Left Mastcam-Z view of distant light-toned outcrops near the Jezero rim, with darker boulders in the foreground.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Left Mastcam-Z",
+      "acquisition": { "sols": [1039], "earth_dates": [] },
+      "credit": "NASA/JPL-Caltech/ASU",
+      "page_url": "https://science.nasa.gov/blog/bright-rocks-on-the-horizon-an-exciting-glimpse-of-uncharted-territory/",
+      "image_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/mars/mars2020-raw-images/pub/ods/surface/sol/01039/ids/edr/browse/zcam/ZL0_1039_0759169947_803EBY_N0490370ZCAM03849_1100LMJ01_1200.jpg",
+      "thumbnail_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/mars/mars2020-raw-images/pub/ods/surface/sol/01039/ids/edr/browse/zcam/ZL0_1039_0759169947_803EBY_N0490370ZCAM03849_1100LMJ01_1200.jpg",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 18.49244782,
+        "longitude_deg": 77.339539938,
+        "localization_sol": 1021,
+        "note": "Nearest earlier published PLACES localization; not the distant outcrop coordinate or an exact camera pose."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/blog/bright-rocks-on-the-horizon-an-exciting-glimpse-of-uncharted-territory/",
+        "image": "https://science.nasa.gov/blog/bright-rocks-on-the-horizon-an-exciting-glimpse-of-uncharted-territory/",
+        "coordinates": "https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_rover_places/data_localizations/best_interp.csv"
+      }
+    },
+    {
+      "id": "pia24921-multi-sol-jezero-delta-panorama",
+      "title": "Perseverance Explores the Jezero Crater Delta",
+      "caption": "A 2.5-billion-pixel panorama assembled from 1,118 Mastcam-Z images acquired across five sols.",
+      "mission": "Mars 2020 Perseverance",
+      "camera": "Mastcam-Z",
+      "acquisition": {
+        "sols": [466, 467, 470, 471, 474],
+        "earth_dates": ["2022-06-12", "2022-06-13", "2022-06-16", "2022-06-17", "2022-06-20"]
+      },
+      "credit": "NASA/JPL-Caltech/ASU/MSSS",
+      "page_url": "https://science.nasa.gov/resource/perseverance-explores-the-jezero-crater-delta/",
+      "image_url": "https://assets.science.nasa.gov/content/dam/science/psd/mars/resources/detail_files/2/6/26979_PIA24921-web.jpg",
+      "thumbnail_url": "https://assets.science.nasa.gov/content/dam/science/psd/mars/resources/detail_files/2/6/26979_PIA24921-web.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
+      "location_type": "none",
+      "coordinates": null,
+      "sources": {
+        "metadata": "https://science.nasa.gov/resource/perseverance-explores-the-jezero-crater-delta/",
+        "image": "https://science.nasa.gov/resource/perseverance-explores-the-jezero-crater-delta/",
+        "coordinates": null
+      }
+    }
+  ]
+}
