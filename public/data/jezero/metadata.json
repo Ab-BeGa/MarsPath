@@ -14,29 +14,29 @@
     "accessed_on": "2026-11-14"
   },
   "grid": {
-    "width": 75,
-    "height": 75,
+    "width": 375,
+    "height": 375,
     "pixel_size_m": [
       20.0,
       20.0
     ],
     "bounds_projected_m": [
-      4351439.999999998,
-      1093240.0000000028,
-      4352939.999999998,
-      1094740.0000000028
+      4348439.999999998,
+      1090240.0000000028,
+      4355939.999999998,
+      1097740.0000000028
     ],
     "transform": [
       20.0,
       0.0,
-      4351439.999999998,
+      4348439.999999998,
       0.0,
       -20.0,
-      1094740.0000000028
+      1097740.0000000028
     ],
     "source_window_col_row": [
-      1122,
-      2434
+      972,
+      2284
     ],
     "dtype": "float32",
     "nodata": -3.4028234663852886e+38,
@@ -45,11 +45,11 @@
     "heights_units": "m",
     "mask_file": "mask.u8",
     "mask_encoding": "uint8 row-major; 1=valid, 0=NoData",
-    "valid_cells": 5625,
-    "total_cells": 5625,
+    "valid_cells": 140625,
+    "total_cells": 140625,
     "valid_fraction": 1.0,
-    "elevation_min_m": -2560.267578125,
-    "elevation_max_m": -2461.501708984375,
+    "elevation_min_m": -2615.513916015625,
+    "elevation_max_m": -2364.054931640625,
     "elevation_reference": "MOLA control net (USGS product metadata)",
     "resampling": "none; native source cells copied"
   },
@@ -148,7 +148,7 @@
     "Route suitability and human EVA safety are not validated by this data preparation step."
   ],
   "checksums": {
-    "heights.f32": "229f542ce3760d3f062542b7779174886cfaf1dac4c3d41ab759536ba6ee1457",
-    "mask.u8": "fd91e388ff811932e7e107c301903dc538ab53b68cb90990ebe27890854d3200"
+    "heights.f32": "89afdaa1042290cbb864efbe9489774b644b892f662bcafbe01be7e54756e192",
+    "mask.u8": "7faa74911b776b065766db7356cbd231655a17c62c48a9398b7d736719962e02"
   }
 }

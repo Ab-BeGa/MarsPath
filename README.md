@@ -6,7 +6,7 @@
 
 **NASA Space Apps Challenge 2026 · Jezero crater, Mars · Research demonstration**
 
-Jezero Traverse explores a **1.5 × 1.5 km** area in Jezero crater's western delta using genuine NASA/USGS terrain data. The web app has an interactive **20 m CTX DEM** map, georeferenced **5 m CTX optical** layer, demo base/science landmarks, direct and experimental A* detour routes, elevation profiles, longitudinal slope bands, route comparison, and **Russian / English / Kazakh** interface localization. Language selection persists after a page reload.
+Jezero Traverse explores a **7.5 × 7.5 km** area in Jezero crater's western delta using genuine NASA/USGS terrain data. The web app has an interactive **20 m CTX DEM** map, georeferenced **5 m CTX optical** layer, demo base/science landmarks, direct and experimental A* detour routes, elevation profiles, longitudinal slope bands, route comparison, and **Russian / English / Kazakh** interface localization. Language selection persists after a page reload. A separate scalable flat map covers the whole planet with NASA MOLA relief, MOC imagery, and a processed-color Viking mosaic.
 
 > **Not an EVA safety system.** A 20 m DEM grid cannot resolve individual rocks, material strength, cross-slope or astronaut constraints. No experimental slope class or A* result proves traversability. Three Forks and Wildcat Ridge/Hazeltop are demonstration reference areas; their route coordinates are not certified landing or fieldwork positions.
 
@@ -54,7 +54,7 @@ Rebuild after updates with git pull --ff-only origin main and docker compose up 
 ## 5-minute demo for a teammate or jury
 
 1. Open the site and choose **Русский / English / Қазақша** in the header. Refresh and verify the choice is remembered.
-2. Open **Surface map**. Pan, zoom, inspect coordinates/elevation in the 75 × 75 original CTX DEM cells (20 m posting), and focus reference markers A (Three Forks) and B (vicinity of Wildcat Ridge).
+2. Open **Surface map**. Explore and expand the global Mars map, switch between relief, MOC imagery, and Viking color; then pan and zoom the local Jezero map. Inspect coordinates/elevation in its 375 × 375 original CTX DEM cells (20 m posting), and focus reference markers A (Three Forks) and B (vicinity of Wildcat Ridge).
 3. Switch the **DEM relief** and **CTX 5 m optical** layers. The optical image shows finer *visual* surface detail; **elevation measurements are still based on the 20 m DEM**. Open the science stop and source/limitations panels.
 4. Scroll to **Route comparison**. Upload one direct and one detour **route_waypoints.json** from the Python steps below. Both exports must have identical original DEM SHA-256, Mars CRS, start/end points, grade limits and sample step.
 5. Compare measured distances, ascents, maximum measured grade, difficult intervals and missing DEM coverage; switch the active route on the map.
@@ -143,7 +143,8 @@ After **npm run build**, the served **dist/** directory contains index.html, ass
 
 ### Scientific data shipped in Git
 
-- **public/data/jezero/heights.f32** — 75×75 Float32 LE heights in metres, **20 m source cell posting**.
+- **public/data/jezero/heights.f32** — 375×375 Float32 LE heights in metres, **20 m source cell posting**.
+- **public/data/mars-global/** — global MOLA overview fallback and metadata for NASA MOLA, MOC, and Viking map layers. Detailed WMTS tiles need an internet connection.
 - **public/data/jezero/mask.u8** — separate valid/NoData mask. Missing elevations are *never* interpolated as valid terrain.
 - **public/data/jezero/metadata.json** and **checksums.sha256** — original USGS source, grid shape, WKT projection, reference points, SHA-256 provenance.
 - **public/data/jezero/ctx_ortho.png** and **ctx_ortho.json** — **5 m optical** imagery aligned to DEM ROI, not a new elevation product.

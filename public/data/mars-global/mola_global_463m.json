@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "title": "Mars MGS MOLA Colorized Shaded Relief",
+  "publisher": "NASA Mars Trek / Arizona State University Mars Space Flight Facility",
+  "mission": "Mars Global Surveyor",
+  "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
+  "source_product_native_resolution_m_per_pixel": 463.1,
+  "source_product_resolution_pixels_per_degree": 128,
+  "source_coverage_latitude_deg": [-88, 88],
+  "display_projection": "Equirectangular, longitude -180..180 degrees east-positive, latitude 90..-90 degrees planetocentric",
+  "display_mosaic": {
+    "file": "mola_global_overview.jpg",
+    "width": 512,
+    "height": 256,
+    "sha256": "9fe49a5b498a3bfb9b23eaa5de67f536a85e862062bdcd7c10b6f3d05b5f1971",
+    "wmts_tile_matrix": "default028mm zoom 0; two columns, one row",
+    "source_tiles": [
+      "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/0/0/0.jpg",
+      "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/0/0/1.jpg"
+    ]
+  },
+  "interactive_tiles": {
+    "service": "NASA Mars Trek WMTS 1.0.0",
+    "capabilities_url": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/WMTSCapabilities.xml",
+    "tile_url_template": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{z}/{row}/{col}.jpg",
+    "min_zoom": 0,
+    "max_zoom": 7,
+    "tile_size_pixels": 256,
+    "matrix_dimensions_by_zoom": [
+      [2, 1], [4, 2], [8, 4], [16, 8], [32, 16], [64, 32], [128, 64], [256, 128]
+    ],
+    "online_required_for_zoomed_tiles": true,
+    "max_cached_tiles_in_browser": 120
+  },
+  "display_modes": [
+    {
+      "key": "relief",
+      "title": "MOLA colorized shaded relief",
+      "layer_id": "Mars_MGS_MOLA_ClrShade_merge_global_463m",
+      "format": "image/jpeg",
+      "max_zoom": 7,
+      "native_resolution_m_per_pixel": 463.1,
+      "capabilities_url": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/WMTSCapabilities.xml"
+    },
+    {
+      "key": "satellite",
+      "title": "MGS MOC Atlas visible-light mosaic",
+      "layer_id": "msss_atlas_simp_clon",
+      "format": "image/png",
+      "max_zoom": 6,
+      "native_resolution_m_per_pixel": 231.55,
+      "capabilities_url": "https://trek.nasa.gov/tiles/Mars/EQ/msss_atlas_simp_clon/1.0.0/WMTSCapabilities.xml"
+    },
+    {
+      "key": "color",
+      "title": "Viking VIS MDIM 2.1 global color mosaic",
+      "layer_id": "Mars_Viking_MDIM21_ClrMosaic_global_232m",
+      "format": "image/jpeg",
+      "max_zoom": 7,
+      "native_resolution_m_per_pixel": 232,
+      "capabilities_url": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/WMTSCapabilities.xml"
+    }
+  ],
+  "jezero_marker": {
+    "latitude_planetocentric_deg": 18.45616697,
+    "longitude_east_deg": 77.40974302,
+    "map_x_percent": 71.502706,
+    "map_y_percent": 39.746574
+  },
+  "limitations": [
+    "Colorized shaded relief is a visualization of MOLA elevation, not a visible-light photograph.",
+    "The MOLA source product has no coverage beyond 88 degrees north and south latitude.",
+    "This global overview is for planetary context; local route calculations use the separate 20 m/pixel Jezero CTX DEM."
+  ]
+}

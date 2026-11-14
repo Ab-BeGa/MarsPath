@@ -6,6 +6,7 @@ import { ElevationProfileChart } from './ElevationProfileChart.tsx'
 import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
 import { RouteSlopePanel } from './RouteSlopePanel.tsx'
 import { useI18n } from './i18n.tsx'
+import { MarsGlobalMap } from './MarsGlobalMap.tsx'
 import {
   DEFAULT_SLOPE_THRESHOLDS, SLOPE_COLORS, measureRouteSlope,
   type SlopeThresholds,
@@ -515,7 +516,10 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
             onClick={() => { if (optical) setActiveLayer('ctx') }}>{t('map.layer.ctx')}</button>
         </div>
       </div>
-      <div className="map-layout">
+      <MarsGlobalMap onOpenRegion={() => {
+        document.getElementById('jezero-map-detail')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }} />
+      <div className="map-layout" id="jezero-map-detail">
         <div className="map-frame">
           <div className="map-canvas-wrap" ref={wrapperRef}>
             <canvas ref={canvasRef} className="mars-map-canvas" tabIndex={0} role="application"

@@ -238,9 +238,69 @@ thead { background: #132734; color: #afc9d4; }
   margin-top: 12px; border: 1px solid #304b56; border-radius: 7px;
   background: #10232f; padding: 11px 15px; font-size: 11px; color: #a8c0cc;
 }
+
+.global-map-card {
+  margin: 0 0 24px;
+  padding: 18px 20px 14px;
+  border: 1px solid #29424c;
+  border-radius: 12px;
+  background: #0c1a29;
+}
+.global-map-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+.global-map-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.global-map-heading h3 { margin: 6px 0; color: #eef6fa; font-size: 18px; }
+.global-map-heading p { margin: 0; color: #91a8b7; font-size: 12px; line-height: 1.5; }
+.global-map-jump, .global-map-detail {
+  flex: 0 0 auto; border: 1px solid #3f736e; border-radius: 7px; padding: 10px 14px;
+  background: #123c3b; color: #b9f3e4; font-size: 12px; font-weight: 750;
+}
+.global-map-jump:hover, .global-map-detail:hover { background: #1b514d; }
+.global-map-detail { border-color: #34515d; background: #10232f; color: #c3d5dc; }
+.global-map-layers { display: flex; gap: 4px; padding: 7px 8px; background: #0a1722; border-bottom: 1px solid #263f4b; }
+.global-map-layers button { border: 1px solid transparent; border-radius: 5px; padding: 7px 12px; background: transparent; color: #b4cad1; font-size: 11px; font-weight: 700; }
+.global-map-layers button:hover { background: #194251; }
+.global-map-layers button.selected { border-color: #34515d; background: #173843; color: #66edcb; }
+.global-map-frame { border: 1px solid #263f4b; border-radius: 8px; background: #07121e; overflow: hidden; }
+.global-map-toolbar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-height: 42px;
+  padding: 5px 8px; background: #0c1a29; border-bottom: 1px solid #263f4b;
+}
+.global-map-toolbar span { margin-right: auto; color: #a9c0ca; font: 10px ui-monospace, monospace; }
+.global-map-toolbar button { border: 1px solid #34515d; border-radius: 5px; padding: 5px 9px; background: #102b39; color: #eaf3f7; font-size: 11px; font-weight: 700; }
+.global-map-toolbar button:disabled { opacity: .4; }
+.global-map-image-wrap {
+  position: relative; width: min(100%, 1120px); aspect-ratio: 2 / 1; margin: 0 auto; overflow: hidden;
+  background: #0a1722; touch-action: none; cursor: grab;
+}
+.global-map-image-wrap:active { cursor: grabbing; }
+.global-map-canvas { display: block; width: 100%; height: 100%; }
+.global-map-coordinate-note { position: absolute; inset: auto 10px 8px; display: flex; justify-content: space-between; color: #e4e9ed; font: 10px ui-monospace, monospace; text-shadow: 0 1px 4px #000; pointer-events: none; }
+.global-map-coordinate-note i { margin: 0 8px; font-style: normal; }
+.global-map-help { padding: 7px 10px; color: #91a8b7; font-size: 10px; }
+.global-map-caption { margin-top: 10px; color: #849ca8; font-size: 10px; line-height: 1.5; }
+.global-map-card.is-expanded {
+  position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; gap: 10px;
+  margin: 0; padding: 16px 20px; border: 0; border-radius: 0; overflow: auto; background: #07121e;
+}
+.global-map-card.is-expanded .global-map-heading { flex: 0 0 auto; margin-bottom: 0; }
+.global-map-card.is-expanded .global-map-frame { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.global-map-card.is-expanded .global-map-image-wrap { flex: 1 1 auto; width: 100%; max-width: none; aspect-ratio: auto; min-height: 0; }
+.global-map-card.is-expanded .global-map-caption { flex: 0 0 auto; }
 @media (max-width: 600px) {
   .layer-select { max-width: 100%; }
   .layer-select button { padding: 10px 11px; font-size: 10px; }
+  .global-map-card { padding: 14px 12px 11px; }
+  .global-map-heading { align-items: flex-start; flex-direction: column; }
+  .global-map-actions { justify-content: flex-start; }
+  .global-map-layers { flex-wrap: wrap; }
+  .global-map-card.is-expanded { padding: 10px; }
+  .global-map-card.is-expanded .global-map-heading { gap: 8px; }
 }
 
 .map-info-card { margin: 1rem 0; padding: 1rem; border: 1px solid #395169; border-radius: .5rem; background: #102031; }
