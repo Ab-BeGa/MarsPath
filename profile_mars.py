@@ -28,6 +28,7 @@ from pyproj import CRS, Transformer
 from rasterio.windows import from_bounds, bounds as window_bounds
 
 from route_geometry import nearest_segment_index, route_samples
+from terrain_sampling import sample_dem_points
 
 ROOT = Path(__file__).resolve().parent
 SITE = ROOT / "jezero_site_selection"
@@ -120,18 +121,13 @@ class Terrain:
         ro, co = int(row - self.window.row_off), int(col - self.window.col_off)
         return 0 <= ro < self.grid.shape[0] and 0 <= co < self.grid.shape[1] and bool(self.has_data[ro, co])
 
+    def sample_with_status(self, xy) -> tuple[np.ndarray, np.ndarray]:
+        """Sample the source GeoTIFF and classify missing values explicitly."""
+        return sample_dem_points(self.dem, xy, self.xy_bounds)
+
     def sample(self, xy) -> np.ndarray:
-        # Real source data at every position, not values interpolated from a preview.
-        xy = np.asarray(xy, dtype=float)
-        result = np.full(len(xy), np.nan, dtype=float)
-        l, r, b, t = self.xy_bounds
-        inside = ((xy[:, 0] >= l) & (xy[:, 0] <= r)
-                  & (xy[:, 1] >= b) & (xy[:, 1] <= t))
-        if np.any(inside):
-            values = list(self.dem.sample(xy[inside], indexes=1, masked=True))
-            result[inside] = [float(v[0]) if not np.ma.is_masked(v[0]) and np.isfinite(v[0])
-                              else np.nan for v in values]
-        return result
+        """Legacy elevation-only helper retained for existing consumers."""
+        return self.sample_with_status(xy)[0]
 
 
 class RouteEditor:
@@ -299,7 +295,7 @@ class RouteEditor:
         self.refresh()
 
     def calculate(self):
-        return route_samples(self.waypoints, self.terrain.sample,
+        return route_samples(self.waypoints, self.terrain.sample_with_status,
                              meters_per_unit=self.terrain.meters_per_unit,
                              step_m=self.step_m)
 
@@ -369,6 +365,13 @@ class RouteEditor:
             g.set_ylim(float(np.nanmin(h)) - 8, float(np.nanmax(h)) + 8)
         for wd in profile.waypoint_distance_m[1:-1]:
             g.axvline(wd, color=GOLD, alpha=.36, lw=1, ls="--")
+        if profile.missing_count:
+            # Missing DEM samples are breaks, not elevations; indicate them
+            # at the graph baseline without constructing fake terrain values.
+            missing = ~valid
+            if valid.any():
+                g.scatter(d[missing], np.full(missing.sum(), float(np.nanmin(h)) - 4),
+                          marker="x", s=22, c=BAD, linewidths=1.2, zorder=5)
         g.set_xlim(0, max(1, profile.total_m))
         g.grid(color="white", alpha=.09, ls="--")
         g.set_title("ELEVATION PROFILE   /   SAMPLED FROM ORIGINAL DEM", loc="left", color=TEXT, fontsize=10, fontweight="bold", pad=12)
@@ -382,8 +385,9 @@ class RouteEditor:
         self.metric_points.set_text(str(len(self.waypoints)))
         self.metric_coverage.set_text(f"{profile.coverage_pct:.1f}%")
         self.metric_coverage.set_color(TEAL if profile.coverage_pct == 100 else BAD)
-        self.status_text.set_text("●  " + self.last_message)
-        self.status_text.set_color(BAD if "REJECTED" in self.last_message else TEAL)
+        warning = f"   •   {profile.missing_count} DEM SAMPLES MISSING" if profile.missing_count else ""
+        self.status_text.set_text("●  " + self.last_message + warning)
+        self.status_text.set_color(BAD if "REJECTED" in self.last_message or warning else TEAL)
         self.fig.canvas.draw_idle()
 
     def load(self, path: Path):
@@ -408,10 +412,11 @@ class RouteEditor:
         lon, lat = self.terrain.to_lonlat.transform(profile.xy[:, 0], profile.xy[:, 1])
         with (output / "route_profile.csv").open("w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            writer.writerow(["distance_m", "elevation_m", "x_projected", "y_projected", "latitude_n", "longitude_e"])
-            for d, z, xy, la, lo in zip(profile.distance_m, profile.elevation_m, profile.xy, lat, lon):
+            writer.writerow(["distance_m", "elevation_m", "x_projected", "y_projected", "latitude_n", "longitude_e", "dem_status"])
+            for d, z, xy, la, lo, state in zip(profile.distance_m, profile.elevation_m,
+                                                profile.xy, lat, lon, profile.sample_status):
                 writer.writerow([f"{d:.3f}", f"{z:.3f}" if np.isfinite(z) else "",
-                                 f"{xy[0]:.3f}", f"{xy[1]:.3f}", f"{la:.8f}", f"{lo:.8f}"])
+                                 f"{xy[0]:.3f}", f"{xy[1]:.3f}", f"{la:.8f}", f"{lo:.8f}", str(state)])
         points_lon, points_lat = self.terrain.to_lonlat.transform(self.waypoints[:, 0], self.waypoints[:, 1])
         result = {
             "title": "Jezero Traverse - Manual waypoint route",
@@ -419,6 +424,9 @@ class RouteEditor:
             "distance_m": round(profile.total_m, 2),
             "dem_sample_step_max_m": self.step_m,
             "valid_samples_pct": round(profile.coverage_pct, 2),
+            "samples_total": int(len(profile.distance_m)),
+            "samples_missing": profile.missing_count,
+            "dem_status_counts": profile.status_counts,
             "safety_notice": "Research demonstration only; DEM resolution cannot verify small hazards or astronaut safety.",
             "waypoints": [{"x": float(x), "y": float(y), "latitude_n": float(la), "longitude_e": float(lo)}
                           for (x, y), la, lo in zip(self.waypoints, points_lat, points_lon)]

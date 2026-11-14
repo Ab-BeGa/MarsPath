@@ -17,6 +17,20 @@ class RouteProfile:
     distance_m: np.ndarray
     elevation_m: np.ndarray
     waypoint_distance_m: np.ndarray
+    sample_status: np.ndarray
+
+    @property
+    def missing_count(self) -> int:
+        return int(np.count_nonzero(self.sample_status != "valid"))
+
+    @property
+    def status_counts(self) -> dict[str, int]:
+        labels, counts = np.unique(self.sample_status, return_counts=True)
+        return {str(label): int(count) for label, count in zip(labels, counts)}
+
+    @property
+    def max_sample_spacing_m(self) -> float:
+        return float(np.max(np.diff(self.distance_m))) if len(self.distance_m) > 1 else 0.0
 
     @property
     def total_m(self) -> float:
@@ -29,7 +43,7 @@ class RouteProfile:
 
 def route_samples(
     waypoints_xy: Sequence[Sequence[float]],
-    sample_elevations: Callable[[np.ndarray], np.ndarray],
+    sample_elevations: Callable[[np.ndarray], np.ndarray | tuple[np.ndarray, np.ndarray]],
     *,
     meters_per_unit: float = 1.0,
     step_m: float = 20.0,
@@ -64,11 +78,29 @@ def route_samples(
 
     xy = np.concatenate(samples, axis=0)
     distance = np.concatenate(distances)
-    heights = np.asarray(sample_elevations(xy), dtype=float).reshape(-1)
+    sampled = sample_elevations(xy)
+    if isinstance(sampled, tuple):
+        if len(sampled) != 2:
+            raise ValueError("Sampler must return elevations or (elevations, statuses)")
+        heights_raw, statuses_raw = sampled
+        statuses = np.asarray(statuses_raw, dtype=str).reshape(-1)
+    else:
+        heights_raw = sampled
+        statuses = None
+    heights = np.asarray(heights_raw, dtype=float).reshape(-1)
     if len(heights) != len(xy):
         raise ValueError("Elevation sampler returned an unexpected number of values")
+    if statuses is None:
+        statuses = np.where(np.isfinite(heights), "valid", "nodata")
+    if len(statuses) != len(xy):
+        raise ValueError("Status sampler returned an unexpected number of values")
+    allowed = {"valid", "nodata", "outside_roi", "outside_dem", "invalid_xy"}
+    if not set(statuses).issubset(allowed):
+        raise ValueError("Unexpected DEM sample status")
+    if np.any((statuses == "valid") != np.isfinite(heights)):
+        raise ValueError("Elevation finite/NoData status mismatch")
     return RouteProfile(xy=xy, distance_m=distance, elevation_m=heights,
-                        waypoint_distance_m=waypoint_distances)
+                        waypoint_distance_m=waypoint_distances, sample_status=statuses)
 
 
 def nearest_segment_index(point_xy: Sequence[float], waypoints_xy: Sequence[Sequence[float]]) -> int:
