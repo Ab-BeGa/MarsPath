@@ -15,6 +15,16 @@ import numpy as np
 from affine import Affine
 
 
+def _project(transform: Affine, col, row):
+    """Apply a Mars DEM affine transform to scalars or arrays.
+
+    Uses coefficients directly to avoid the deprecated Affine * tuple API
+    while remaining compatible with Affine 2.x and 3.x.
+    """
+    return (transform.a * col + transform.b * row + transform.c,
+            transform.d * col + transform.e * row + transform.f)
+
+
 class NoDetourError(ValueError):
     """The selected ROI has no path satisfying the DEM and slope constraints."""
 
@@ -93,13 +103,13 @@ def plan_detour(
         if not np.isfinite(roi_bounds).all() or left >= right or bottom >= top:
             raise ValueError("Invalid geographic ROI")
         rr, cc = np.indices(z.shape)
-        xcent, ycent = transform * (cc + 0.5, rr + 0.5)
+        xcent, ycent = _project(transform, cc + 0.5, rr + 0.5)
         good &= (xcent >= left) & (xcent <= right) & (ycent >= bottom) & (ycent <= top)
         if np.any((pts[:, 0] < left) | (pts[:, 0] > right) | (pts[:, 1] < bottom) | (pts[:, 1] > top)):
             raise NoDetourError("The fixed start or goal lies outside the study region")
     inverse = ~transform
     def to_cell(p):
-        col, row = inverse * (float(p[0]), float(p[1]))
+        col, row = _project(inverse, float(p[0]), float(p[1]))
         return int(math.floor(row)), int(math.floor(col))
     start, goal = to_cell(pts[0]), to_cell(pts[1])
     height, width = z.shape
@@ -109,11 +119,11 @@ def plan_detour(
 
     def xy(rc):
         r, c = rc
-        return np.asarray(transform * (c + 0.5, r + 0.5), dtype=float)
+        return np.asarray(_project(transform, c + 0.5, r + 0.5), dtype=float)
     # Physical neighbor steps include affine rotation/skew and Mars map units.
     directions = ((-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1))
     step_dist = {
-        (dr, dc): float(np.linalg.norm(np.asarray(transform * (dc, dr)) - np.asarray(transform * (0, 0)))) * meters_per_unit
+        (dr, dc): math.hypot(transform.a * dc + transform.b * dr, transform.d * dc + transform.e * dr) * meters_per_unit
         for dr, dc in directions
     }
     if min(step_dist.values()) <= 0:
