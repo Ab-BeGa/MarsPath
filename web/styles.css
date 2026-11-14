@@ -224,7 +224,7 @@ thead { background: #132734; color: #afc9d4; }
 
 /* Task 18: only enable a real CTX orthoimage after verifying its CRS/DEM manifest. */
 .layer-select {
-  display: inline-flex; gap: 3px; align-items: center; border: 1px solid #34515d;
+  display: flex; flex-wrap: wrap; gap: 3px; align-items: center; border: 1px solid #34515d;
   border-radius: 8px; background: #0d2430; padding: 4px; flex-shrink: 0;
 }
 .layer-select button {

@@ -4,7 +4,8 @@ import { routeToGrid, type RoutePair } from './routeMap.ts'
 import { sampleRouteElevation, selectedProfileInterval } from './routeProfile.ts'
 import { ElevationProfileChart } from './ElevationProfileChart.tsx'
 import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
-import { loadThemisLayer } from './themisLayer.ts'
+import { loadThemisLayer, loadThemisTemperature } from './themisLayer.ts'
+import { loadCrismModels, CRISM_MODELS, type CrismModel } from './crismModels.ts'
 import { RouteSlopePanel } from './RouteSlopePanel.tsx'
 import { useI18n } from './i18n.tsx'
 import { loadPhotoCatalog, type JezeroPhoto, type PhotoCatalog } from './photoCatalog.ts'
@@ -108,9 +109,55 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
   const [hovered, setHovered] = useState<TerrainCell | null>(null)
   const [optical, setOptical] = useState<CtxOpticalLayer | null>(null)
   const [opticalError, setOpticalError] = useState('')
-  const [activeLayer, setActiveLayer] = useState<'relief' | 'ctx' | 'themis'>('relief')
+  const [activeLayer, setActiveLayer] = useState<'relief' | 'ctx' | 'themis' | 'temperature' | 'crism'>('relief')
+  const [crism, setCrism] = useState<{ image: HTMLImageElement; labelCell: [number, number] } | null>(null)
+  const showCrism = activeLayer === 'crism' && crism !== null
+  const [crismModels, setCrismModels] = useState<Awaited<ReturnType<typeof loadCrismModels>> | null>(null)
+  const [crismSelection, setCrismSelection] = useState<CrismModel | 'silica'>('silica')
+  const selectedCrismModel = crismSelection === 'silica' ? null : crismModels?.[crismSelection]
+  useEffect(() => {
+    let current = true
+    setCrismModels(null)
+    void loadCrismModels(terrain).then(models => {
+      if (current) setCrismModels(models)
+    }).catch(() => { if (current) setCrismSelection('silica') })
+    return () => { current = false }
+  }, [terrain])
+  useEffect(() => {
+    let current = true
+    setCrism(null)
+    void (async () => {
+      const base = './data/jezero/crism_minerals'
+      const response = await fetch(base + '.json')
+      if (!response.ok) return
+      const data = await response.json()
+      const { grid, crs_wkt } = terrain.metadata
+      if (data.crs_wkt !== crs_wkt || data.width !== grid.width || data.height !== grid.height ||
+          !Array.isArray(data.bounds_projected_m) || data.bounds_projected_m.length !== 4 ||
+          grid.bounds_projected_m.some((value, index) => value !== data.bounds_projected_m[index])) return
+      const labelCell: [number, number] = data.label_cell
+      if (!Array.isArray(labelCell) || labelCell.length !== 2 ||
+          !labelCell.every((value, axis) => Number.isFinite(value) && value >= 0 && value < [grid.width, grid.height][axis])) return
+      const image = new Image()
+      image.src = base + '.png'
+      await image.decode()
+      if (current && image.naturalWidth === grid.width && image.naturalHeight === grid.height) setCrism({ image, labelCell })
+    })().catch(() => { if (current) setCrism(null) })
+    return () => { current = false }
+  }, [terrain])
   const [themis, setThemis] = useState<HTMLImageElement | null>(null)
   const showThemis = activeLayer === 'themis' && themis !== null
+  const [temperature, setTemperature] = useState<Awaited<ReturnType<typeof loadThemisTemperature>> | null>(null)
+  const showTemperature = activeLayer === 'temperature' && temperature !== null
+  const showThemisModes = showThemis || showTemperature
+  useEffect(() => {
+    let current = true
+    setTemperature(null)
+    void loadThemisTemperature(terrain).then(layer => {
+      if (current) setTemperature(layer)
+    }).catch(() => { if (current) setTemperature(null) })
+    return () => { current = false }
+  }, [terrain])
   const [themisUnavailable, setThemisUnavailable] = useState(false)
   const [photoCatalog, setPhotoCatalog] = useState<PhotoCatalog | null>(null)
   const [photoError, setPhotoError] = useState('')
@@ -183,6 +230,8 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     selectedSample >= 0 && selectedSample < activeProfile.samples.length ? selectedSample : null
   useEffect(() => { setSelectedSample(null) }, [routes])
   const state = pinned ?? hovered ?? cellAtGrid(terrain, Math.floor(grid.width / 2), Math.floor(grid.height / 2))
+  const kelvin = showTemperature && state ? temperature.kelvinAt(state.col, state.row) : null
+  const temperatureText = (value: number) => `${format(value, { maximumFractionDigits: 1 })} K / ${format(value - 273.15, { maximumFractionDigits: 1 })} °C`
   const validPercent = (100 * terrain.validCount / terrain.heights.length).toFixed(1)
   const slopeState = useMemo(() => {
     if (!routes) return { report: null, error: '' }
@@ -288,7 +337,18 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     const showCtx = activeLayer === 'ctx' && optical !== null
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
-    if (showThemis) {
+    if (showCrism) {
+      ctx.drawImage(optical?.image ?? relief, p.ox, p.oy, iw, ih)
+      ctx.save()
+      ctx.imageSmoothingEnabled = false
+      ctx.drawImage(selectedCrismModel?.image ?? crism.image, p.ox, p.oy, iw, ih)
+      ctx.restore()
+    } else if (showTemperature) {
+      ctx.save()
+      ctx.imageSmoothingEnabled = false
+      ctx.drawImage(temperature.image, p.ox, p.oy, iw, ih)
+      ctx.restore()
+    } else if (showThemis) {
       ctx.drawImage(themis, p.ox, p.oy, iw, ih)
     } else if (showCtx) {
       ctx.drawImage(optical.image, p.ox, p.oy, iw, ih)
@@ -442,6 +502,11 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       ctx.fillText(name, bx + 9, by + 19)
     }
 
+    if (showCrism && !selectedCrismModel) {
+      const [col, row] = crism.labelCell
+      marker(col, row, t('map.crism.silica'), '#cb83ff', 'CRISM')
+    }
+
     // Fixed points originate in the original USGS Mars-projected CRS.
     for (const point of checkpoints) {
       const [sx, , tx, , sy, ty] = grid.transform
@@ -464,7 +529,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 16)
       ctx.stroke()
     }
-  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical, themis, slopeState, showSlopeHighlights, activeProfile, safeSelectedIndex])
+  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical, themis, temperature, crism, selectedCrismModel, slopeState, showSlopeHighlights, activeProfile, safeSelectedIndex, t])
 
   function selectProfileSample(index: number | null) {
     setSelectedSample(index)
@@ -538,6 +603,15 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     Math.abs(cur / metersPerScreenPx - 110) < Math.abs(prev / metersPerScreenPx - 110) ? cur : prev, 100)
   const barWidth = Math.max(25, Math.min(240, barMeters / metersPerScreenPx))
 
+  function centerMapOnCell(col: number, row: number) {
+    setCamera(old => {
+      const zoom = Math.max(2.3, old.zoom)
+      const view = measure(size, terrain, { zoom, panX: 0, panY: 0 })
+      return { zoom, panX: size.width / 2 - (view.ox + col * view.scale),
+        panY: size.height / 2 - (view.oy + row * view.scale) }
+    })
+  }
+
   const focusPoint = (pointId: string) => {
     const point = checkpoints.find(p => p.id === pointId)
     if (!point) return
@@ -545,12 +619,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     const [sx, , tx, , sy, ty] = grid.transform
     const col = (point.projected_x_m - tx) / sx
     const row = (point.projected_y_m - ty) / sy
-    setCamera(old => {
-      const zoom = Math.max(2.3, old.zoom)
-      const a = measure(size, terrain, { zoom, panX: 0, panY: 0 })
-      return { zoom, panX: size.width / 2 - (a.ox + col * a.scale),
-        panY: size.height / 2 - (a.oy + row * a.scale) }
-    })
+    centerMapOnCell(col, row)
     setPinned(cellAtProjected(terrain, point.projected_x_m, point.projected_y_m))
   }
 
@@ -561,19 +630,6 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
           <span className="section-kicker"><span className="live-dot"/> {t('map.kicker')}</span>
           <h2 id="map-title">{t('map.title')}</h2>
           <p>{t('map.description')}</p>
-        </div>
-        <div className="layer-select" role="group" aria-label={t('map.layer.aria')}>
-          <button type="button" aria-pressed={activeLayer === 'relief'}
-            className={activeLayer === 'relief' ? 'selected' : ''}
-            onClick={() => setActiveLayer('relief')}>{t('map.layer.dem')}</button>
-          <button type="button" aria-pressed={activeLayer === 'ctx'}
-            className={activeLayer === 'ctx' ? 'selected' : ''}
-            disabled={!optical}
-            title={!optical ? t('map.layer.ctxDisabled') : t('map.layer.ctxEnabled')}
-            onClick={() => { if (optical) setActiveLayer('ctx') }}>{t('map.layer.ctx')}</button>
-          <button type="button" aria-pressed={activeLayer === 'themis' && !!themis}
-            className={activeLayer === 'themis' && themis ? 'selected' : ''}
-            disabled={!themis} onClick={() => setActiveLayer('themis')}>{t('map.layer.themis')}</button>
         </div>
       </div>
       <section className="photo-map-toolbar" aria-labelledby="photo-map-title">
@@ -607,6 +663,39 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       </section>
       <div className="map-layout" id="jezero-map-detail">
         <div className="map-frame">
+          <div className="layer-select" role="group" aria-label={t('map.layer.aria')}>
+            <button type="button" aria-pressed={activeLayer === 'relief'}
+              className={activeLayer === 'relief' ? 'selected' : ''}
+              onClick={() => setActiveLayer('relief')}>{t('map.layer.dem')}</button>
+            <button type="button" aria-pressed={activeLayer === 'ctx'}
+              className={activeLayer === 'ctx' ? 'selected' : ''}
+              disabled={!optical}
+              title={!optical ? t('map.layer.ctxDisabled') : t('map.layer.ctxEnabled')}
+              onClick={() => { if (optical) setActiveLayer('ctx') }}>{t('map.layer.ctx')}</button>
+            <button type="button" aria-pressed={showThemisModes} className={showThemisModes ? 'selected' : ''}
+              disabled={!themis && !temperature} onClick={() => {
+                if (!showThemisModes) setActiveLayer(themis ? 'themis' : 'temperature')
+              }}>THEMIS</button>
+            <button type="button" aria-pressed={showCrism} className={showCrism ? 'selected' : ''}
+              disabled={!crism} onClick={() => {
+                if (!crism) return
+                setActiveLayer('crism')
+                if (crismSelection === 'silica') centerMapOnCell(...crism.labelCell)
+              }}>{t('map.crism.local')}</button>
+          </div>
+          {showThemisModes && <div className="layer-select" role="group" aria-label="THEMIS">
+            <button type="button" aria-pressed={showThemis} className={showThemis ? 'selected' : ''}
+              disabled={!themis} onClick={() => setActiveLayer('themis')}>{t('map.layer.themis')}</button>
+            <button type="button" aria-pressed={showTemperature} className={showTemperature ? 'selected' : ''}
+              disabled={!temperature} onClick={() => setActiveLayer('temperature')}>{t('map.layer.temperature')}</button>
+          </div>}
+          {showCrism && <div className="layer-select" role="group" aria-label={t('map.crism.local')}>
+            <button type="button" aria-pressed={crismSelection === 'silica'} className={crismSelection === 'silica' ? 'selected' : ''}
+              onClick={() => { setCrismSelection('silica'); centerMapOnCell(...crism.labelCell) }}>{t('map.crism.silica')}</button>
+            {CRISM_MODELS.map(model => <button type="button" key={model} disabled={!crismModels}
+              aria-pressed={crismSelection === model} className={crismSelection === model ? 'selected' : ''}
+              onClick={() => { setCrismSelection(model); setCamera({ zoom: 1, panX: 0, panY: 0 }) }}>{t(`map.crism.${model}`)}</button>)}
+          </div>}
           <div className="map-canvas-wrap" ref={wrapperRef}>
             <canvas ref={canvasRef} className="mars-map-canvas" tabIndex={0} role="application"
               aria-label={t('map.accessibility')}
@@ -651,6 +740,10 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
             <strong className="altitude">{state ? elevation(state.elevation) : '—'}</strong>
             <span className="telemetry-muted">{t('map.telemetry.elevation')}</span>
           </div>
+          {kelvin !== null && <div className="telemetry-block">
+            <span className="telemetry-label">{t('map.temperature.label')}</span>
+            <strong>{temperatureText(kelvin)}</strong>
+          </div>}
           <div className="telemetry-block">
             <span className="telemetry-label">{t('map.telemetry.coordinates')}</span>
             <div className="coord-pair"><span>{t('map.telemetry.lat')}</span><strong>{state ? coordinate.format(state.latitude) + '°' : '—'}</strong></div>
@@ -764,7 +857,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       {activeProfile && <ElevationProfileChart profile={activeProfile} activeRoute={activeRoute}
         selectedIndex={safeSelectedIndex} onSelect={selectProfileSample} />}
       <div className="layer-status" role="status">
-        {showThemis ? t('map.status.themisActive') : opticalError
+        {showTemperature ? t('map.temperature.label') : showThemis ? t('map.status.themisActive') : opticalError
           ? t('map.status.ctxError', {detail:localizeError(opticalError)})
           : optical
             ? activeLayer === 'ctx'
@@ -772,17 +865,42 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
               : t('map.status.ctxReady')
             : t('map.status.ctxMissing')}
       </div>
-      <div className="map-footer">
+      {showCrism ? <div className="map-info-card">
+        <div className="map-footer">
+          <span>{selectedCrismModel ? '0%' : t('map.crism.unmarked')}</span>
+          <div className="relief-gradient" style={{ background: `linear-gradient(to right, transparent, ${
+            selectedCrismModel ? (crismSelection === 'magnesite' ? '#ffbf46' : '#56dfac') : '#cb83ff'
+          })` }} aria-hidden="true" />
+          <span>{selectedCrismModel
+            ? `${format(selectedCrismModel.maximum, { maximumFractionDigits: 1 })}%`
+            : t('map.crism.detected')}</span>
+        </div>
+        {selectedCrismModel ? <>
+          <p>{t('map.crism.modelDescription')}</p>
+          <a href="https://zenodo.org/records/4699583">Zastrow &amp; Glotch · HRL000040FF</a>
+        </> : <>
+          <p>{t('map.crism.localDescription')}</p>
+          <a href="https://doi.org/10.7910/DVN/LFXQQR">Tarnas et al. · HRL000040FF</a>
+        </>}
+      </div> : showTemperature ? <div className="map-info-card">
+        <div className="map-footer">
+          <span>{temperatureText(temperature.minimum)}</span>
+          <div className="relief-gradient" style={{ background: 'linear-gradient(to right, #31288e, #af377c, #ffd963)' }} aria-hidden="true" />
+          <span>{temperatureText(temperature.maximum)}</span>
+        </div>
+        <p>{t('map.temperature.note')}</p>
+        <a href="https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0064/i702xxpbt/I70247006PBT.IMG">NASA PDS · I70247006PBT</a>
+      </div> : <div className="map-footer">
         <div className="legend-title">{t(showThemis ? 'map.footer.themis' : 'map.footer.relief')} <span>{t('map.footer.low')}</span></div>
         <div className="relief-gradient" style={showThemis ? {background: 'linear-gradient(to right, #161616, #ededed)'} : undefined} aria-hidden="true" />
         <span>{t('map.footer.high')}</span>
         <div className="map-source">{t(showThemis ? 'map.footer.themisSource' : 'map.footer.source')}</div>
-      </div>
-      <p className="scientific-disclaimer">
+      </div>}
+      {!showCrism && !showTemperature && <p className="scientific-disclaimer">
         {activeLayer === 'themis' && themis ? t('map.source.themisNote') : activeLayer === 'ctx' && optical
           ? t('map.note.ctx')
           : t('map.note.dem', {size:format(grid.pixel_size_m[0])})}
-      </p>
+      </p>}
       {themisUnavailable && <p className="layer-status">{t('map.layer.themisUnavailable')}</p>}
       <details className="map-info-card">
         <summary>{t('map.source.title')}</summary>
@@ -813,6 +931,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
           <dt>{t('map.source.resolution')}</dt><dd>100 {t('map.source.pixel')}</dd>
         </dl>
         <p>{t('map.source.themisNote')}</p>
+        <a href="https://data.nasa.gov/dataset/odyssey-themis-ir-btr-v1-0-74ffb">NASA PDS · THEMIS IR-BTR (K)</a>
       </details>
     </section>
   )

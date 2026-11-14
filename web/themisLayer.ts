@@ -1,8 +1,8 @@
 import type { MarsTerrain } from './marsTerrain.ts'
 
-export async function loadThemisLayer(terrain: MarsTerrain): Promise<HTMLImageElement> {
+async function loadThemisRaster(terrain: MarsTerrain, name: 'themis_day' | 'themis_pbt') {
   const base = './data/jezero/'
-  const response = await fetch(base + 'themis_day.json')
+  const response = await fetch(base + name + '.json')
   if (!response.ok) throw new Error('THEMIS metadata unavailable')
   const data = await response.json()
   const bounds = terrain.metadata.grid.bounds_projected_m
@@ -18,10 +18,32 @@ export async function loadThemisLayer(terrain: MarsTerrain): Promise<HTMLImageEl
     throw new Error('THEMIS does not match the current Jezero map')
   }
   const image = new Image()
-  image.src = base + 'themis_day.png'
+  image.src = base + name + '.png'
   await image.decode()
   if (image.naturalWidth !== data.width || image.naturalHeight !== data.height) {
     throw new Error('THEMIS image dimensions do not match its metadata')
   }
-  return image
+  return { image, data }
+}
+
+export async function loadThemisLayer(terrain: MarsTerrain): Promise<HTMLImageElement> {
+  return (await loadThemisRaster(terrain, 'themis_day')).image
+}
+
+export async function loadThemisTemperature(terrain: MarsTerrain) {
+  const { image, data } = await loadThemisRaster(terrain, 'themis_pbt')
+  const values: unknown = data.kelvin_tenths
+  if (!Array.isArray(values) || values.length !== image.width * image.height ||
+      !values.every(value => Number.isInteger(value) && value > 0 && value <= 4000)) {
+    throw new Error('Invalid THEMIS brightness temperatures')
+  }
+  const minimum = Math.min(...values) / 10
+  const maximum = Math.max(...values) / 10
+  const kelvinAt = (col: number, row: number) => {
+    const grid = terrain.metadata.grid
+    const x = Math.floor((col + 0.5) * image.width / grid.width)
+    const y = Math.floor((row + 0.5) * image.height / grid.height)
+    return values[y * image.width + x] / 10
+  }
+  return { image, minimum, maximum, kelvinAt }
 }
