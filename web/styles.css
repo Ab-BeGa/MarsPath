@@ -20,3 +20,35 @@ caption { text-align: left; margin-bottom: .5rem; }
 th, td { padding: .6rem; border-bottom: 1px solid #395169; text-align: right; }
 th:first-child { text-align: left; }
 thead { background: #102031; }
+
+
+/* Task: show both projected Mars routes and highlight the selected path. */
+.route-map-section { margin: 1.6rem 0; padding: 1.1rem; border: 1px solid #395169; border-radius: .65rem; background: #102031; }
+.route-map-section h2 { margin: 0 0 .5rem; font-size: 1.2rem; }
+.map-note { margin: 0 0 1rem; font-size: .9rem; }
+.route-controls { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: .85rem; }
+.route-selector { background: #263b4b; color: #edf5f9; border: 1px solid #547084; }
+.route-selector[aria-pressed="true"] { border-color: #edf5f9; box-shadow: 0 0 0 2px #edf5f955; }
+.route-selector--direct { border-left: 5px solid #55efc4; }
+.route-selector--detour { border-left: 5px solid #ffb45e; }
+.route-selector:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.route-map-scroll { overflow: hidden; border: 1px solid #395169; border-radius: .4rem; background: #091725; }
+.route-map { display: block; width: 100%; height: auto; }
+.route-path { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.route-path--direct { stroke: #55efc4; }
+.route-path--detour { stroke: #ffb45e; }
+.route-path--inactive { stroke-width: 4; opacity: .55; }
+.route-path--active { stroke-width: 7; opacity: 1; }
+.route-endpoint { stroke: #091725; stroke-width: 3; }
+.route-endpoint--base { fill: #55efc4; }
+.route-endpoint--science { fill: #ffb45e; }
+.route-point-label { fill: #edf5f9; font-size: 20px; font-weight: 700; paint-order: stroke; stroke: #091725; stroke-width: 5px; stroke-linejoin: round; }
+.route-map-status { margin: .8rem 0 .6rem; }
+.route-map-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; color: #d8e6ee; font-size: .9rem; }
+.route-map-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.legend-line { display: inline-block; width: 1.7rem; border-top: 4px solid; }
+.legend-line--direct { border-color: #55efc4; }
+.legend-line--detour { border-color: #ffb45e; }
+.legend-dot { display: inline-block; width: .8rem; height: .8rem; border-radius: 50%; }
+.legend-dot--base { background: #55efc4; }
+.legend-dot--science { background: #ffb45e; }
