@@ -55,6 +55,7 @@ test('all static t(...) keys used by React views exist in the catalog', () => {
   const files = [
     'web/main.tsx', 'web/MarsMap.tsx', 'web/ElevationProfileChart.tsx',
     'web/RouteSlopePanel.tsx', 'web/RouteOverview.tsx', 'web/i18n.tsx',
+    'web/MarsGlobalMap.tsx', 'web/MarsSiteInfoCard.tsx',
   ]
   let found = 0
   for (const file of files) {
