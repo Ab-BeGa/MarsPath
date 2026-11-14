@@ -62,6 +62,18 @@ const errors: Record<string, readonly [string, string]> = {
   'Начало и конец маршрутов должны совпадать': ['Route endpoints must match', 'Бағыттардың басталуы мен аяқталуы сәйкес болуы тиіс'],
 }
 
+const ctxDimensionLabels: Record<string, readonly [string, string]> = {
+  'границам участка': ['study area bounds', 'зерттеу аймағының шекаралары'],
+  'шагу X': ['X spacing', 'X қадамы'],
+  'наклону X': ['X shear', 'X қисайуы'],
+  'положению X': ['X origin', 'X орны'],
+  'наклону Y': ['Y shear', 'Y қисайуы'],
+  'шагу Y': ['Y spacing', 'Y қадамы'],
+  'положению Y': ['Y origin', 'Y орны'],
+  'ширине DEM': ['DEM width', 'DEM ені'],
+  'высоте DEM': ['DEM height', 'DEM биіктігі'],
+}
+
 const prefixes: readonly [string, string, string][] = [
   ['Неверные метаданные DEM:', 'Invalid DEM metadata:', 'DEM метадеректері жарамсыз:'],
   ['Неверное число DEM:', 'Invalid DEM number:', 'DEM саны жарамсыз:'],
@@ -88,7 +100,14 @@ export function localizeErrorMessage(message: string, locale: Locale): string {
   const exact = errors[message]
   if (exact) return exact[locale === 'en' ? 0 : 1]
   for (const [ru, en, kk] of prefixes) {
-    if (message.startsWith(ru)) return (locale === 'en' ? en : kk) + message.slice(ru.length)
+    if (!message.startsWith(ru)) continue
+    const suffix = message.slice(ru.length)
+    if (ru === 'CTX и DEM не совпадают по ') {
+      const names = ctxDimensionLabels[suffix]
+      return names ? (locale === 'en' ? en + names[0] : kk + names[1]) :
+        translate('error.generic', locale)
+    }
+    return (locale === 'en' ? en : kk) + suffix
   }
   return translate('error.generic', locale)
 }
