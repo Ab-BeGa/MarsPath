@@ -4,6 +4,8 @@ import { clampGlobeView, marsToGlobeScreen, screenUnitToMars, texturePixel, type
 import { MarsGlobalMap } from './MarsGlobalMap.tsx'
 import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
 import { loadMarsSites, type MarsSite } from './marsSites.ts'
+import { MolaElevationLegend } from './MolaElevationLegend.tsx'
+import { loadPhotoCatalog, type JezeroPhoto } from './photoCatalog.ts'
 
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
 const JEZERO = { longitude: 77.40974302, latitude: 18.45616697 }
@@ -24,6 +26,11 @@ type Metadata = {
   display_projection: string
   display_mosaic: { file: string; width: number; height: number; sha256: string }
   globe_textures: Record<GlobeLayer, { files: [string, string]; title: string; source_layer: string }>
+}
+type DetailedRegion = {
+  id: string; name: string; latitude_deg: number; longitude_east_deg: number
+  coverage_km: [number, number]; detail_status: 'available'; detail_target: string
+  dem_resolution_m: number; optical_resolution_m: number; metadata: string
 }
 
 function validateMetadata(value: unknown): Metadata {
@@ -58,6 +65,10 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
   const [siteFilter, setSiteFilter] = useState<'all' | MarsSite['category']>('all')
   const [selectedSiteIds, setSelectedSiteIds] = useState<string[]>([])
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
+  const [panoramas, setPanoramas] = useState<JezeroPhoto[]>([])
+  const [selectedPanorama, setSelectedPanorama] = useState<JezeroPhoto | null>(null)
+  const [showPanoramas, setShowPanoramas] = useState(true)
+  const [detailedRegions, setDetailedRegions] = useState<DetailedRegion[]>([])
 
   useEffect(() => {
     let active = true
@@ -86,6 +97,22 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
       })
       setMetadata(checked)
     }).catch(reason => { if (active) setError(reason instanceof Error ? reason.message : String(reason)) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    Promise.all([
+      loadPhotoCatalog('/data/jezero/photos.json'),
+      fetch('/data/mars-global/detailed_regions.json').then(response => {
+        if (!response.ok) throw new Error(`Detailed regions unavailable (HTTP ${response.status})`)
+        return response.json() as Promise<{ regions: DetailedRegion[] }>
+      }),
+    ]).then(([catalogue, regions]) => {
+      if (!active) return
+      setPanoramas(catalogue.records.filter(photo => photo.coordinates && /panorama/i.test(`${photo.title} ${photo.caption}`)))
+      setDetailedRegions(regions.regions)
+    }).catch(reason => { if (active) setSiteError(reason instanceof Error ? reason.message : String(reason)) })
     return () => { active = false }
   }, [])
 
@@ -255,7 +282,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
             onPointerCancel={endPointer} onWheel={onWheel}/>
           {!metadata && !error && <span className="globe-loading">{t('globe.loading')}</span>}
           {marker.visible && <button className="globe-jezero-marker" style={{ left: `${markerLeft}%`, top: `${markerTop}%` }}
-            onClick={onOpenDetail} aria-label={t('globe.detail')}><i/>JEZERO</button>}
+            onClick={onOpenDetail} aria-label={t('globe.detail')}><i/>JEZERO · {t('globe.region.report')}</button>}
           <div className="globe-site-markers" aria-label={t('map.sites.title')}>
             {siteGroups.map(group => {
               const point = marsToGlobeScreen(group[0].longitude_east_deg, group[0].latitude_deg, view)
@@ -273,9 +300,30 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
               </button>
             })}
           </div>
+          {showPanoramas && <div className="globe-panorama-markers" aria-label={t('globe.panoramas')}>
+            {panoramas.map(panorama => {
+              const coordinates = panorama.coordinates!
+              const point = marsToGlobeScreen(coordinates.longitude_deg, coordinates.latitude_deg, view)
+              if (!point.visible) return null
+              return <button key={panorama.id} className="globe-panorama-pin"
+                style={{ left: `${50 + point.x * 43 * view.zoom}%`, top: `${50 - point.y * 43 * view.zoom}%` }}
+                aria-label={t('globe.panorama.open', {title:panorama.title})} title={panorama.title}
+                onClick={() => setSelectedPanorama(panorama)}>360°</button>
+            })}
+          </div>}
         </div>
+        {activeLayer === 'relief' && <MolaElevationLegend compact/>}
         {selectedSiteId && selectedSites.length > 0 && <MarsSiteInfoCard sites={selectedSites} selectedId={selectedSiteId}
           onSelect={setSelectedSiteId} onClose={closeSite}/>}
+        {selectedPanorama && <aside className="globe-panorama-card" role="dialog" aria-label={selectedPanorama.title}>
+          <button className="global-site-popup-close" onClick={() => setSelectedPanorama(null)} aria-label={t('map.photos.close')}>×</button>
+          <img src={selectedPanorama.thumbnail_url} alt=""/>
+          <div><span className="section-kicker">360° · {selectedPanorama.camera}</span>
+            <h4>{selectedPanorama.title}</h4><p>{selectedPanorama.caption}</p>
+            <p className="globe-panorama-warning">{t('globe.panorama.locationNote')}</p>
+            <a href={selectedPanorama.page_url} target="_blank" rel="noopener noreferrer">{t('map.photos.nasaSource')} ↗</a>
+          </div>
+        </aside>}
         <div className="globe-controls" aria-label={t('globe.controls')}>
           <button onClick={() => updateZoom(1.15)} aria-label="+">+</button>
           <button onClick={() => updateZoom(1 / 1.15)} aria-label="−">−</button>
@@ -306,6 +354,14 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
               }}><option value="">{t('map.sites.pickPlaceholder')}</option>{filteredSites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}</select>
             </label>
             {siteError && <span className="global-site-error">{t('map.sites.loadError')} {siteError}</span>}
+          </div>
+          <div className="globe-extra-layers">
+            <button aria-pressed={showPanoramas} onClick={() => { setShowPanoramas(value => !value); setSelectedPanorama(null) }}>
+              <span>360°</span><b>{t('globe.panoramas')}</b><small>{panoramas.length}</small>
+            </button>
+            <button aria-pressed="true" onClick={onOpenDetail}>
+              <span>▣</span><b>{t('globe.detailedRegions')}</b><small>{detailedRegions.length}</small>
+            </button>
           </div>
           <button className="globe-detail-button" onClick={onOpenDetail}>{t('globe.detail')}</button>
         </>}

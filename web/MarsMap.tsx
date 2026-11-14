@@ -7,7 +7,6 @@ import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
 import { loadThemisLayer } from './themisLayer.ts'
 import { RouteSlopePanel } from './RouteSlopePanel.tsx'
 import { useI18n } from './i18n.tsx'
-import { MarsGlobalMap } from './MarsGlobalMap.tsx'
 import { loadPhotoCatalog, type JezeroPhoto, type PhotoCatalog } from './photoCatalog.ts'
 import { clusterPhotoPoints, filterPhotos } from './photoMap.ts'
 import {
@@ -577,9 +576,6 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
             disabled={!themis} onClick={() => setActiveLayer('themis')}>{t('map.layer.themis')}</button>
         </div>
       </div>
-      <MarsGlobalMap onOpenRegion={() => {
-        document.getElementById('jezero-map-detail')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }} />
       <section className="photo-map-toolbar" aria-labelledby="photo-map-title">
         <div>
           <span className="section-kicker">{t('map.photos.kicker')}</span>

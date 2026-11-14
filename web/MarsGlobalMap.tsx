@@ -6,6 +6,7 @@ import {
   type SiteCategoryFilter,
 } from './marsSiteMapGeometry.ts'
 import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
+import { MolaElevationLegend } from './MolaElevationLegend.tsx'
 
 type Size = { width: number; height: number }
 type Camera = { zoom: number; panX: number; panY: number }
@@ -459,6 +460,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe }: { onOpenRegion: (
             <span>180°W <i>0°</i> 180°E</span>
             <span>{cursorCoordinates ? `${cursorCoordinates.latitude.toFixed(2)}° · ${cursorCoordinates.longitude.toFixed(2)}°E` : LAYER_SHORT_NAMES[activeLayer]}</span>
           </div>
+          {activeLayer === 'relief' && <MolaElevationLegend compact/>}
         </div>
         <div className="global-map-help">{t('map.global.help')}</div>
         <div className="global-site-legend">{t('map.sites.legend')}</div>

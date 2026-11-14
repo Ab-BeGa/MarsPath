@@ -282,6 +282,23 @@ thead { background: #132734; color: #afc9d4; }
 .global-map-canvas { display: block; width: 100%; height: 100%; }
 .global-map-coordinate-note { position: absolute; inset: auto 10px 8px; display: flex; justify-content: space-between; color: #e4e9ed; font: 10px ui-monospace, monospace; text-shadow: 0 1px 4px #000; pointer-events: none; }
 .global-map-coordinate-note i { margin: 0 8px; font-style: normal; }
+.mola-elevation-legend {
+  color: #eaf4f7; font: 10px ui-monospace, monospace;
+}
+.mola-elevation-legend.is-compact {
+  position: absolute; z-index: 7; right: 12px; bottom: 31px; width: min(270px, calc(100% - 24px));
+  border: 1px solid #48616b; border-radius: 6px; padding: 8px 9px; background: #071722e8;
+  box-shadow: 0 7px 22px #0007; backdrop-filter: blur(6px); pointer-events: none;
+}
+.mola-legend-heading { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.mola-legend-heading strong { letter-spacing: .06em; }
+.mola-legend-heading span { color: #9fb5be; }
+.mola-legend-scale {
+  height: 10px; border: 1px solid #dce7e9aa; border-radius: 2px;
+  background: linear-gradient(90deg, #1c063c 0%, #392886 10%, #185bbb 23%, #18b8d0 34%, #38b96c 44%, #c4df43 54%, #f2c354 63%, #d96a3c 74%, #a23834 82%, #a8a8a4 91%, #fff 100%);
+}
+.mola-legend-ticks { display: flex; justify-content: space-between; margin-top: 3px; color: #c9d8de; font-size: 8px; }
+.mola-elevation-legend p { margin: 7px 0 0; color: #9db3bc; font: 9px/1.4 system-ui, sans-serif; }
 .global-map-help { padding: 7px 10px; color: #91a8b7; font-size: 10px; }
 .global-map-caption { margin-top: 10px; color: #849ca8; font-size: 10px; line-height: 1.5; }
 
@@ -344,7 +361,26 @@ thead { background: #132734; color: #afc9d4; }
 .globe-site-pin--event { background: #ffad5a; }
 .globe-site-pin--mixed { background: #c7a3fc; }
 .globe-site-pin:hover, .globe-site-pin[aria-pressed="true"] { transform: translate(-50%, -50%) scale(1.24); outline: 2px solid #fff; outline-offset: 2px; }
+.globe-panorama-markers { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.globe-panorama-pin {
+  position: absolute; transform: translate(-50%, -50%); min-width: 31px; height: 22px; border: 2px solid #fff;
+  border-radius: 12px; padding: 0 5px; background: #a865f3; color: #fff; box-shadow: 0 2px 9px #000b;
+  font-size: 8px; font-weight: 900; pointer-events: auto;
+}
+.globe-panorama-pin:hover { transform: translate(-50%, -50%) scale(1.15); background: #c58cff; }
 .mars-globe-stage .global-site-popup { z-index: 8; max-width: min(430px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow: auto; }
+.mars-globe-stage > .mola-elevation-legend.is-compact { right: auto; left: 12px; bottom: 12px; }
+.globe-panorama-card {
+  position: absolute; z-index: 9; left: 16px; right: 16px; bottom: 16px; display: grid;
+  grid-template-columns: minmax(140px, 35%) 1fr; gap: 13px; max-height: calc(100% - 32px); overflow: auto;
+  border: 1px solid #6e5a8f; border-radius: 8px; padding: 11px; background: #0b1b28f5; box-shadow: 0 15px 45px #000b;
+}
+.globe-panorama-card > button { position: absolute; right: 8px; top: 8px; }
+.globe-panorama-card img { width: 100%; height: 100%; max-height: 180px; object-fit: cover; border-radius: 5px; }
+.globe-panorama-card h4 { margin: 5px 28px 5px 0; color: #fff; }
+.globe-panorama-card p { margin: 5px 0; color: #b8ccd4; font-size: 10px; line-height: 1.45; }
+.globe-panorama-card a { color: #69efd1; font-size: 11px; font-weight: 800; }
+.globe-panorama-card .globe-panorama-warning { color: #efc67a; }
 .globe-controls {
   position: absolute; z-index: 4; right: 12px; top: 12px; display: grid; overflow: hidden;
   border: 1px solid #345361; border-radius: 7px; background: #0b1e2aeb;
@@ -364,6 +400,12 @@ thead { background: #132734; color: #afc9d4; }
 .globe-site-controls > strong { display: block; margin-bottom: 8px; color: #e8f5f5; font-size: 11px; }
 .globe-site-picker { display: grid; gap: 4px; margin-top: 8px; color: #8fb0bd; font-size: 9px; }
 .globe-site-picker select { width: 100%; min-width: 0; border: 1px solid #34515d; border-radius: 5px; padding: 7px; background: #102b39; color: #eaf5f7; }
+.globe-extra-layers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0 15px; }
+.globe-extra-layers button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px; border: 1px solid #34515d; border-radius: 6px; padding: 8px; background: #10232f; color: #dcebee; text-align: left; }
+.globe-extra-layers button[aria-pressed="true"] { border-color: #63dfc2; background: #153b39; }
+.globe-extra-layers button span { color: #c690ff; font-weight: 900; }
+.globe-extra-layers button b { font-size: 9px; }
+.globe-extra-layers button small { color: #7cf0d3; }
 .globe-detail-button { width: 100%; margin-top: 10px; border: 1px solid #58edca; border-radius: 6px; padding: 10px; background: #17463f; color: #f5fffc; font-weight: 800; }
 .globe-detail-button:hover { background: #1f5b51; }
 
@@ -388,6 +430,8 @@ thead { background: #132734; color: #afc9d4; }
   .globe-mode-switch { justify-content: stretch; }
   .globe-mode-switch button { flex: 1; }
   .globe-flat-mode { padding: 5px; }
+  .globe-panorama-card { grid-template-columns: 1fr; }
+  .mola-elevation-legend.is-compact { width: min(220px, calc(100% - 24px)); }
 }
 .global-map-card.is-expanded {
   position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; gap: 10px;
