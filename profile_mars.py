@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 from pathlib import Path
 
@@ -69,6 +70,8 @@ def locate_dem(explicit: str | None) -> Path:
 
 class Terrain:
     def __init__(self, dem_path: Path, config_path: Path):
+        self.dem_path = dem_path
+        self._dem_sha256: str | None = None
         self.config = json.loads(config_path.read_text(encoding="utf-8"))
         self.dem = rasterio.open(dem_path)
         if self.dem.crs is None or not self.dem.crs.is_projected:
@@ -120,6 +123,15 @@ class Terrain:
 
     def close(self):
         self.dem.close()
+
+    def dem_sha256(self) -> str:
+        if self._dem_sha256 is None:
+            digest = hashlib.sha256()
+            with self.dem_path.open("rb") as source:
+                for block in iter(lambda: source.read(1024 * 1024), b""):
+                    digest.update(block)
+            self._dem_sha256 = digest.hexdigest()
+        return self._dem_sha256
 
     def is_valid(self, p) -> bool:
         x, y = p
@@ -656,6 +668,7 @@ class RouteEditor:
         profile = self.calculate()
         stats = calculate_route_metrics(profile)
         risks = analyze_traversability(profile, self.thresholds)
+        dem_sha256 = self.terrain.dem_sha256()
         output = self.output
         output.mkdir(parents=True, exist_ok=True)
         lon, lat = self.terrain.to_lonlat.transform(profile.xy[:, 0], profile.xy[:, 1])
@@ -677,6 +690,7 @@ class RouteEditor:
         result = {
             "title": "Jezero Traverse - Manual waypoint route",
             "crs_wkt": self.terrain.dem.crs.to_wkt(),
+            "dem_sha256": dem_sha256,
             "distance_m": round(profile.total_m, 2),
             "route_metrics": stats.to_dict(),
             "experimental_traversability": risks.to_dict(),
