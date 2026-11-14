@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { cellAtGrid, cellAtProjected, type MarsTerrain, type TerrainCell } from './marsTerrain.ts'
 import { routeToGrid, type RoutePair } from './routeMap.ts'
+import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
 
 type Camera = { zoom: number; panX: number; panY: number }
 type Size = { width: number; height: number }
@@ -91,6 +92,9 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
   const [activeRoute, setActiveRoute] = useState<'direct' | 'detour'>('direct')
   const cameraRef = useRef(camera)
   const [hovered, setHovered] = useState<TerrainCell | null>(null)
+  const [optical, setOptical] = useState<CtxOpticalLayer | null>(null)
+  const [opticalError, setOpticalError] = useState('')
+  const [activeLayer, setActiveLayer] = useState<'relief' | 'ctx'>('relief')
   const [pinned, setPinned] = useState<TerrainCell | null>(null)
   const [scienceOpen, setScienceOpen] = useState(false)
   const dragRef = useRef<Drag>(null)
@@ -102,6 +106,19 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
   const validPercent = (100 * terrain.validCount / terrain.heights.length).toFixed(1)
 
   useEffect(() => { cameraRef.current = camera }, [camera])
+
+  useEffect(() => {
+    let current = true
+    setOptical(null)
+    setOpticalError('')
+    setActiveLayer('relief')
+    void loadCtxOpticalLayer(terrain).then(layer => {
+      if (current) setOptical(layer)
+    }).catch(error => {
+      if (current) setOpticalError(error instanceof Error ? error.message : 'CTX не доступен')
+    })
+    return () => { current = false }
+  }, [terrain])
 
   useEffect(() => {
     const element = wrapperRef.current
@@ -178,9 +195,12 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
     ctx.fillRect(p.ox, p.oy, iw, ih)
     ctx.restore()
     // Visual smoothing only: the source DEM still contains 20 m cells.
+    // CTX is a genuine 5 m orthomosaic aligned to the exact projected DEM
+    // bounds; route overlays below stay in the same Mars CRS/camera.
+    const showCtx = activeLayer === 'ctx' && optical !== null
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(relief, p.ox, p.oy, iw, ih)
+    ctx.drawImage(showCtx ? optical.image : relief, p.ox, p.oy, iw, ih)
     ctx.strokeStyle = 'rgba(241,214,165,.8)'
     ctx.lineWidth = 1.2
     ctx.strokeRect(p.ox + .5, p.oy + .5, iw - 1, ih - 1)
@@ -275,7 +295,7 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
       ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 16)
       ctx.stroke()
     }
-  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute])
+  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical])
 
   function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
     if (event.button !== 0) return
@@ -357,7 +377,16 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
           <h2 id="map-title">Западная дельта Езеро</h2>
           <p>Рельеф кратера из настоящей цифровой модели высот NASA / USGS CTX. Область 1,5 × 1,5 км.</p>
         </div>
-        <span className="data-pill">MRO / CTX · 20 M / PIXEL</span>
+        <div className="layer-select" role="group" aria-label="Переключение базового слоя карты">
+          <button type="button" aria-pressed={activeLayer === 'relief'}
+            className={activeLayer === 'relief' ? 'selected' : ''}
+            onClick={() => setActiveLayer('relief')}>Рельеф DEM</button>
+          <button type="button" aria-pressed={activeLayer === 'ctx'}
+            className={activeLayer === 'ctx' ? 'selected' : ''}
+            disabled={!optical}
+            title={!optical ? 'Не загружен геопривязанный CTX-ортофотоплан' : 'Оптический CTX · 5 м/пиксель'}
+            onClick={() => { if (optical) setActiveLayer('ctx') }}>CTX · 5 м</button>
+        </div>
       </div>
       <div className="map-layout">
         <div className="map-frame">
@@ -441,13 +470,26 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
           }}>Закрыть научную карточку</button>
         </section>
       )}
+      <div className="layer-status" role="status">
+        {opticalError
+          ? 'CTX: ошибка загрузки — ' + opticalError
+          : optical
+            ? activeLayer === 'ctx'
+              ? 'CTX: настоящий ортофотоплан USGS, геопривязка подтверждена метаданными · 5 м/пиксель'
+              : 'CTX-ортофотоплан доступен: переключитесь на спутниковый снимок'
+            : 'CTX ещё не загружен на сайт: необходимы официальный оптический PNG и метаданные геопривязки'}
+      </div>
       <div className="map-footer">
         <div className="legend-title">RELIEF ELEVATION <span>LOW</span></div>
         <div className="relief-gradient" aria-hidden="true" />
         <span>HIGH</span>
         <div className="map-source">USGS Astrogeology · CTX 20 м/пиксель · марсианская проекция, не WGS84</div>
       </div>
-      <p className="scientific-disclaimer">Карта показывает только высоты, а не оптический снимок. Рельеф 20 м/пиксель не раскрывает небольшие камни и не подтверждает безопасность выхода астронавтов.</p>
+      <p className="scientific-disclaimer">
+        {activeLayer === 'ctx' && optical
+          ? 'Оптический CTX показывает отражённый свет в оттенках серого; координаты и высоты берутся из DEM. Подложка не подтверждает безопасность выхода астронавтов.'
+          : 'Цветной рельеф построен из высот DEM, это не орбитальная фотография. Разрешение 20 м/пиксель не показывает мелкие препятствия и не подтверждает безопасность EVA.'}
+      </p>
     </section>
   )
 }

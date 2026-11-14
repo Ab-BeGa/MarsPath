@@ -123,13 +123,6 @@ a { color: inherit; }
 .legend-title span, .map-footer > span { color: #97aebb; font-size: 10px; }
 .relief-gradient { width: min(240px, 32vw); height: 8px; border-radius: 3px; background: linear-gradient(to right, #2d1b20, #5e3533, #995741, #cb9063, #ebcba0); }
 .map-source { margin-left: auto; color: #728f9c; font-size: 10px; text-align: right; }
-.map-info-card { margin: 1rem 0; padding: 1rem; border: 1px solid #395169; border-radius: .5rem; background: #102031; }
-.map-info-card summary { cursor: pointer; font-weight: 700; }
-.map-info-card h3 { margin: .6rem 0; }
-.map-info-card dl { display: grid; grid-template-columns: minmax(7rem, auto) minmax(0, 1fr); gap: .4rem 1rem; }
-.map-info-card dt { color: #aebfcb; }
-.map-info-card dd { margin: 0; overflow-wrap: anywhere; }
-.map-info-card a { color: #55efc4; }
 .scientific-disclaimer { color: #96aab5; font-size: 11px; line-height: 1.65; margin: 10px 0 0; }
 .comparison-section { padding-top: 10px; }
 .comparison-card { padding: 25px; }
@@ -221,3 +214,32 @@ thead { background: #132734; color: #afc9d4; }
   background: #204348; border-color: #b5e6e0; box-shadow: inset 0 0 0 1px #c6efe3;
 }
 .route-switcher .telemetry-muted { display: block; line-height: 1.5; margin-top: 10px; }
+
+/* Task 18: only enable a real CTX orthoimage after verifying its CRS/DEM manifest. */
+.layer-select {
+  display: inline-flex; gap: 3px; align-items: center; border: 1px solid #34515d;
+  border-radius: 8px; background: #0d2430; padding: 4px; flex-shrink: 0;
+}
+.layer-select button {
+  border: 0; background: transparent; color: #b4cad1; border-radius: 5px;
+  font-size: 11px; font-weight: 700; padding: 11px 16px; white-space: nowrap;
+}
+.layer-select button:hover:not(:disabled) { background: #194251; }
+.layer-select button.selected { background: #55efc4; color: #071522; }
+.layer-select button:disabled { opacity: .38; cursor: not-allowed; }
+.layer-status {
+  margin-top: 12px; border: 1px solid #304b56; border-radius: 7px;
+  background: #10232f; padding: 11px 15px; font-size: 11px; color: #a8c0cc;
+}
+@media (max-width: 600px) {
+  .layer-select { max-width: 100%; }
+  .layer-select button { padding: 10px 11px; font-size: 10px; }
+}
+
+.map-info-card { margin: 1rem 0; padding: 1rem; border: 1px solid #395169; border-radius: .5rem; background: #102031; }
+.map-info-card summary { cursor: pointer; font-weight: 700; }
+.map-info-card h3 { margin: .6rem 0; }
+.map-info-card dl { display: grid; grid-template-columns: minmax(7rem, auto) minmax(0, 1fr); gap: .4rem 1rem; }
+.map-info-card dt { color: #aebfcb; }
+.map-info-card dd { margin: 0; overflow-wrap: anywhere; }
+.map-info-card a { color: #55efc4; }
