@@ -197,7 +197,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const dpr = Math.min(window.devicePixelRatio || 1, 3)
     canvas.width = Math.round(size.width * dpr)
     canvas.height = Math.round(size.height * dpr)
     const { width, height } = size
@@ -231,7 +231,24 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     const showCtx = activeLayer === 'ctx' && optical !== null
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(showCtx ? optical.image : relief, p.ox, p.oy, iw, ih)
+    if (showCtx) {
+      ctx.drawImage(optical.image, p.ox, p.oy, iw, ih)
+    } else if (optical) {
+      // DEM stays the quantitative layer: its colors encode elevation.
+      // The aligned CTX luminance contributes genuine surface detail instead
+      // of inventing detail by upscaling the 20 m height grid.
+      ctx.drawImage(optical.image, p.ox, p.oy, iw, ih)
+      ctx.save()
+      ctx.globalCompositeOperation = 'color'
+      ctx.globalAlpha = 0.86
+      ctx.drawImage(relief, p.ox, p.oy, iw, ih)
+      ctx.globalCompositeOperation = 'soft-light'
+      ctx.globalAlpha = 0.28
+      ctx.drawImage(relief, p.ox, p.oy, iw, ih)
+      ctx.restore()
+    } else {
+      ctx.drawImage(relief, p.ox, p.oy, iw, ih)
+    }
     ctx.strokeStyle = 'rgba(241,214,165,.8)'
     ctx.lineWidth = 1.2
     ctx.strokeRect(p.ox + .5, p.oy + .5, iw - 1, ih - 1)
@@ -606,7 +623,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       <p className="scientific-disclaimer">
         {activeLayer === 'ctx' && optical
           ? 'Оптический CTX показывает отражённый свет. Высоты берутся из DEM. Оценка пригодности маршрута для выхода экипажа требует отдельной проверки.'
-          : `Цвет и затенение показывают высоты DEM. При шаге сетки ${number.format(grid.pixel_size_m[0])} м мелкие препятствия остаются за пределами разрешения карты.`}
+          : `Цвет показывает высоты DEM, а детали поверхности взяты из геопривязанного CTX. Исходный шаг DEM — ${number.format(grid.pixel_size_m[0])} м.`}
       </p>
       <details className="map-info-card">
         <summary>Источники и ограничения</summary>
