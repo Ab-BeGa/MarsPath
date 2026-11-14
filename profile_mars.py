@@ -22,14 +22,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 from matplotlib.colors import LinearSegmentedColormap, LightSource
+from matplotlib.collections import LineCollection
+from matplotlib.lines import Line2D
 from matplotlib.ticker import FuncFormatter
-from matplotlib.widgets import Button
+from matplotlib.widgets import Button, TextBox
 from pyproj import CRS, Transformer
 from rasterio.windows import from_bounds, bounds as window_bounds
 
 from route_geometry import (nearest_segment_index, route_samples,
                             profile_index_at_distance, route_index_near_xy)
 from route_metrics import calculate_route_metrics
+from traversability import SlopeThresholds, analyze_traversability
 from terrain_sampling import sample_dem_points
 
 ROOT = Path(__file__).resolve().parent
@@ -43,6 +46,9 @@ MUTED = "#91a7b8"
 TEAL = "#55efc4"
 GOLD = "#ffce78"
 BAD = "#ff8e7c"
+SLOPE_COLORS = {"gentle": "#55efc4", "moderate": "#fcd16b",
+                "steep": "#ff9e61", "very_steep": "#ff5279",
+                "unknown": "#b6c1cd"}
 
 MARS_COLORS = LinearSegmentedColormap.from_list(
     "mars-terrain", ["#251b22", "#4f3032", "#855044", "#ae7856", "#d6a573", "#efd8ab"], 256
@@ -133,10 +139,12 @@ class Terrain:
 
 
 class RouteEditor:
-    def __init__(self, terrain: Terrain, *, step_m: float = 20.0, output: Path = ROOT):
+    def __init__(self, terrain: Terrain, *, step_m: float = 20.0, output: Path = ROOT,
+                 thresholds: SlopeThresholds | None = None):
         self.terrain = terrain
         self.step_m = step_m
         self.output = output
+        self.thresholds = thresholds or SlopeThresholds()
         self.waypoints = terrain.fixed_points.copy()
         self.history = []
         self.dragging = None
@@ -186,8 +194,7 @@ class RouteEditor:
         self.sidebar.text(.55, .447, "MAX MEAS. SLOPE", color=MUTED, fontsize=7.1)
         self.metric_warning = self.sidebar.text(.10, .407, "20m DEM  /  SAMPLE-BASED", color=MUTED, fontsize=7.1)
         self.sidebar.plot([.08, .92], [.392, .392], color=BORDER, lw=1)
-        self.sidebar.text(.10, .366, "LEFT CLICK: ADD  /  DRAG: MOVE", color=MUTED, fontsize=7.6)
-        self.sidebar.text(.10, .335, "RIGHT CLICK: REMOVE  /  CTRL+Z", color=MUTED, fontsize=7.6)
+        self.sidebar.text(.10, .373, "TEST SLOPE LIMITS / DEGREES", color=GOLD, fontsize=7.6)
         self.sidebar.text(.10, .148, "LIVE ELEVATION PROBE", color=GOLD, fontsize=8, fontweight="bold")
         self.probe_info = self.sidebar.text(.10, .116, "HOVER OVER THE PROFILE", color=TEXT, fontsize=9, fontweight="bold")
         self.probe_detail = self.sidebar.text(.10, .092, "CLICK PROFILE TO PIN", color=MUTED, fontsize=7.5)
@@ -206,7 +213,17 @@ class RouteEditor:
             button.label.set_fontsize(9)
             button.on_clicked(callback)
             self.buttons.append(button)
-        self.status_text = self.fig.text(.037, .035, "", color=MUTED, fontsize=9)
+        self.threshold_fields = []
+        for j, val in enumerate((self.thresholds.gentle_max_deg,
+                                 self.thresholds.moderate_max_deg,
+                                 self.thresholds.steep_max_deg)):
+            field_ax = self.fig.add_axes([.797 + .056 * j, .339, .046, .028], facecolor="#223749")
+            field = TextBox(field_ax, "", initial=f"{val:g}", color="#223749", hovercolor="#30546b")
+            field.text_disp.set_color(TEXT)
+            field.text_disp.set_fontsize(10)
+            field.on_submit(self._on_threshold_submit)
+            self.threshold_fields.append(field)
+        self.status_text = self.fig.text(.037, .035, "", color=MUTED, fontsize=8.6)
         self.fig.text(.73, .035, "USGS CTX DEM  •  20m raster  |  elevation samples ~20m apart",
                       color=MUTED, fontsize=8, ha="right")
 
@@ -346,6 +363,7 @@ class RouteEditor:
         self.profile = profile
         stats = calculate_route_metrics(profile)
         self.route_metrics = stats
+        self.traversability = analyze_traversability(profile, self.thresholds)
         ax = self.map_ax
         ax.clear()
         ax.set_facecolor(PANEL)
@@ -363,7 +381,22 @@ class RouteEditor:
         ax.imshow(shade, extent=(x0, x1, y0, y1), origin="upper", interpolation="nearest")
         route = self.waypoints
         ax.plot(route[:, 0], route[:, 1], color="#051b29", lw=8, solid_capstyle="round", zorder=4)
-        ax.plot(route[:, 0], route[:, 1], color=TEAL, lw=3.0, solid_capstyle="round", zorder=5)
+        bands = self.traversability.interval_bands
+        sample_pairs = np.stack([profile.xy[:-1], profile.xy[1:]], axis=1)
+        ax.add_collection(LineCollection(sample_pairs[bands != "unknown"],
+                        colors=[SLOPE_COLORS[b] for b in bands if b != "unknown"],
+                        linewidths=3.7, zorder=5))
+        if np.any(bands == "unknown"):
+            ax.add_collection(LineCollection(sample_pairs[bands == "unknown"],
+                              colors=SLOPE_COLORS["unknown"], linewidths=3.7,
+                              linestyles="dashed", zorder=5))
+        handles = [Line2D([0], [0], color=SLOPE_COLORS[b], lw=3,
+                          ls="--" if b == "unknown" else "-") for b in SLOPE_COLORS]
+        legend = ax.legend(handles, ["GENTLE", "MODERATE", "STEEP", "VERY STEEP", "NO DATA"],
+                           loc="lower center", ncol=5, fontsize=7, framealpha=.92,
+                           facecolor=BG, edgecolor=BORDER, labelcolor=TEXT,
+                           columnspacing=1.1, handlelength=1.3, borderpad=.5)
+        legend.set_zorder(20)
         if len(route) > 2:
             ax.scatter(route[1:-1, 0], route[1:-1, 1], s=82, c=GOLD,
                        edgecolors=BG, linewidths=1.9, zorder=8)
@@ -402,7 +435,14 @@ class RouteEditor:
         h = profile.elevation_m
         valid = np.isfinite(h)
         if valid.any():
-            g.plot(d, np.ma.masked_invalid(h), color=TEAL, lw=2.5)
+            g.plot(d, np.ma.masked_invalid(h), color=TEAL, lw=1.0, alpha=.4)
+            valid_edges = ((bands != "unknown") & np.isfinite(h[:-1]) & np.isfinite(h[1:]))
+            if np.any(valid_edges):
+                graph_pairs = np.stack([np.stack([d[:-1], h[:-1]], axis=1),
+                                        np.stack([d[1:], h[1:]], axis=1)], axis=1)
+                g.add_collection(LineCollection(graph_pairs[valid_edges],
+                                 colors=[SLOPE_COLORS[b] for b in bands[valid_edges]],
+                                 linewidths=2.8, zorder=5))
             baseline = float(np.nanmin(h)) - 2
             g.fill_between(d, np.where(valid, h, baseline), baseline, where=valid,
                            color=TEAL, alpha=.09)
@@ -440,9 +480,13 @@ class RouteEditor:
             # Emphasize only the steepest *measured* DEM interval, not a safe/unsafe boundary.
             edge = int(np.searchsorted(profile.distance_m, stats.max_slope_start_m, side="left"))
             xy = profile.xy[edge:edge+2]
-            ax.plot(xy[:, 0], xy[:, 1], color=BAD, lw=5, solid_capstyle="round", zorder=7)
+            # Mark the absolute maximum measured grade without overriding
+            # the user-selected slope-band color of that map interval.
+            midpoint = np.mean(xy, axis=0)
+            ax.scatter(midpoint[0], midpoint[1], marker="x", s=48,
+                       c=TEXT, linewidths=1.6, zorder=11)
             g.axvspan(stats.max_slope_start_m, stats.max_slope_end_m,
-                      color=BAD, alpha=.20, zorder=1)
+                      color="#ffffff", alpha=.10, zorder=1)
         g.set_xlim(0, max(1, profile.total_m))
         g.grid(color="white", alpha=.09, ls="--")
         g.set_title("ELEVATION PROFILE   /   SAMPLED FROM ORIGINAL DEM", loc="left", color=TEXT, fontsize=10, fontweight="bold", pad=12)
@@ -477,9 +521,28 @@ class RouteEditor:
         self.metric_coverage.set_text(f"{profile.coverage_pct:.1f}%")
         self.metric_coverage.set_color(TEAL if profile.coverage_pct == 100 else BAD)
         warning = f"   •   {profile.missing_count} DEM SAMPLES MISSING" if profile.missing_count else ""
-        self.status_text.set_text("●  " + self.last_message + warning)
+        self.status_text.set_text(
+            "●  " + self.last_message + warning +
+            f"   /   STEEP+ {self.traversability.difficult_m:.0f} m" +
+            f"   /   UNKNOWN {self.traversability.unknown_m:.0f} m"
+        )
         self.status_text.set_color(BAD if "REJECTED" in self.last_message or warning else TEAL)
         self.fig.canvas.draw_idle()
+
+    def _on_threshold_submit(self, _value: str):
+        """Allow changes to the three experimental cutoffs without rebooting."""
+        try:
+            values = [float(field.text.strip().replace(",", ".")) for field in self.threshold_fields]
+            updated = SlopeThresholds(*values)
+        except ValueError:
+            self.last_message = "INVALID LIMITS: NEED 0 < A < B < C < 90"
+            self.status_text.set_text("●  " + self.last_message)
+            self.status_text.set_color(BAD)
+            self.fig.canvas.draw_idle()
+            return
+        self.thresholds = updated
+        self.last_message = "EXPERIMENTAL BANDS UPDATED (NOT EVA SAFETY LIMITS)"
+        self.refresh()
 
     def _set_probe(self, index: int | None):
         """Synchronize the two views with a single *measured* DEM sample.
@@ -528,6 +591,7 @@ class RouteEditor:
     def export(self, _event=None):
         profile = self.calculate()
         stats = calculate_route_metrics(profile)
+        risks = analyze_traversability(profile, self.thresholds)
         output = self.output
         output.mkdir(parents=True, exist_ok=True)
         lon, lat = self.terrain.to_lonlat.transform(profile.xy[:, 0], profile.xy[:, 1])
@@ -538,12 +602,20 @@ class RouteEditor:
                                                 profile.xy, lat, lon, profile.sample_status):
                 writer.writerow([f"{d:.3f}", f"{z:.3f}" if np.isfinite(z) else "",
                                  f"{xy[0]:.3f}", f"{xy[1]:.3f}", f"{la:.8f}", f"{lo:.8f}", str(state)])
+        with (output / "route_traversability.csv").open("w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow(["interval_start_m", "interval_end_m", "length_m", "measured_slope_deg", "slope_band"])
+            for i, (slope, band, length) in enumerate(zip(risks.interval_slope_deg,
+                                                           risks.interval_bands, risks.interval_lengths_m)):
+                writer.writerow([f"{profile.distance_m[i]:.3f}", f"{profile.distance_m[i+1]:.3f}",
+                                 f"{length:.3f}", f"{slope:.3f}" if np.isfinite(slope) else "", str(band)])
         points_lon, points_lat = self.terrain.to_lonlat.transform(self.waypoints[:, 0], self.waypoints[:, 1])
         result = {
             "title": "Jezero Traverse - Manual waypoint route",
             "crs_wkt": self.terrain.dem.crs.to_wkt(),
             "distance_m": round(profile.total_m, 2),
             "route_metrics": stats.to_dict(),
+            "experimental_traversability": risks.to_dict(),
             "dem_sample_step_max_m": self.step_m,
             "valid_samples_pct": round(profile.coverage_pct, 2),
             "samples_total": int(len(profile.distance_m)),
@@ -560,6 +632,7 @@ class RouteEditor:
         print(f"Route exported: {output / 'route_profile.csv'}")
         print(f"Waypoints exported: {output / 'route_waypoints.json'}")
         print(f"Dashboard: {output / 'route_profile.png'}")
+        print(f"Experimental slope bands: {output / 'route_traversability.csv'}")
 
 
 def main():
@@ -567,6 +640,9 @@ def main():
     parser.add_argument("--dem", help="Path to original USGS Jezero DEM (.tif)")
     parser.add_argument("--config", type=Path, default=SITE / "site_config.json")
     parser.add_argument("--step", type=float, default=20.0, help="Maximum sample spacing (meters)")
+    parser.add_argument("--slope-bands", nargs=3, type=float, default=[5, 10, 15],
+                        metavar=("LOW", "MOD", "HIGH"),
+                        help="Experimental upper bounds in degrees: 0 < LOW < MOD < HIGH < 90")
     parser.add_argument("--output", type=Path, default=ROOT, help="Directory for CSV, JSON, PNG exports")
     parser.add_argument("--export-only", action="store_true", help="Export direct or loaded route without opening interactive UI")
     parser.add_argument("--load", type=Path, help="Load previously exported route_waypoints.json")
@@ -574,9 +650,13 @@ def main():
     if args.step <= 0:
         parser.error("--step must be positive")
     dem_path = locate_dem(args.dem)
+    try:
+        thresholds = SlopeThresholds(*args.slope_bands)
+    except ValueError as exc:
+        parser.error(str(exc))
     terrain = Terrain(dem_path, args.config)
     try:
-        editor = RouteEditor(terrain, step_m=args.step, output=args.output)
+        editor = RouteEditor(terrain, step_m=args.step, output=args.output, thresholds=thresholds)
         if args.load:
             editor.load(args.load)
         if args.export_only:

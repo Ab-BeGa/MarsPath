@@ -7,3 +7,4 @@ __pycache__/
 route_waypoints.json
 jezero_site_selection/site_dem_preview.png
 .pytest_cache/
+route_traversability.csv
