@@ -48,6 +48,12 @@ export function MarsSiteInfoCard({
       </div>}
 
       <h4 id="global-site-popup-title">{selected.name}</h4>
+      {selected.image && <figure className="global-site-image">
+        <a href={selected.image.page_url} target="_blank" rel="noopener noreferrer">
+          <img src={selected.image.url} alt={selected.image.alt_ru} loading="eager" decoding="async"/>
+        </a>
+        <figcaption>{selected.image.caption_ru} <span>© {selected.image.credit}</span></figcaption>
+      </figure>}
       <dl className="global-site-facts">
         <dt>{t('map.sites.type')}</dt><dd>{typeLabel}</dd>
         <dt>{t('map.sites.mission')}</dt><dd>{selected.mission}</dd>
