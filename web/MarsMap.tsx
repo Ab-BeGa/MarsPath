@@ -85,15 +85,18 @@ function toGridPosition(screenX: number, screenY: number, m: ReturnType<typeof m
 export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: RoutePair }) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const scienceButtonRef = useRef<HTMLButtonElement>(null)
   const [size, setSize] = useState<Size>({ width: 920, height: 570 })
   const [camera, setCamera] = useState<Camera>({ zoom: 1, panX: 0, panY: 0 })
   const [activeRoute, setActiveRoute] = useState<'direct' | 'detour'>('direct')
   const cameraRef = useRef(camera)
   const [hovered, setHovered] = useState<TerrainCell | null>(null)
   const [pinned, setPinned] = useState<TerrainCell | null>(null)
+  const [scienceOpen, setScienceOpen] = useState(false)
   const dragRef = useRef<Drag>(null)
   const relief = useMemo(() => createRelief(terrain), [terrain])
   const checkpoints = terrain.metadata.checked_points.filter(p => ['base', 'science_target'].includes(p.id))
+  const science = checkpoints.find(point => point.id === 'science_target')
   const { grid } = terrain.metadata
   const state = pinned ?? hovered ?? cellAtGrid(terrain, Math.floor(grid.width / 2), Math.floor(grid.height / 2))
   const validPercent = (100 * terrain.validCount / terrain.heights.length).toFixed(1)
@@ -333,6 +336,7 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
   const focusPoint = (pointId: string) => {
     const point = checkpoints.find(p => p.id === pointId)
     if (!point) return
+    setScienceOpen(point.id === 'science_target')
     const [sx, , tx, , sy, ty] = grid.transform
     const col = (point.projected_x_m - tx) / sx
     const row = (point.projected_y_m - ty) / sy
@@ -391,7 +395,11 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
           </div>
           <div className="telemetry-block">
             <span className="telemetry-label">НАУЧНЫЕ ОРИЕНТИРЫ</span>
-            {checkpoints.map(point => <button key={point.id} type="button" className="checkpoint" onClick={() => focusPoint(point.id)}>
+            {checkpoints.map(point => <button key={point.id} type="button" className="checkpoint"
+              ref={point.id === 'science_target' ? scienceButtonRef : undefined}
+              aria-expanded={point.id === 'science_target' ? scienceOpen : undefined}
+              aria-controls={point.id === 'science_target' ? 'science-stop-card' : undefined}
+              onClick={() => focusPoint(point.id)}>
               <span className={point.id === 'base' ? 'point-glyph base' : 'point-glyph science'}>{point.id === 'base' ? 'A' : 'B'}</span>
               <span className="checkpoint-text"><strong>{point.id === 'base' ? 'Three Forks' : 'Wildcat Ridge'}</strong>
                 <small>{point.id === 'base' ? 'Условная база' : 'Научная остановка'}</small></span>
@@ -420,6 +428,19 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
           </div>
         </aside>
       </div>
+      {science && (
+        <section className="map-info-card" id="science-stop-card" aria-labelledby="science-stop-title" hidden={!scienceOpen}>
+          <h3 id="science-stop-title">Wildcat Ridge / Hazeltop</h3>
+          <p>Демонстрационная точка B в районе Wildcat Ridge · {coordinate.format(science.latitude_deg)}° N · {coordinate.format(science.longitude_deg)}° E</p>
+          <p>Мелкозернистые осадочные породы с сульфатами помогают изучать условия древнего озера Езеро. Отложения могли сформироваться при испарении солёной воды. В обнажении Wildcat Ridge Perseverance отобрал керны Hazeltop и Bearwallow.</p>
+          <p><strong>Задача астронавта в демо.</strong> Сфотографировать обнажение с масштабом, описать видимые слои и обосновать выбор точки для отбора образца.</p>
+          <a href="https://science.nasa.gov/resource/sample-collection-and-rock-analysis-at-wildcat-ridge/">NASA · Отбор и анализ образцов Wildcat Ridge</a>
+          <button type="button" className="text-action" onClick={() => {
+            setScienceOpen(false)
+            scienceButtonRef.current?.focus()
+          }}>Закрыть научную карточку</button>
+        </section>
+      )}
       <div className="map-footer">
         <div className="legend-title">RELIEF ELEVATION <span>LOW</span></div>
         <div className="relief-gradient" aria-hidden="true" />
