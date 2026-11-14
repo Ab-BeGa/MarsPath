@@ -4,6 +4,14 @@
     75,
     75
   ],
+  "source_grid_shape_rows_cols": [
+    375,
+    375
+  ],
+  "source_window_offset_row_col": [
+    150,
+    150
+  ],
   "pixel_size_m_xy": [
     20.0,
     20.0

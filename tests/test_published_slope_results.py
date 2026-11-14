@@ -23,8 +23,18 @@ OUTPUTS = ROOT / "results" / "jezero_slopes"
 class PublishedLocalSlopesTests(unittest.TestCase):
     def test_committed_results_match_recomputed_mars_dem(self):
         heights, valid, dx, dy, metadata = load_dem(DATA_DIR)
-        calculated = calculate_local_slopes(heights, valid, dx, dy)
-        rows, cols = heights.shape
+        summary_path = OUTPUTS / "slope_summary.json"
+        self.assertTrue(summary_path.is_file())
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+
+        rows, cols = summary["grid_shape_rows_cols"]
+        source_rows, source_cols = summary["source_grid_shape_rows_cols"]
+        row_offset, col_offset = summary["source_window_offset_row_col"]
+        self.assertEqual([heights.shape[0], heights.shape[1]], [source_rows, source_cols])
+        slope_heights = heights[row_offset:row_offset + rows, col_offset:col_offset + cols]
+        slope_valid = valid[row_offset:row_offset + rows, col_offset:col_offset + cols]
+        self.assertEqual(slope_heights.shape, (rows, cols))
+        calculated = calculate_local_slopes(slope_heights, slope_valid, dx, dy)
 
         binary_path = OUTPUTS / "local_max_slope_deg.f32"
         self.assertTrue(binary_path.is_file())
@@ -34,15 +44,11 @@ class PublishedLocalSlopesTests(unittest.TestCase):
         np.testing.assert_allclose(
             published, calculated.local_max_slope_deg.astype("<f4"),
             rtol=0, atol=1e-5, equal_nan=True,
-            err_msg="Published slopes differ from recomputation on the real DEM",
+            err_msg="Published slopes differ from recomputation on their recorded real DEM window",
         )
         self.assertTrue(np.array_equal(
             np.isfinite(published), np.isfinite(calculated.local_max_slope_deg)
         ))
-
-        summary_path = OUTPUTS / "slope_summary.json"
-        self.assertTrue(summary_path.is_file())
-        summary = json.loads(summary_path.read_text(encoding="utf-8"))
         self.assertEqual(summary["grid_shape_rows_cols"], [rows, cols])
         self.assertEqual(summary["pixel_size_m_xy"], [dx, dy])
         self.assertEqual(summary["source"], metadata["source"]["product"])

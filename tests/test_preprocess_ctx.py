@@ -33,7 +33,9 @@ class CtxPreparationTests(unittest.TestCase):
         left, bottom, right, top = self.bounds
         if covered:
             t = from_origin(left - 50, top + 50, 5, 5)
-            rows, cols = 320, 320
+            # The current optical region is 7.5 km at 5 m/pixel, plus 50 m
+            # of synthetic coverage around all four edges.
+            rows, cols = 1520, 1520
         else:
             t = from_origin(left, top, 5, 5)
             rows, cols = 20, 20
@@ -54,8 +56,8 @@ class CtxPreparationTests(unittest.TestCase):
         output = self.path / "out"
         result = generate_ctx_tile(source, DEM_METADATA, output)
         self.assertEqual(result["alignment"]["resolution_m"], 5)
-        self.assertEqual(result["alignment"]["width"], 300)
-        self.assertEqual(result["alignment"]["height"], 300)
+        self.assertEqual(result["alignment"]["width"], 1500)
+        self.assertEqual(result["alignment"]["height"], 1500)
         self.assertEqual(result["alignment"]["target_dem_sha256"], self.meta["source"]["source_sha256"])
         self.assertEqual(result["alignment"]["target_dem_crs_wkt"], self.meta["crs_wkt"])
         self.assertGreater(result["alignment"]["coverage_valid_fraction"], .9)
@@ -63,7 +65,7 @@ class CtxPreparationTests(unittest.TestCase):
         self.assertEqual(result["alignment"]["bounds_projected_m"], self.bounds)
         self.assertEqual(result["display"]["image_file"], "ctx_ortho.png")
         with Image.open(output / "ctx_ortho.png") as image:
-            self.assertEqual(image.size, (300, 300))
+            self.assertEqual(image.size, (1500, 1500))
             self.assertEqual(image.mode, "RGBA")
             rgba = np.asarray(image)
             self.assertEqual(int(rgba[80, 80, 3]), 0)
@@ -83,8 +85,8 @@ class CtxPreparationTests(unittest.TestCase):
         source = self.make_source(crs=unnamed_crs)
         output = self.path / "unknown_crs_out"
         result = generate_ctx_tile(source, DEM_METADATA, output)
-        self.assertEqual(result["alignment"]["width"], 300)
-        self.assertEqual(result["alignment"]["height"], 300)
+        self.assertEqual(result["alignment"]["width"], 1500)
+        self.assertEqual(result["alignment"]["height"], 1500)
         self.assertTrue((output / "ctx_ortho.png").exists())
 
     def test_rejects_projected_earth_crs_even_if_crs_name_is_generic(self):
