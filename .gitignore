@@ -1,0 +1,6 @@
+*.tif
+*.tiff
+route_profile.csv
+route_profile.png
+__pycache__/
+.venv/
