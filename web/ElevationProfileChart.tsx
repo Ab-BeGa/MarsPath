@@ -58,7 +58,7 @@ export function ElevationProfileChart({
           <h3 id="elevation-profile-heading">Профиль высот · {activeRoute === 'direct' ? 'прямой маршрут' : 'обходной маршрут'}</h3>
           <p>Измерения по компактной USGS CTX DEM 20 м/пиксель. Нажми точку графика или используй ползунок.</p>
         </div>
-        <span>{samples.length} отсчётов · {fmt(profile.total_m)} м</span>
+        <span>{samples.length} отсчётов · {fmt.format(profile.total_m)} м</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="elevation-profile-svg"
         role="img" aria-label="Высота по расстоянию вдоль маршрута. Нажмите на график для выбора точки.">
@@ -67,12 +67,12 @@ export function ElevationProfileChart({
           const z = minHeight + f * (maxHeight - minHeight)
           return <g key={f}>
             <line x1={L} x2={W-R} y1={y(z)} y2={y(z)} stroke="#405766" strokeDasharray="4 7" opacity=".7" />
-            <text x={L-11} y={y(z)+4} textAnchor="end" fill="#a8c1cd" fontSize="12">{fmt(z)}</text>
+            <text x={L-11} y={y(z)+4} textAnchor="end" fill="#a8c1cd" fontSize="12">{fmt.format(z)}</text>
           </g>
         })}
         {tickDistances.map((distance, i) => <g key={i}>
           <line x1={x(distance)} x2={x(distance)} y1={T} y2={H-B} stroke="#38515e" opacity=".5" />
-          <text x={x(distance)} y={H-24} textAnchor="middle" fill="#acc4cf" fontSize="12">{fmt(distance)} м</text>
+          <text x={x(distance)} y={H-24} textAnchor="middle" fill="#acc4cf" fontSize="12">{fmt.format(distance)} м</text>
         </g>)}
         <text x={15} y={14} fill="#acc4cf" fontSize="12">Высота, м</text>
         {visibleIntervals.map(({ prev, next, i }) => (
@@ -104,8 +104,8 @@ export function ElevationProfileChart({
       </div>
       <p className="elevation-profile-reading" role="status">
         {active
-          ? <>{fmt(active.distance_m)} м от базы · Высота: <strong>{active.elevation_m === null ? 'нет данных' : `${fmt2(active.elevation_m)} м`}</strong>
-              {' · '}Измеренный уклон интервала: <strong>{slope === null ? 'неизвестен' : `${fmt2(slope)}°`}</strong>
+          ? <>{fmt.format(active.distance_m)} м от базы · Высота: <strong>{active.elevation_m === null ? 'нет данных' : `${fmt2.format(active.elevation_m)} м`}</strong>
+              {' · '}Измеренный уклон интервала: <strong>{slope === null ? 'неизвестен' : `${fmt2.format(slope)}°`}</strong>
               {' · '}Статус: {active.status}</>
           : 'Выбери точку на профиле: соответствующий интервал и отсчёт будут подсвечены на карте выше.'}
       </p>
