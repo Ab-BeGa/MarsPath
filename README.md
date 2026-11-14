@@ -276,3 +276,44 @@ npm.cmd run dev
 дем-данных), `web/MarsMap.tsx` (Canvas/React карта),
 `web/marsTerrain.test.ts` (тесты координат, бинарных данных, маски и валидации).
 CI для веб-интерфейса проверяет TypeScript, тесты Node и production-сборку.
+## Оптический слой CTX (Task #18)
+
+Источник: USGS Astrogeology, Mars 2020 Science Investigation CTX orthomosaic 5 м/пиксель, совмещённый с CTX DEM:
+https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic
+
+Это настоящий оптический снимок орбитального аппарата Mars Reconnaissance Orbiter, а не раскрашенная высотная DEM или неподтверждённый browse-JPEG.
+
+### Подготовка слоя из официального GeoTIFF
+
+В Windows PowerShell из корня репозитория:
+
+```powershell
+$py = "..\jezero_site_selection\.venv\Scripts\python.exe"
+& $py -m pip install -r requirements.txt
+& $py scripts/preprocess_ctx.py --download
+```
+
+Параметр --download загружает ПОЛНЫЙ официальный GeoTIFF, который может быть очень большим. Он сохраняется в data/M20_JezeroCrater_CTXortho_mosaic_5m.tif и не коммитится в Git.
+Если исходный файл уже скачан, укажи его через --source вместо --download.
+
+Скрипт проверяет подлинную Mars CRS и сопоставимость её радиуса с DEM, берёт ровно 1,5×1,5 км участка из metadata.json, и через rasterio.WarpedVRT переводит только оптические пиксели в DEM CRS и ту же границу ROI с разрешением 5 м/пиксель. DEM остаётся нетронутой.
+
+Два компактных результата:
+- public/data/jezero/ctx_ortho.png (300×300, grayscale RGBA, прозрачные NoData)
+- public/data/jezero/ctx_ortho.json (источник, SHA-256, исходная CRS, преобразование, подтверждённые границы ROI и покрытие).
+
+**Без этих файлов кнопка CTX · 5 м намеренно отключена.** Нельзя показывать декоративную картинку как реальную геопривязанную фотографию.
+
+### Добавить изображения в рабочую ветку
+
+```powershell
+git switch feature/ctx-optical-layer
+git pull --ff-only origin feature/ctx-optical-layer
+git add public/data/jezero/ctx_ortho.png public/data/jezero/ctx_ortho.json
+git commit -m "data(ctx): add true georeferenced Jezero CTX tile"
+git push origin feature/ctx-optical-layer
+```
+
+После появления подложки запустить npm.cmd test, npm.cmd run build и Python тесты; проверить изображение в браузере, затем слить PR в main.
+
+Рельеф DEM и CTX переключаются в той же карте; координаты и высоты остаются привязанными к исходной DEM. Оптический слой не доказывает безопасность EVA.
