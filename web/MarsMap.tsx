@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, 
 import { cellAtGrid, cellAtProjected, type MarsTerrain, type TerrainCell } from './marsTerrain.ts'
 import { routeToGrid, type RoutePair } from './routeMap.ts'
 import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
+import { RouteSlopePanel } from './RouteSlopePanel.tsx'
+import {
+  DEFAULT_SLOPE_THRESHOLDS, SLOPE_COLORS, measureRouteSlope,
+  type SlopeThresholds,
+} from './routeSlopes.ts'
 
 type Camera = { zoom: number; panX: number; panY: number }
 type Size = { width: number; height: number }
@@ -90,6 +95,8 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
   const [size, setSize] = useState<Size>({ width: 920, height: 570 })
   const [camera, setCamera] = useState<Camera>({ zoom: 1, panX: 0, panY: 0 })
   const [activeRoute, setActiveRoute] = useState<'direct' | 'detour'>('direct')
+  const [slopeThresholds, setSlopeThresholds] = useState<SlopeThresholds>({ ...DEFAULT_SLOPE_THRESHOLDS })
+  const [showSlopeHighlights, setShowSlopeHighlights] = useState(true)
   const cameraRef = useRef(camera)
   const [hovered, setHovered] = useState<TerrainCell | null>(null)
   const [optical, setOptical] = useState<CtxOpticalLayer | null>(null)
@@ -104,6 +111,14 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
   const { grid } = terrain.metadata
   const state = pinned ?? hovered ?? cellAtGrid(terrain, Math.floor(grid.width / 2), Math.floor(grid.height / 2))
   const validPercent = (100 * terrain.validCount / terrain.heights.length).toFixed(1)
+  const slopeState = useMemo(() => {
+    if (!routes) return { report: null, error: '' }
+    try {
+      return { report: measureRouteSlope(terrain, routes[activeRoute], slopeThresholds), error: '' }
+    } catch (cause) {
+      return { report: null, error: cause instanceof Error ? cause.message : 'Не удалось рассчитать уклоны' }
+    }
+  }, [terrain, routes, activeRoute, slopeThresholds])
 
   useEffect(() => { cameraRef.current = camera }, [camera])
 
@@ -246,6 +261,30 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
       ctx.restore()
     }
 
+    // Draw the route grade overlay AFTER both path strokes, BEFORE location
+    // markers. Every segment uses real DEM sample heights (not drawn pixels).
+    if (routes && slopeState.report && showSlopeHighlights) {
+      const [stepX, , left, , stepY, top] = grid.transform
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(p.ox, p.oy, iw, ih)
+      ctx.clip()
+      ctx.lineJoin = 'round'
+      ctx.lineCap = 'round'
+      ctx.lineWidth = 6.5
+      for (const interval of slopeState.report.intervals) {
+        ctx.strokeStyle = SLOPE_COLORS[interval.band]
+        ctx.setLineDash(interval.band === 'unknown' ? [6, 6] : [])
+        ctx.beginPath()
+        ctx.moveTo(p.ox + (interval.from.x - left) / stepX * p.scale,
+                   p.oy + (interval.from.y - top) / stepY * p.scale)
+        ctx.lineTo(p.ox + (interval.to.x - left) / stepX * p.scale,
+                   p.oy + (interval.to.y - top) / stepY * p.scale)
+        ctx.stroke()
+      }
+      ctx.restore()
+    }
+
     const marker = (x: number, y: number, name: string, color: string, id: string) => {
       const px = p.ox + x * p.scale
       const py = p.oy + y * p.scale
@@ -295,7 +334,7 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
       ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 16)
       ctx.stroke()
     }
-  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical])
+  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, optical, slopeState, showSlopeHighlights])
 
   function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
     if (event.button !== 0) return
@@ -470,6 +509,12 @@ export function MarsMap({ terrain, routes }: { terrain: MarsTerrain; routes?: Ro
           }}>Закрыть научную карточку</button>
         </section>
       )}
+      {slopeState.report && (
+        <RouteSlopePanel report={slopeState.report} routeName={activeRoute}
+          thresholds={slopeThresholds} onThresholdsChange={setSlopeThresholds}
+          highlightEnabled={showSlopeHighlights} onToggle={setShowSlopeHighlights}/>
+      )}
+      {slopeState.error && <p className="alert error-alert" role="alert">Не удалось оценить уклоны: {slopeState.error}</p>}
       <div className="layer-status" role="status">
         {opticalError
           ? 'CTX: ошибка загрузки — ' + opticalError
