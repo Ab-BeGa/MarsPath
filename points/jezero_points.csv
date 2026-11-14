@@ -1,0 +1,4 @@
+id,name,latitude_deg,longitude_deg,role
+site_center,West delta site center,18.45616697,77.40974302,roi_center
+base,Three Forks (demonstration base),18.45369687,77.41359752,base
+science_target,Wildcat Ridge / Hazeltop,18.45863707,77.40588851,science_target

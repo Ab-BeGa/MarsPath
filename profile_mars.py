@@ -4,16 +4,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 from rasterio.plot import plotting_extent
+from scripts.preprocess_dem import projected_distance_m
 
 
 folder = Path(__file__).resolve().parent
-dem_path = folder / "M20_JezeroCrater_CTXDEM_20m.tif"
+dem_path = folder / "data" / "M20_JezeroCrater_CTXDEM_20m.tif"
 
 with rasterio.open(dem_path) as dem:
     if dem.crs is None or not dem.crs.is_projected:
         raise SystemExit("Для расчёта нужна модель высот в проекции.")
-
-    _, meters_per_unit = dem.crs.linear_units_factor
 
     # Уменьшаем изображение для предпросмотра. Высоты берём из оригинала.
     scale = min(1, 1200 / max(dem.height, dem.width))
@@ -35,12 +34,12 @@ with rasterio.open(dem_path) as dem:
         raise SystemExit("Запусти скрипт ещё раз и выбери две точки.")
 
     start, end = np.asarray(points)
-    length_m = np.linalg.norm(end - start) * meters_per_unit
+    length_m = projected_distance_m(dem.crs, tuple(start), tuple(end))
 
     if length_m == 0:
         raise SystemExit("Выбери две разные точки.")
 
-    # Берём отсчёты через 5 метров или чаще, включая обе конечные точки.
+    # Берём отсчёты с шагом не более 20 метров, включая обе конечные точки.
     sample_count = int(np.ceil(length_m / 20)) + 1
     coordinates = np.linspace(start, end, sample_count)
     distances = np.linspace(0, length_m, sample_count)
