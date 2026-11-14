@@ -7,6 +7,8 @@ import { loadMarsSites, type MarsSite } from './marsSites.ts'
 import { MolaElevationLegend } from './MolaElevationLegend.tsx'
 import { loadPhotoCatalog, type JezeroPhoto } from './photoCatalog.ts'
 import { PanoramaDialog } from './PanoramaDialog.tsx'
+import { clusterPanoramas } from './panoramaClusters.ts'
+import { preloadPanoramaImage } from './PanoramaViewer.tsx'
 
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
 const JEZERO = { longitude: 77.40974302, latitude: 18.45616697 }
@@ -71,6 +73,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
   const [panoramas, setPanoramas] = useState<JezeroPhoto[]>([])
   const [selectedPanorama, setSelectedPanorama] = useState<JezeroPhoto | null>(null)
+  const [panoramaGroup, setPanoramaGroup] = useState<JezeroPhoto[]>([])
   const [showPanoramas, setShowPanoramas] = useState(true)
   const [detailedRegions, setDetailedRegions] = useState<DetailedRegion[]>([])
 
@@ -256,6 +259,13 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
     return [...groups.values()]
   }, [filteredSites])
   const selectedSites = selectedSiteIds.map(id => sites.find(site => site.id === id)).filter((site): site is MarsSite => Boolean(site))
+  const panoramaClusters = clusterPanoramas(panoramas.flatMap(panorama => {
+    const coordinates = panorama.coordinates
+    if (!coordinates) return []
+    const point = marsToGlobeScreen(coordinates.longitude_deg, coordinates.latitude_deg, view)
+    if (!point.visible) return []
+    return [{ item:panorama, x:(.5 + point.x * .43 * view.zoom) * size, y:(.5 - point.y * .43 * view.zoom) * size }]
+  }), 36)
   const focusSite = (site: MarsSite) => {
     setView(current => clampGlobeView({ ...current, longitude: site.longitude_east_deg, latitude: site.latitude_deg }))
     setSelectedSiteIds([site.id])
@@ -315,21 +325,21 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
             })}
           </div>
           {showPanoramas && <div className="globe-panorama-markers" aria-label={t('globe.panoramas')}>
-            {panoramas.map(panorama => {
-              const coordinates = panorama.coordinates!
-              const point = marsToGlobeScreen(coordinates.longitude_deg, coordinates.latitude_deg, view)
-              if (!point.visible) return null
-              return <button key={panorama.id} className="globe-panorama-pin"
-                style={{ left: `${50 + point.x * 43 * view.zoom}%`, top: `${50 - point.y * 43 * view.zoom}%` }}
-                aria-label={t('globe.panorama.open', {title:panorama.title})} title={panorama.title}
-                onClick={() => setSelectedPanorama(panorama)}>360°</button>
-            })}
+            {panoramaClusters.map(cluster => <button key={cluster.id} className="globe-panorama-pin"
+              style={{ left: `${cluster.x / size * 100}%`, top: `${cluster.y / size * 100}%` }}
+              aria-label={cluster.items.length > 1 ? t('globe.panorama.cluster',{count:cluster.items.length}) : t('globe.panorama.open',{title:cluster.items[0].title})}
+              title={cluster.items.map(item => item.title).join(' / ')}
+              onMouseEnter={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
+              onFocus={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
+              onClick={() => { setPanoramaGroup(cluster.items); setSelectedPanorama(cluster.items[0]) }}>
+              {cluster.items.length > 1 ? cluster.items.length : '360°'}
+            </button>)}
           </div>}
         </div>
         {activeLayer === 'relief' && <MolaElevationLegend compact/>}
         {selectedSiteId && selectedSites.length > 0 && <MarsSiteInfoCard sites={selectedSites} selectedId={selectedSiteId}
           onSelect={setSelectedSiteId} onClose={closeSite}/>}
-        {selectedPanorama && <PanoramaDialog panoramas={panoramas} selected={selectedPanorama}
+        {selectedPanorama && <PanoramaDialog panoramas={panoramaGroup.length ? panoramaGroup : panoramas} selected={selectedPanorama}
           onSelect={setSelectedPanorama} onClose={() => setSelectedPanorama(null)}/>}
         <div className="globe-controls" aria-label={t('globe.controls')}>
           <button onClick={() => updateZoom(1.15)} aria-label="+">+</button>

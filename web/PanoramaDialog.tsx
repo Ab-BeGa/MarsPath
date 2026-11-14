@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useI18n } from './i18n.tsx'
 import type { JezeroPhoto } from './photoCatalog.ts'
-import { PanoramaViewer } from './PanoramaViewer.tsx'
+import { PanoramaViewer, preloadPanoramaImage } from './PanoramaViewer.tsx'
 
 export function PanoramaDialog({ panoramas, selected, onSelect, onClose }: {
   panoramas: JezeroPhoto[]; selected: JezeroPhoto
@@ -17,10 +17,14 @@ export function PanoramaDialog({ panoramas, selected, onSelect, onClose }: {
     window.addEventListener('keydown', close)
     return () => { document.body.style.overflow = previous; window.removeEventListener('keydown', close) }
   }, [onClose])
+  useEffect(() => {
+    const neighbours = [selected, panoramas[(index + 1) % panoramas.length], panoramas[(index - 1 + panoramas.length) % panoramas.length]]
+    for (const panorama of neighbours) if (panorama) void preloadPanoramaImage(panorama.image_url).catch(() => undefined)
+  }, [index, panoramas, selected])
 
   return <aside className="globe-panorama-card" role="dialog" aria-modal="true" aria-label={selected.title}>
     <button className="global-site-popup-close" onClick={onClose} aria-label={t('map.photos.close')}>×</button>
-    <PanoramaViewer key={selected.id} imageUrl={selected.image_url} title={selected.title}/>
+    <PanoramaViewer key={selected.id} imageUrl={selected.image_url} previewUrl={selected.thumbnail_url} title={selected.title}/>
     <div className="panorama-dialog-copy"><span className="section-kicker">360° · {selected.camera}</span>
       <h4>{selected.title}</h4><p>{selected.caption}</p>
       <p className="globe-panorama-warning">{t('globe.panorama.locationNote')}</p>
@@ -30,6 +34,15 @@ export function PanoramaDialog({ panoramas, selected, onSelect, onClose }: {
         <button onClick={() => adjacent(1)}>{t('globe.panorama.next')} →</button>
       </div>
       <a href={selected.page_url} target="_blank" rel="noopener noreferrer">{t('map.photos.nasaSource')} ↗</a>
+    </div>
+    <div className="panorama-list" aria-label={t('globe.panorama.list')}>
+      {panoramas.map((panorama, itemIndex) => <button key={panorama.id} aria-pressed={panorama.id === selected.id}
+        onMouseEnter={() => { void preloadPanoramaImage(panorama.image_url).catch(() => undefined) }}
+        onFocus={() => { void preloadPanoramaImage(panorama.image_url).catch(() => undefined) }}
+        onClick={() => onSelect(panorama)}>
+        <img src={panorama.thumbnail_url} alt="" loading={itemIndex < 3 ? 'eager' : 'lazy'} decoding="async"/>
+        <span><b>{panorama.title}</b><small>Sol {panorama.acquisition.sols.join('–')}</small></span>
+      </button>)}
     </div>
   </aside>
 }

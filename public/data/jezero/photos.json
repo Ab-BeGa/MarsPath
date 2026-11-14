@@ -209,8 +209,8 @@
       "acquisition": { "sols": [933, 944], "earth_dates": ["2023-10-05", "2023-10-16"] },
       "credit": "NASA/JPL-Caltech/MSSS",
       "page_url": "https://www.jpl.nasa.gov/images/pia26815-perseverances-view-of-turquoise-bay/",
-      "image_url": "https://d2pn8kiwq2w21t.cloudfront.net/original_images/PIA26815.jpg",
-      "thumbnail_url": "https://d2pn8kiwq2w21t.cloudfront.net/original_images/PIA26815.jpg",
+      "image_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26815/PIA26815.jpg?fit=clip&w=4096",
+      "thumbnail_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26815/PIA26815.jpg?fit=clip&w=1280",
       "location_type": "approximate_area",
       "coordinates": {
         "latitude_deg": 18.488714636,
@@ -257,8 +257,8 @@
       "acquisition": { "sols": [1516], "earth_dates": ["2025-05-26"] },
       "credit": "NASA/JPL-Caltech/ASU/MSSS",
       "page_url": "https://www.jpl.nasa.gov/images/pia26644-nasas-perseverance-rover-at-falbreen/",
-      "image_url": "https://d2pn8kiwq2w21t.cloudfront.net/original_images/jpegPIA26644.jpg",
-      "thumbnail_url": "https://d2pn8kiwq2w21t.cloudfront.net/original_images/jpegPIA26644.jpg",
+      "image_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26644/PIA26644.jpg?fit=clip&w=4096",
+      "thumbnail_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia26/pia26644/PIA26644.jpg?fit=clip&w=1280",
       "location_type": "approximate_area",
       "coordinates": {
         "latitude_deg": 18.452555778,
