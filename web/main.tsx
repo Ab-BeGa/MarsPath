@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MarsMap } from './MarsMap.tsx'
+import { RouteOverview } from './RouteOverview.tsx'
 import { loadMarsTerrain, type MarsTerrain } from './marsTerrain.ts'
 import { compareRoutes, type RouteComparison } from './compareRoutes.ts'
 import './styles.css'
@@ -70,6 +71,7 @@ function RouteComparisonPanel({ onComparison }: { onComparison: (value: RouteCom
             {result.coverage.partial && <p className="alert">Часть DEM отсутствует: покрытие прямого маршрута {format(result.coverage.direct)}%, обходного {format(result.coverage.detour)}%. Высотные метрики относятся только к измеренным участкам.</p>}
             {!result.coverage.partial && lengthDelta != null && steepDelta != null &&
               <p className="comparison-summary">Обход меняет длину на <strong>{format(lengthDelta, true)} м</strong>, а длину измеренных крутых интервалов — на <strong>{format(steepDelta, true)} м</strong>.</p>}
+            <RouteOverview direct={result.routes.direct} detour={result.routes.detour}/>
             <div className="table-scroll" tabIndex={0} role="region" aria-label="Результаты сравнения">
               <table>
                 <caption>Разница: обходной минус прямой</caption>
