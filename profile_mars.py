@@ -27,7 +27,8 @@ from matplotlib.widgets import Button
 from pyproj import CRS, Transformer
 from rasterio.windows import from_bounds, bounds as window_bounds
 
-from route_geometry import nearest_segment_index, route_samples
+from route_geometry import (nearest_segment_index, route_samples,
+                            profile_index_at_distance, route_index_near_xy)
 from terrain_sampling import sample_dem_points
 
 ROOT = Path(__file__).resolve().parent
@@ -138,6 +139,8 @@ class RouteEditor:
         self.waypoints = terrain.fixed_points.copy()
         self.history = []
         self.dragging = None
+        self.probe_index = None
+        self.probe_pinned = False
         self.last_message = "LEFT CLICK TO ADD A WAYPOINT"
         self._build_layout()
         self._connect()
@@ -175,8 +178,11 @@ class RouteEditor:
         for y, title in [(0.460, "LEFT CLICK  /  ADD POINT"), (.425, "DRAG  /  ADJUST POINT"),
                          (.390, "RIGHT CLICK  /  REMOVE"), (.355, "CTRL+Z  /  UNDO")]:
             self.sidebar.text(.10, y, title, color=MUTED, fontsize=8.3)
-        self.sidebar.text(.1, .078, "DEMONSTRATION ONLY", color=BAD, fontsize=8.5, fontweight="bold")
-        self.sidebar.text(.1, .048, "Not a validated safe route", color=MUTED, fontsize=7.5)
+        self.sidebar.text(.10, .148, "LIVE ELEVATION PROBE", color=GOLD, fontsize=8, fontweight="bold")
+        self.probe_info = self.sidebar.text(.10, .116, "HOVER OVER THE PROFILE", color=TEXT, fontsize=9, fontweight="bold")
+        self.probe_detail = self.sidebar.text(.10, .092, "CLICK PROFILE TO PIN", color=MUTED, fontsize=7.5)
+        self.sidebar.text(.1, .052, "DEMONSTRATION ONLY", color=BAD, fontsize=8.5, fontweight="bold")
+        self.sidebar.text(.1, .025, "Not a validated safe route", color=MUTED, fontsize=7.5)
 
         self.buttons = []
         for label, rect, callback, color in [
@@ -199,6 +205,7 @@ class RouteEditor:
         self.fig.canvas.mpl_connect("motion_notify_event", self.on_move)
         self.fig.canvas.mpl_connect("button_release_event", self.on_release)
         self.fig.canvas.mpl_connect("key_press_event", self.on_key)
+        self.fig.canvas.mpl_connect("axes_leave_event", self.on_axes_leave)
 
     def _point_tolerance(self) -> float:
         x0, x1 = self.map_ax.get_xlim()
@@ -212,6 +219,13 @@ class RouteEditor:
         return None
 
     def on_press(self, event):
+        if event.inaxes == self.chart_ax and event.button == 1 and event.xdata is not None:
+            idx = profile_index_at_distance(self.profile, event.xdata)
+            if idx is not None:
+                # A second click on the selected sample releases the pin.
+                self.probe_pinned = not (self.probe_pinned and self.probe_index == idx)
+                self._set_probe(idx if self.probe_pinned else None)
+            return
         if event.inaxes != self.map_ax or event.xdata is None or event.ydata is None:
             return
         xy = np.array([event.xdata, event.ydata], dtype=float)
@@ -244,7 +258,21 @@ class RouteEditor:
         self.refresh()
 
     def on_move(self, event):
-        if self.dragging is None or event.inaxes != self.map_ax or event.xdata is None or event.ydata is None:
+        if self.dragging is None:
+            if self.probe_pinned:
+                return
+            if event.inaxes == self.chart_ax and event.xdata is not None:
+                self._set_probe(profile_index_at_distance(self.profile, float(event.xdata)))
+            elif event.inaxes == self.map_ax and event.xdata is not None and event.ydata is not None:
+                # Select nearby *route* samples only, not arbitrary nearby terrain.
+                display_width = max(float(self.map_ax.bbox.width), 1.0)
+                tolerance = (self.map_ax.get_xlim()[1] - self.map_ax.get_xlim()[0]) * 16.0 / display_width
+                idx = route_index_near_xy(self.profile, (event.xdata, event.ydata), tolerance)
+                self._set_probe(idx)
+            else:
+                self._set_probe(None)
+            return
+        if event.inaxes != self.map_ax or event.xdata is None or event.ydata is None:
             return
         xy = np.array([event.xdata, event.ydata], dtype=float)
         if not self.terrain.is_valid(xy):
@@ -255,6 +283,10 @@ class RouteEditor:
         self.waypoints[self.dragging] = xy
         self.last_message = f"MOVING WAYPOINT {self.dragging}"
         self.refresh()
+
+    def on_axes_leave(self, event):
+        if not self.probe_pinned and self.dragging is None:
+            self._set_probe(None)
 
     def on_release(self, event):
         if self.dragging is not None:
@@ -363,8 +395,28 @@ class RouteEditor:
             g.fill_between(d, np.where(valid, h, baseline), baseline, where=valid,
                            color=TEAL, alpha=.09)
             g.set_ylim(float(np.nanmin(h)) - 8, float(np.nanmax(h)) + 8)
-        for wd in profile.waypoint_distance_m[1:-1]:
-            g.axvline(wd, color=GOLD, alpha=.36, lw=1, ls="--")
+        # All control points (including fixed start A / end B) appear on the
+        # elevation profile. Their measured elevations come from real DEM samples.
+        waypoint_distances = profile.waypoint_distance_m
+        last_label_px = -float("inf")
+        graph_width = max(1, self.chart_ax.bbox.width)
+        for i, wd in enumerate(waypoint_distances):
+            is_endpoint = i == 0 or i == len(waypoint_distances) - 1
+            color = TEAL if i == 0 else GOLD
+            g.axvline(wd, color=color, alpha=.58 if is_endpoint else .28,
+                      lw=1.2 if is_endpoint else 1, ls="-" if is_endpoint else "--")
+            sample_idx = profile_index_at_distance(profile, float(wd))
+            if sample_idx is not None and np.isfinite(h[sample_idx]):
+                g.scatter([wd], [h[sample_idx]], color=color, s=28 if is_endpoint else 16,
+                          edgecolors=BG, linewidths=.8, zorder=6)
+            # Suppress overlapping short labels in routes with many turns.
+            screen_x = graph_width * (wd / max(profile.total_m, 1))
+            if is_endpoint or screen_x - last_label_px >= 34:
+                label = "A" if i == 0 else "B" if i == len(waypoint_distances) - 1 else str(i)
+                g.text(wd, .97, label, transform=g.get_xaxis_transform(), color=color,
+                       fontsize=8, fontweight="bold", ha="left" if i == 0 else "right" if i == len(waypoint_distances) - 1 else "center",
+                       va="top", zorder=7)
+                last_label_px = screen_x
         if profile.missing_count:
             # Missing DEM samples are breaks, not elevations; indicate them
             # at the graph baseline without constructing fake terrain values.
@@ -381,6 +433,17 @@ class RouteEditor:
         for spine in g.spines.values():
             spine.set_color(BORDER)
 
+        # Draw once per route rebuild; hover only moves existing artists.
+        self.profile_cursor_line = g.axvline(0, color=GOLD, lw=1.2, alpha=.85, visible=False, zorder=9)
+        self.profile_cursor_dot = g.scatter([], [], s=74, color=GOLD, edgecolors=BG,
+                                            linewidths=1.8, zorder=10, visible=False)
+        self.map_cursor_dot = ax.scatter([], [], s=230, facecolors="none", edgecolors=GOLD,
+                                         linewidths=2.5, zorder=12, visible=False)
+        self.map_cursor_center = ax.scatter([], [], s=22, c=GOLD, zorder=13, visible=False)
+        self.probe_index = None
+        self.probe_pinned = False
+        self.probe_info.set_text("HOVER OVER THE PROFILE")
+        self.probe_detail.set_text("CLICK PROFILE TO PIN")
         self.metric_length.set_text(f"{profile.total_m:,.0f} m")
         self.metric_points.set_text(str(len(self.waypoints)))
         self.metric_coverage.set_text(f"{profile.coverage_pct:.1f}%")
@@ -388,6 +451,35 @@ class RouteEditor:
         warning = f"   •   {profile.missing_count} DEM SAMPLES MISSING" if profile.missing_count else ""
         self.status_text.set_text("●  " + self.last_message + warning)
         self.status_text.set_color(BAD if "REJECTED" in self.last_message or warning else TEAL)
+        self.fig.canvas.draw_idle()
+
+    def _set_probe(self, index: int | None):
+        """Synchronize the two views with a single *measured* DEM sample.
+
+        Mouse moves must not rerun sampling, redraw the terrain, or modify the
+        route. Only four existing Matplotlib artists and two text labels move.
+        """
+        if index == self.probe_index:
+            return
+        self.probe_index = index
+        active = index is not None
+        for artist in (self.profile_cursor_line, self.profile_cursor_dot,
+                       self.map_cursor_dot, self.map_cursor_center):
+            artist.set_visible(active)
+        if not active:
+            self.probe_info.set_text("HOVER OVER THE PROFILE")
+            self.probe_detail.set_text("CLICK PROFILE TO PIN")
+        else:
+            d = float(self.profile.distance_m[index])
+            z = float(self.profile.elevation_m[index])
+            xy = self.profile.xy[index]
+            status = str(self.profile.sample_status[index])
+            self.profile_cursor_line.set_xdata([d, d])
+            self.profile_cursor_dot.set_offsets([[d, z]] if np.isfinite(z) else np.empty((0, 2)))
+            self.map_cursor_dot.set_offsets([xy])
+            self.map_cursor_center.set_offsets([xy])
+            self.probe_info.set_text(f"{d:,.0f} m   /   {z:,.2f} m" if np.isfinite(z) else f"{d:,.0f} m   /   NODATA")
+            self.probe_detail.set_text(f"DEM: {status.upper()}  •  " + ("PINNED" if self.probe_pinned else "LIVE CURSOR"))
         self.fig.canvas.draw_idle()
 
     def load(self, path: Path):

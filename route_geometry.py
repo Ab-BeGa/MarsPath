@@ -116,3 +116,39 @@ def nearest_segment_index(point_xy: Sequence[float], waypoints_xy: Sequence[Sequ
                           out=np.zeros_like(length_sq), where=length_sq > 0), 0, 1)
     closest = a + t[:, None] * ab
     return int(np.argmin(((closest - p) ** 2).sum(axis=1)))
+
+
+def profile_index_at_distance(profile: RouteProfile, distance_m: float) -> int | None:
+    """Index of the closest *existing* DEM reading along the route.
+
+    This intentionally does not interpolate unknown elevations. Clamp a cursor
+    slightly outside the plot to the first/last measured point.
+    """
+    if not np.isfinite(distance_m) or len(profile.distance_m) == 0:
+        return None
+    distances = profile.distance_m
+    target = int(np.searchsorted(distances, distance_m, side="left"))
+    if target <= 0:
+        return 0
+    if target >= len(distances):
+        return len(distances) - 1
+    previous = target - 1
+    return previous if abs(distances[previous] - distance_m) <= abs(distances[target] - distance_m) else target
+
+
+def route_index_near_xy(profile: RouteProfile, xy, tolerance: float) -> int | None:
+    """Nearest DEM sample if a map cursor is close enough in projected units.
+
+    The source XY positions and the mouse point are in the same projected CRS.
+    Screen-size dependent tolerance is provided by the UI, not hard-coded here.
+    """
+    point = np.asarray(xy, dtype=float)
+    if point.shape != (2,) or not np.isfinite(point).all():
+        return None
+    if not np.isfinite(tolerance) or tolerance <= 0:
+        return None
+    if profile.xy.size == 0:
+        return None
+    distances_squared = ((profile.xy - point[None, :]) ** 2).sum(axis=1)
+    idx = int(np.argmin(distances_squared))
+    return idx if distances_squared[idx] <= tolerance * tolerance else None
