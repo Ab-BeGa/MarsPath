@@ -10,6 +10,8 @@ import { PanoramaDialog } from './PanoramaDialog.tsx'
 import { clusterPanoramas } from './panoramaClusters.ts'
 import { preloadPanoramaImage } from './PanoramaViewer.tsx'
 import { loadDetailedRegions, type DetailedRegion } from './detailedRegions.ts'
+import { regionText } from './scienceRegionTranslations.ts'
+import { siteText } from './scienceSiteTranslations.ts'
 
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
 const INITIAL_VIEW: GlobeView = { longitude: 58, latitude: 18, zoom: 1 }
@@ -44,7 +46,7 @@ function validateMetadata(value: unknown): Metadata {
 }
 
 export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedRegion) => void }) {
-  const { t, format } = useI18n()
+  const { t, format, locale } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textureRef = useRef<Partial<Record<GlobeLayer, ImageData>>>({})
   const pointersRef = useRef(new Map<number, { x: number; y: number }>())
@@ -307,10 +309,10 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
               if (!point.visible) return null
               return <button key={region.id} className={`globe-region-pin${region.detail_status === 'local_map' ? ' is-local' : ''}`}
                 style={{left:`${50 + point.x * 43 * view.zoom}%`,top:`${50 - point.y * 43 * view.zoom}%`}}
-                title={region.name_ru} aria-label={`Открыть отчёт: ${region.name_ru}`}
+                title={regionText(region,locale,'name')} aria-label={t('region.report.open',{name:regionText(region,locale,'name')})}
                 onClick={() => {
                   onOpenDetail(region)
-                }}><span>▣</span>{region.name_ru}</button>
+                }}><span>▣</span>{regionText(region,locale,'name')}</button>
             })}
           </div>
           <div className="globe-site-markers" aria-label={t('map.sites.title')}>
@@ -360,7 +362,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
           <dl className="globe-readout">
             <div><dt>{t('globe.center')}</dt><dd>{format(view.latitude, { maximumFractionDigits: 1 })}°, {format(view.longitude, { maximumFractionDigits: 1 })}°</dd></div>
             <div><dt>{t('globe.texture')}</dt><dd>{metadata?.globe_textures[activeLayer].title ?? '—'}</dd></div>
-            <div><dt>{t('globe.resolution')}</dt><dd>{metadata ? `${LAYER_RESOLUTION[activeLayer]} m/px` : '—'}</dd></div>
+            <div><dt>{t('globe.resolution')}</dt><dd>{metadata ? t('region.map.resolution',{size:format(LAYER_RESOLUTION[activeLayer])}) : '—'}</dd></div>
           </dl>
           <p>{t('globe.limit')}</p>
           <p className="globe-help">{t('globe.help')}</p>
@@ -374,7 +376,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
               <select value={selectedSiteId ?? ''} onChange={event => {
                 const site = sites.find(item => item.id === event.currentTarget.value)
                 if (site) focusSite(site); else closeSite()
-              }}><option value="">{t('map.sites.pickPlaceholder')}</option>{filteredSites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}</select>
+              }}><option value="">{t('map.sites.pickPlaceholder')}</option>{filteredSites.map(site => <option key={site.id} value={site.id}>{siteText(site,locale,'name')}</option>)}</select>
             </label>
             {siteError && <span className="global-site-error">{t('map.sites.loadError')} {siteError}</span>}
           </div>
