@@ -993,3 +993,39 @@ thead { background: #132734; color: #afc9d4; }
 .regional-viewport .map-scale { box-sizing: content-box; }
 .regional-viewport .scale-stroke { box-sizing: border-box; }
 .regional-orbital-card img { display: block; width: min(100%, 380px); margin-block: 8px; border-radius: 6px; }
+
+
+/* Browser route planner; map/globe visual layout is intentionally unchanged. */
+.browser-planner {
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  border: 1px solid #345460;
+  background: #102635;
+  border-radius: 10px;
+}
+.browser-planner-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+.browser-planner-header h3 { font-size: 18px; color:#edf8fa; margin:5px 0 6px; }
+.browser-planner-header p { font-size:12px; color:#a9c5cf; line-height:1.5; margin:0; max-width:720px; }
+.browser-planner-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:15px 0 10px; }
+.browser-planner-actions button {
+  border:1px solid #476676; border-radius:6px; padding:10px 12px;
+  background:#183849; color:#e8f3f7; font-size:12px; font-weight:750;
+}
+.browser-planner-actions button:hover:not(:disabled) {background:#24536a;}
+.browser-planner-actions button.is-selecting {
+  border-color:#77ffe0; background:#185346; color:#effffa; box-shadow:0 0 0 2px #5fecca66;
+}
+.browser-planner-actions button.browser-planner-build {background:#51e6bc; border-color:#51e6bc; color:#092324; }
+.browser-planner-actions button.browser-planner-build:hover:not(:disabled) {background:#83f6d3;}
+.browser-planner-actions button:disabled {opacity:.4; cursor:not-allowed;}
+.browser-planner-actions button:focus-visible {outline:3px solid #fff;outline-offset:2px;}
+.browser-planner-selection {display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; font-size:11px; color:#aec8d1;}
+.browser-planner-selection strong {color:#eafaf5; font-variant-numeric:tabular-nums;}
+.browser-planner-hint {color:#ffda9a; font-weight:700;}
+.browser-planner-result {border-left:3px solid #5fecca; padding:8px 11px; background:#173c3d; font-size:12px; color:#e1f8f1; line-height:1.65;}
+.browser-planner-caveat {font-size:11px; line-height:1.55; color:#9fb8c4; margin:12px 0 0;}
+@media (max-width:680px) {
+  .browser-planner {padding:12px;}
+  .browser-planner-header {flex-direction:column;}
+  .browser-planner-actions button {flex:1 1 135px;}
+}
