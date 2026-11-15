@@ -26,4 +26,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/gale/heights.f32 public/data/gale/mask.u8 public/data/gale/metadata.json public/data/gale/checksums.sha256
           git commit -m "data(gale): commit verified USGS DEM subset"
+          git fetch origin feature/gale-route-planner
+          git rebase origin/feature/gale-route-planner
           git push origin HEAD:feature/gale-route-planner
