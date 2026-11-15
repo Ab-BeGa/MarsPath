@@ -86,11 +86,12 @@ function RouteComparisonPanel({ comparison, onComparison }: {
             {result.coverage.partial && <p className="alert">{t('compare.partial', {direct:format(result.coverage.direct),detour:format(result.coverage.detour)})}</p>}
             {!result.coverage.partial && lengthDelta != null && steepDelta != null &&
               <p className="comparison-summary">{t('compare.summary', {length:format(lengthDelta,true),steep:format(steepDelta,true)})}</p>}
-            <RouteOverview direct={result.routes.direct} detour={result.routes.detour}/>
+            <RouteOverview direct={result.routes.direct} detour={result.routes.detour}
+              browserMode={result.origin === 'browser'}/>
             <div className="table-scroll" tabIndex={0} role="region" aria-label={t('compare.resultsAria')}>
               <table>
                 <caption>{t('compare.caption')}</caption>
-                <thead><tr><th scope="col">{t('compare.metric')}</th><th scope="col">{t('route.direct')}</th><th scope="col">{t('route.detour')}</th><th scope="col">{t('compare.delta')}</th></tr></thead>
+                <thead><tr><th scope="col">{t('compare.metric')}</th><th scope="col">{t(result.origin === 'browser' ? 'planner.shortest' : 'route.direct')}</th><th scope="col">{t(result.origin === 'browser' ? 'planner.slopeCost' : 'route.detour')}</th><th scope="col">{t('compare.delta')}</th></tr></thead>
                 <tbody>{result.rows.map(row => <tr key={row.label}>
                   <th scope="row">{t(metricKeys[row.label] || row.label)}{row.unit && ', ' + (locale === 'en' && row.unit === 'м' ? 'm' : row.unit)}</th>
                   <td>{format(row.direct)}</td><td>{format(row.detour)}</td><td>{format(row.delta, true)}</td>
@@ -174,7 +175,8 @@ function App() {
               </section>}
               {terrain && <>
                 <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}
-                  routeStepM={mapSourceMatches ? comparison?.source.step : undefined} onPlan={setComparison}/>
+                  routeStepM={mapSourceMatches ? comparison?.source.step : undefined}
+                  routeOrigin={mapSourceMatches ? comparison?.origin : undefined} onPlan={setComparison}/>
                 <RegionSummary region={selectedRegion} />
               </>}
             </>}
