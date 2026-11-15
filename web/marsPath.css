@@ -1,0 +1,493 @@
+:root {
+  --space: #08080b;
+  --surface: #151317;
+  --line: #ffffff24;
+  --ink: #faf4ef;
+  --muted: #c2b5ae;
+  --light: #ffb596;
+  color: var(--ink);
+  background: var(--space);
+}
+.site-shell { background: var(--space); }
+.main-content { max-width: 1580px; padding-inline: clamp(14px, 4vw, 64px); }
+.topbar {
+  position: relative; z-index: 15; height: 66px; gap: 22px;
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  padding-inline: clamp(16px, 4vw, 64px);
+  background: #0b0a0d; border-color: var(--line);
+}
+.brand { min-width: 0; width: max-content; gap: 10px; }
+.brand-title { color: var(--ink); font-size: 22px; letter-spacing: -.055em; }
+.brand-title em, .topnav a:hover, .page-footer a { color: var(--light); }
+.brand-mark {
+  position: relative; width: 25px; height: 25px; border: 1px solid #ffbc9b88;
+  border-radius: 50%; background: radial-gradient(circle at 27% 24%, #ffcba6, #bd5736 41%, #441d19 78%);
+  box-shadow: 0 0 14px #ff754345;
+}
+.brand-mark::after {
+  content: ''; position: absolute; inset: 6px -5px; transform: rotate(-34deg);
+  border-bottom: 1px solid var(--ink); border-radius: 50%;
+}
+.topnav { flex-wrap: wrap; gap: clamp(10px, 2vw, 28px); }
+.topnav a { color: var(--muted); }
+.topbar .language-switcher { width: auto; justify-self: end; margin: 0; border-color: var(--line); background: var(--surface); }
+
+.orbital-scene {
+  --planet: min(48vw, 70svh, 720px);
+  position: relative; isolation: isolate;
+  display: grid; grid-template-rows: 1fr auto;
+  min-height: calc(100svh - 66px);
+  margin: 0 calc(-1 * clamp(14px, 4vw, 64px)) 48px;
+  padding: 0 clamp(16px, 4vw, 64px) 20px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 47% 45%, #42201e 0%, #1b1216 31%, #08080c 68%);
+}
+.orbital-stars { position: absolute; z-index: -1; inset: 0; pointer-events: none; }
+.orbital-stars i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff5ec; }
+.orbital-stars i:nth-child(4n) {
+  width: 3px; height: 3px; box-shadow: 0 0 6px 1px #ffdecb95;
+  animation: star-shimmer 7s ease-in-out infinite alternate;
+}
+.orbital-stars i:nth-child(4n + 1) { width: 1px; height: 1px; }
+@keyframes star-shimmer { from { scale: .6; } to { scale: 1.2; } }
+
+.orbital-scene .mars-globe-layout {
+  grid-row: 1; min-width: 0;
+  grid-template-columns: minmax(0, 1fr) var(--planet) minmax(0, 1fr);
+  align-items: center; gap: clamp(4px, 1vw, 20px);
+  padding: 8px 0; border: 0; background: transparent;
+}
+.orbital-scene .mars-globe-stage {
+  width: 100%; min-height: 0; overflow: visible; border: 0; border-radius: 0;
+  background: transparent;
+}
+.orbital-scene .mars-globe-stage::before { content: none; }
+.orbital-scene .mars-globe-sphere-wrap { width: 100%; max-width: none; position: relative; isolation: isolate; }
+.orbital-scene .mars-globe-sphere-wrap::before {
+  content: ''; position: absolute; inset: 7%; z-index: -1;
+  border-radius: 50%; box-shadow: -12px -7px 85px 4px #e56f4b38, 0 0 130px #9d453743;
+  pointer-events: none;
+}
+.orbital-scene .mars-globe-canvas { filter: drop-shadow(-3px -2px 12px #e48c5859); }
+.orbital-scene .globe-controls {
+  inset: auto 6% 2% auto; z-index: 7; display: flex; border: 1px solid var(--line);
+  border-radius: 99px; background: #0c090ec9;
+}
+.orbital-scene .globe-controls button { min-width: 33px; border: 0; padding: 6px 9px; }
+.orbital-scene .globe-controls button:hover { background: #ffffff21; }
+
+.orbital-rail {
+  position: relative; z-index: 7; display: grid; align-content: center; justify-items: end;
+  gap: 8px; min-width: 0; margin-right: -14%;
+  padding: 30px 28% 30px 0;
+}
+.orbital-rail::after {
+  content: ''; position: absolute; pointer-events: none;
+  inset: 2% 11% 2% auto; width: 62%;
+  border-right: 1px solid #fddbcc70; border-radius: 50%;
+}
+.orbital-rail :is(button, a) {
+  position: relative; z-index: 1; display: flex; align-items: center; justify-content: flex-end;
+  gap: 10px; min-height: 40px; width: max-content; max-width: 100%; text-align: right;
+  padding: 6px 7px; background: transparent; border: 0; border-radius: 6px;
+  color: var(--muted); text-decoration: none; font-size: clamp(11px, 1vw, 14px);
+}
+.orbital-rail :is(button, a):nth-child(2),
+.orbital-rail :is(button, a):nth-child(3) { margin-right: clamp(6px, 1.7vw, 25px); }
+.orbital-rail i {
+  flex: 0 0 auto; display: grid; place-items: center; width: 28px; height: 28px;
+  border: 1px solid #f8c4aa55; border-radius: 50%; font-style: normal; color: var(--light);
+  background: #1a1115;
+}
+.orbital-rail :is(button, a):hover, .orbital-rail button[aria-pressed="true"] { color: #fff; background: #25191bea; }
+.orbital-rail button:disabled { opacity: .45; cursor: default; }
+
+.orbital-scene .globe-panel {
+  position: relative; z-index: 7; min-width: 0; padding: 12px 0 12px clamp(4px, 1vw, 18px);
+  border: 0; background: transparent; color: var(--muted);
+}
+.orbital-eyebrow { color: var(--light); font: 10px ui-monospace, monospace; letter-spacing: .12em; }
+.globe-panel h1 {
+  margin: 10px 0 15px; color: var(--ink); font-size: clamp(36px, 6.4vw, 112px); line-height: .92;
+  font-weight: 350; letter-spacing: .05em; text-transform: uppercase;
+}
+.globe-panel .orbital-intro {
+  max-width: 34ch; margin: 0 0 18px; color: var(--ink); font-size: clamp(12px, 1.12vw, 16px); line-height: 1.6;
+}
+.orbital-scene .globe-readout { max-width: 330px; margin-bottom: 10px; }
+.orbital-scene .globe-readout div { border-color: var(--line); padding: 6px 0; }
+.orbital-scene .globe-readout dt { color: var(--muted); }
+.orbital-scene .globe-panel > p:last-child { max-width: 40ch; color: var(--muted); }
+.orbital-scene .globe-site-controls { margin: 8px 0; border-color: var(--line); }
+.orbital-scene .globe-site-picker select { background: var(--surface); border-color: var(--line); }
+.orbital-scene .globe-site-controls > strong { display: none; }
+.orbital-scene .global-site-filters button { background: var(--surface); border-color: var(--line); }
+.orbital-scene .global-site-filters button[aria-pressed="true"] { background: var(--light); color: #241511; }
+
+.orbital-toolbar {
+  position: relative; z-index: 9; grid-row: 2;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+  justify-self: center; max-width: 100%; padding: 6px;
+  border: 1px solid var(--line); border-radius: 14px; background: #0c0a0fd9;
+}
+.orbital-toolbar :is(.globe-mode-switch, .globe-layer-switch) {
+  position: static; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px;
+  margin: 0; padding: 0; border: none; background: transparent;
+}
+.orbital-toolbar button {
+  min-height: 38px; padding: 7px 12px; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--muted); font-size: 12px; font-weight: 650;
+}
+.orbital-toolbar button:hover { background: #ffffff19; color: var(--ink); }
+.orbital-toolbar button[aria-pressed="true"] {
+  color: var(--ink); background: #ffffff15; border-color: #ffb59670; box-shadow: none;
+}
+.orbital-toolbar .orbital-spin { color: var(--light); }
+.orbital-spin span { display: inline-block; margin-right: 7px; }
+.orbital-scene.mode-flat { grid-template-rows: auto 1fr; padding-top: 20px; }
+.mode-flat .orbital-toolbar { grid-row: 1; margin-bottom: 14px; }
+.mode-flat .globe-flat-mode { grid-row: 2; min-width: 0; }
+.orbital-flat-title { margin: 4px 8px 8px; font-weight: 500; }
+
+#map, #compare { scroll-margin-top: 24px; }
+.section-heading h2 { color: var(--ink); font-size: clamp(30px, 3.8vw, 52px); letter-spacing: -.045em; }
+.section-heading p { color: var(--muted); font-size: 14px; }
+.section-kicker { color: var(--light); }
+.globe-flat-mode, .global-map-card, .map-frame, .telemetry, .comparison-card,
+.detailed-region-card, .map-info-card, .load-state { background: var(--surface); border-color: var(--line); }
+.data-pill, .telemetry-block.bottom, .route-form input, .comparison-summary { background: #100f13; border-color: var(--line); }
+.telemetry-title, .telemetry-block, th, td, .page-footer { border-color: var(--line); }
+.comparison-card { padding: clamp(16px, 3vw, 32px); }
+.route-form label, .table-note, .page-footer { color: var(--muted); }
+.route-form input::file-selector-button, thead { background: #352522; color: var(--ink); }
+.primary-action { background: var(--light); color: #25150e; }
+.primary-action:hover { background: #ffdbca; }
+
+@media (max-width: 830px) {
+  .orbital-scene { --planet: min(68vw, 540px); min-height: calc(100svh - 66px); }
+  .orbital-scene.mode-globe { grid-template: minmax(var(--planet), 1fr) auto auto / minmax(102px, 1fr) var(--planet); gap: 7px; }
+  .orbital-scene .mars-globe-layout { display: contents; }
+  .mode-globe .orbital-toolbar { grid-column: 1 / -1; }
+  .orbital-rail, .mode-globe .mars-globe-stage { grid-row: 1; align-self: center; }
+  .mode-globe .mars-globe-stage { grid-column: 2; }
+  .orbital-scene .globe-panel {
+    grid-area: 3 / 1 / 4 / -1; display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; align-items: start;
+  }
+  .orbital-eyebrow, .globe-panel h1 { grid-column: 1; }
+  .orbital-scene .globe-panel .orbital-intro { grid-column: 1; grid-row: 3; margin-bottom: 4px; }
+  .orbital-scene .globe-readout { grid-column: 2; grid-row: 1 / span 3; }
+  .orbital-scene .globe-site-controls, .orbital-scene .globe-panel > p:last-child { grid-column: 1 / -1; }
+  .orbital-rail { padding-right: 12%; margin-right: -8%; }
+}
+@media (max-width: 520px) {
+  .topbar { height: auto; grid-template-columns: 1fr auto; gap: 8px; padding-block: 10px; }
+  .topnav { grid-area: 2 / 1 / 3 / -1; border-color: var(--line); padding-top: 8px; }
+  .orbital-scene { --planet: min(86vw, 440px); padding-inline: 14px; }
+  .orbital-scene.mode-globe { grid-template: auto auto auto auto / minmax(0, 1fr); justify-items: center; }
+  .orbital-scene.mode-globe .mars-globe-stage { grid-column: 1; width: var(--planet); }
+  .mode-globe .orbital-toolbar { grid-row: 3; }
+  .orbital-rail {
+    grid-row: 2; display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px; padding: 0; margin: 0 0 8px;
+  }
+  .orbital-rail::after { content: none; }
+  .orbital-rail :is(button, a):nth-child(n) {
+    width: 100%; min-width: 0; margin: 0; padding: 5px; justify-content: space-between; gap: 4px;
+    border: 1px solid var(--line); background: #171116; color: var(--ink); text-align: left;
+  }
+  .orbital-rail i { width: 23px; height: 23px; }
+  .orbital-scene .globe-panel { grid-row: 4; width: 100%; padding: 10px 0; }
+  .orbital-toolbar button { padding-inline: 7px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .orbital-stars i,
+  .orbital-scene :is(.mars-globe-stage, .globe-panel, .orbital-rail, .orbital-toolbar) { animation: none; }
+}
+
+
+/* Entrance and atlas share the same canvas so the planet rises continuously. */
+html:has(.site-shell.is-intro), body:has(.site-shell.is-intro) { overflow: hidden; overscroll-behavior: none; }
+.site-shell.is-intro { height: 100svh; overflow: hidden; }
+.orbital-scene {
+  min-height: 100svh;
+  --entrance-x: 0px;
+  --entrance-y: calc(30svh + var(--planet) * .43 + 30px);
+}
+.orbital-entrance {
+  position: absolute; z-index: 12; inset: 0;
+  display: grid; justify-items: center; pointer-events: none;
+  text-align: center;
+}
+.entrance-copy {
+  position: absolute; top: 28svh; width: min(90vw, 680px);
+  opacity: 0; translate: 0 -20px; filter: blur(10px);
+  transition: opacity .38s ease, translate .65s ease, filter .5s ease;
+}
+.is-intro .entrance-copy { opacity: 1; translate: 0 0; filter: none; animation: title-reveal .95s ease-out; }
+.entrance-copy h1 {
+  margin: 17px 0 11px; color: #fff6ef;
+  font-size: clamp(65px, 14vw, 176px); line-height: .86; font-weight: 280;
+  text-transform: uppercase; letter-spacing: .17em; padding-left: .17em;
+  text-shadow: 0 0 50px #ffac8460;
+}
+.entrance-copy p { color: var(--muted); font-size: clamp(12px, 2vw, 16px); letter-spacing: .22em; text-transform: uppercase; }
+@keyframes title-reveal { from { opacity: 0; filter: blur(8px); letter-spacing: .1em; } to { opacity: 1; filter: none; } }
+.entrance-hit {
+  position: absolute; top: 75svh; bottom: 0; width: min(90vw, 540px);
+  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
+  border: 0; border-radius: 50% 50% 0 0; background: transparent; color: var(--ink);
+  opacity: 0; transition: opacity .25s ease;
+  text-shadow: 0 2px 10px #09060a;
+}
+.is-intro .entrance-hit { opacity: 1; pointer-events: auto; }
+.entrance-hit i {
+  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid #ffd3b980; background: #1a1019ab; font-style: normal;
+  animation: invitation 2.5s ease-in-out infinite;
+}
+.entrance-hit:hover i, .entrance-hit:focus-visible i { background: #5c352c; }
+@keyframes invitation { 50% { translate: 0 -5px; box-shadow: 0 0 16px #ffc4a050; } }
+.mode-globe .mars-globe-stage {
+  transition: transform 1.28s cubic-bezier(.2,.76,.25,1), filter 1.28s ease;
+}
+.is-intro .mode-globe .mars-globe-stage {
+  transform: translate(var(--entrance-x), var(--entrance-y)) scale(1.35);
+  transform-origin: center 7%; filter: brightness(1.25);
+}
+.orbital-scene .orbital-rail, .orbital-scene .globe-panel, .orbital-scene .orbital-toolbar,
+.orbital-scene .globe-controls {
+  transition: opacity .55s ease .6s, transform .8s cubic-bezier(.2,.76,.25,1) .52s, filter .65s ease .55s;
+}
+.is-intro .orbital-scene :is(.orbital-rail, .globe-panel, .orbital-toolbar, .globe-controls) {
+  opacity: 0; transform: translateY(25px); filter: blur(8px); transition: none;
+}
+.is-intro .orbital-stars { animation: entrance-stars 48s ease-in-out infinite alternate; }
+@keyframes entrance-stars { to { transform: scale(1.12) translateY(-1%); } }
+.site-shell:not(.is-intro) .orbital-rail > :nth-child(n) {
+  animation: rail-reveal .65s cubic-bezier(.2,.76,.25,1) calc(.5s + var(--rail-order) * .1s) backwards;
+}
+.orbital-rail > :nth-child(1) { --rail-order: 1; }
+.orbital-rail > :nth-child(2) { --rail-order: 2; }
+.orbital-rail > :nth-child(3) { --rail-order: 3; }
+.orbital-rail > :nth-child(4) { --rail-order: 4; }
+@keyframes rail-reveal { from { opacity: 0; translate: -13px 5px; } }
+.site-shell:not(.is-intro) .mars-globe-sphere-wrap::before {
+  animation: orbital-halo 1.6s ease-out;
+}
+@keyframes orbital-halo { 45% { opacity: .65; scale: 1.13; } }
+#globe { scroll-margin-top: 0; }
+#globe-title:focus { outline: none; }
+.region-picker { margin: 14px 0; }
+.region-picker select { min-height: 38px; }
+
+.orbital-language {
+  position: fixed; z-index: 25; top: max(16px, env(safe-area-inset-top)); right: clamp(15px, 3vw, 45px);
+  width: 42px; height: 42px; display: grid; place-items: center;
+  border: 1px solid #f6c4ab55; border-radius: 50%; background: #120e14dc; color: #fbe8df;
+  transition: border-color .2s ease, background .2s ease;
+}
+.orbital-language:hover, .orbital-language:focus-within { border-color: var(--light); background: #35231f; }
+.orbital-language select {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; color-scheme: dark;
+}
+.language-globe-icon {
+  position: relative; display: block; width: 19px; height: 19px;
+  border: 1px solid currentColor; border-radius: 50%;
+}
+.language-globe-icon::before { content: ''; position: absolute; inset: -1px 4px; border: 1px solid currentColor; border-radius: 50%; }
+.language-globe-icon::after { content: ''; position: absolute; inset: 5px 0; border-block: 1px solid currentColor; }
+
+.orbital-scene .orbital-toolbar {
+  width: fit-content; gap: 0; border: 1px solid #efa98c39;
+  padding: 3px 7px; border-radius: 999px; background: #100b12d9;
+  box-shadow: 0 12px 30px #0005; backdrop-filter: blur(14px);
+}
+.orbital-toolbar .globe-mode-switch button { flex: 0 0 auto; }
+.orbital-toolbar .globe-layer-switch {
+  padding-left: 8px; margin-left: 8px; border-left: 1px solid #ffffff26; border-radius: 0;
+}
+.orbital-toolbar :is(.globe-mode-switch, .globe-layer-switch) button {
+  position: relative; line-height: 1.25; white-space: nowrap; min-height: 43px;
+  padding: 9px 11px; color: var(--muted); border: 0; border-radius: 999px;
+}
+.orbital-toolbar :is(.globe-mode-switch, .globe-layer-switch) button[aria-pressed="true"] {
+  color: #fff2e9; background: radial-gradient(ellipse at bottom, #c36c453a, transparent 80%); box-shadow: none;
+}
+.orbital-toolbar button[aria-pressed="true"]::after {
+  content: ''; position: absolute; height: 3px; width: 3px; left: calc(50% - 1.5px); bottom: 3px;
+  border-radius: 50%; background: var(--light); box-shadow: 0 0 9px 2px #ff936f9a;
+}
+#map { --map-panel: #221721; --map-inset: #181016; --map-line: #69443e; }
+.map-return {
+  display: inline-flex; padding: 9px 14px; border: 1px solid #f5b59250; border-radius: 99px;
+  color: var(--light); text-decoration: none; background: var(--map-inset);
+}
+.comparison-section .section-heading { flex-wrap: wrap; gap: 10px 24px; }
+#map :is(.map-frame,.telemetry,.map-info-card,.detailed-region-card,.regional-map,.layer-select) {
+  border-color: var(--map-line); background: var(--map-panel);
+}
+#map :is(.map-controls,.map-overlay-head,.map-scale,.map-photo-card,.telemetry-block.bottom,.checkpoint,.detailed-region-note) {
+  background: var(--map-inset); border-color: var(--map-line); color: var(--ink);
+}
+#map .layer-select {
+  border-radius: 14px; padding: 6px; gap: 4px;
+}
+#map .layer-select button {
+  color: #e1c5b8; min-height: 36px; border-radius: 9px;
+}
+#map .layer-select button:hover, #map .map-controls button:hover { background: #54372d; color: #fff1e9; }
+#map .layer-select button:is(.selected,[aria-pressed="true"]) {
+  background: var(--light); color: #28150f; box-shadow: none;
+}
+#map :is(.map-head-indicator,.live-dot,.pulse-circle) { background: var(--light); box-shadow: 0 0 12px #ff936f80; }
+#map :is(.map-compass b,.altitude,.map-info-card a,.regional-layer-note a,.detailed-region-sources a,.detailed-region-card h4) { color: var(--light); }
+#map :is(.map-controls span,.map-controls .reset-map,.telemetry-block,.telemetry-title) { border-color: var(--map-line); }
+#map .map-bottom-note, #map .map-source { color: #c4ada4; }
+#map .checkpoint:hover { border-color: var(--light); }
+
+@media (max-width: 830px) {
+  .orbital-scene { --entrance-x: calc(-46vw + var(--planet) * .5); --entrance-y: calc(78svh - var(--planet) * .07); }
+  .is-intro .mode-globe .mars-globe-stage { transform: translate(var(--entrance-x), var(--entrance-y)) scale(1.28); }
+}
+@media (max-width: 520px) {
+  .orbital-scene { --entrance-x: 0px; --entrance-y: calc(78svh - var(--planet) * .07); }
+  .orbital-scene .orbital-toolbar { border-radius: 18px; gap: 2px; }
+  .orbital-toolbar .globe-layer-switch { border: 0; margin: 0; padding: 0; }
+  .orbital-toolbar :is(.globe-mode-switch, .globe-layer-switch) button { padding-inline: 6px; font-size: 10px; min-height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-intro :is(.orbital-stars,.entrance-copy,.entrance-hit i) { animation: none; }
+  .orbital-scene :is(.mars-globe-stage,.orbital-rail,.globe-panel,.orbital-toolbar,.globe-controls,.entrance-copy) { transition: none; }
+  .site-shell:not(.is-intro) .orbital-rail > :nth-child(n),
+  .site-shell:not(.is-intro) .mars-globe-sphere-wrap::before { animation: none; }
+}
+
+
+/* Shared cartography controls and pin shapes. */
+:root { --map-inset: #181217; --map-panel: #23191f; --map-line: #65463f; }
+:is(.comparison-workspace, .globe-panel, #atlas-information)[hidden] { display: none; }
+.orbital-rail > :nth-child(5) { --rail-order: 5; }
+.orbital-scene .globe-panel:not([hidden]) {
+  display: block; padding: 14px; border: 1px solid var(--map-line); border-radius: 15px;
+  background: #181217ed;
+}
+.orbital-scene .globe-panel .orbital-intro { margin-top: 0; }
+.orbital-scene .globe-site-picker select, .orbital-scene .global-site-picker select {
+  width: 100%; min-width: 0; background: var(--map-inset); border-color: var(--map-line);
+}
+:is(.global-map-card, .globe-flat-mode, .global-map-frame, .global-map-image-wrap,
+  .global-map-layers, .global-site-controls, .global-map-toolbar, .global-site-popup,
+  .global-site-image, .globe-panorama-card, .panorama-list, .region-report, .region-report-sidebar,
+  .region-report-main, .region-panorama-section, .region-panorama-grid button) {
+  background: var(--map-inset); border-color: var(--map-line);
+}
+:is(.global-map-help,.global-map-caption,.global-site-legend,.global-site-caption,.global-site-picker,
+  .global-map-heading p,.global-site-facts dt,.global-site-image figcaption,.global-map-toolbar span) {
+  color: var(--muted); border-color: var(--map-line);
+}
+:is(.global-map-detail,.global-map-jump,.global-map-toolbar button,.global-site-popup-close,
+  .global-site-group-options button,.global-site-picker select,.global-site-picker option,
+  .global-site-filters button,.globe-site-picker option) {
+  background: var(--map-panel); border-color: var(--map-line); color: var(--ink);
+}
+.global-map-card :is(.global-map-actions button,.global-map-toolbar button,.global-map-layers button,.global-site-filters button):hover:not(:disabled) {
+  background: #493028; color: var(--ink);
+}
+.global-map-layers button { color: var(--muted); }
+.global-map-layers button.selected, .orbital-scene .global-site-filters button[aria-pressed="true"],
+.global-site-group-options button[aria-pressed="true"] {
+  background: var(--light); color: #25150e; border-color: var(--light);
+}
+.global-panorama-filter[aria-pressed="true"] {
+  color: #25150e !important; border-color: var(--light) !important;
+}
+:is(.global-site-precision,.global-site-alternative,.global-site-group) { border-color: var(--map-line); }
+:is(.global-site-category,.global-site-popup h5,.global-site-image figcaption span,.global-site-sources a) { color: var(--light); }
+.orbital-scene :is(.globe-site-pin,.global-site-pin,.globe-region-pin,.global-detailed-region-pin,.globe-panorama-pin,.global-panorama-pin) {
+  display: block; width: 32px; height: 38px; min-width: 0; padding: 0; border: 0; border-radius: 0;
+  background: transparent; box-shadow: none; transform: translate(-50%, -95%);
+  transform-origin: center 95%; overflow: visible; z-index: 1;
+}
+.orbital-scene :is(.globe-site-pin,.global-site-pin,.globe-region-pin,.global-detailed-region-pin,.globe-panorama-pin,.global-panorama-pin):is(:hover,:focus-visible,[aria-pressed="true"]) {
+  outline: 0; box-shadow: none; background: transparent;
+  transform: translate(-50%, -95%) scale(1.14); z-index: 9;
+}
+.map-pin-art {
+  position: relative; display: block; width: 32px; height: 38px; margin: 0; rotate: none;
+  color: #281710; filter: drop-shadow(0 2px 3px #0b050bd0);
+}
+.map-pin-art img { display: block; width: 100%; height: 100%; }
+:is(.globe-panorama-pin,.global-panorama-pin) .map-pin-art { color: var(--ink); }
+.map-pin-count { position: absolute; inset: 0 0 auto; height: 32px; display: grid; place-items: center; font-size: 12px; }
+.orbital-scene button:is(.globe-site-pin,.global-site-pin,.globe-region-pin,.global-detailed-region-pin,.globe-panorama-pin,.global-panorama-pin):is(:focus-visible,[aria-pressed="true"]) .map-pin-art {
+  filter: drop-shadow(0 0 4px #ffc6a2);
+}
+.orbital-scene :is(.globe-region-pin,.global-detailed-region-pin) .marker-label {
+  position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%);
+  display: none; pointer-events: none; white-space: nowrap;
+  color: var(--ink); border: 1px solid var(--map-line); background: var(--map-panel);
+  padding: 6px 8px; border-radius: 7px; font-size: 11px; max-width: none;
+}
+.orbital-scene :is(.globe-region-pin,.global-detailed-region-pin):is(:hover,:focus-visible) .marker-label { display: block; }
+:is(.region-report-grid,.region-panorama-empty,.photo-map-toolbar,.photo-detail-card,
+  .photo-filters :is(select,input,button),.photo-coordinate-note,.route-overview-section,.route-map-scroll,
+  .route-selector,.panorama-sequence button,.panorama-list > button,.region-report-warning) {
+  background: var(--map-panel); border-color: var(--map-line); color: var(--ink);
+}
+:is(.region-report-sidebar dl div,.region-panorama-empty > span,.panorama-list) { border-color: var(--map-line); }
+:is(.region-report-index,.region-report-main h4,.region-report-sources a,.region-panorama-grid small,
+  .photo-filter-summary,.photo-location-badge.exact_rover) { color: var(--light); }
+:is(.region-report-sidebar dt,.region-panorama-grid em,.photo-filters label,.photo-metadata dt,.panorama-list small) {
+  color: var(--muted);
+}
+.panorama-list > button[aria-pressed="true"], .region-panorama-grid button:is(:hover,:focus-visible) {
+  background: #492f29; border-color: var(--light); box-shadow: none;
+}
+
+
+/* Route planners use the same surfaces as the atlas controls. */
+#map :is(.browser-planner,.gale-planner-panel) {
+  margin: 20px 0 18px; padding: clamp(16px,3vw,28px); border-radius: 16px;
+  border: 1px solid var(--map-line);
+  background: radial-gradient(ellipse at top right, #48282055, transparent 65%), var(--map-inset);
+}
+#map .regional-map .map-frame > .gale-planner-panel {
+  margin: 0; border: 0; border-radius: 0; padding: clamp(12px, 2vw, 20px);
+}
+:is(.browser-planner-header,.gale-planner-panel) h3 { margin: 0 0 8px; font-size: clamp(22px,3vw,30px); color: var(--ink); }
+:is(.browser-planner-header,.gale-planner-heading) p, .browser-planner-selection, .browser-planner-caveat, .gale-dem-source { color: var(--muted); }
+:is(.browser-planner,.gale-planner-panel) .data-pill { border-color: var(--map-line); color: var(--light); background: var(--map-panel); }
+.browser-planner-actions { gap: 8px; margin-block: 18px 12px; }
+.browser-planner-actions button {
+  min-height: 42px; border-radius: 9px; border-color: var(--map-line); background: var(--map-panel); color: var(--ink);
+}
+.browser-planner-actions button:hover:not(:disabled) { background: #493028; }
+.browser-planner-actions button.is-selecting {
+  border-color: var(--light); background: #432b27; color: var(--ink); box-shadow: 0 0 0 2px #ffb5962e;
+}
+.browser-planner-actions button.browser-planner-build {
+  border-color: var(--light); background: var(--light); color: #25150e; font-weight: 800;
+}
+.browser-planner-actions button.browser-planner-build:hover:not(:disabled) { background: #ffdbca; }
+.browser-planner-actions button:focus-visible { outline-color: var(--light); }
+.browser-planner-selection strong { color: var(--ink); }
+.browser-planner-hint { color: var(--light); }
+.browser-planner-result {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 9px 14px;
+  margin-top: 14px; padding: 11px 14px; border-radius: 8px; border-color: var(--light);
+  background: #36231f; color: var(--ink);
+}
+.browser-planner-result p { flex: 1 1 230px; margin: 0; }
+.browser-planner-result .map-return { gap: 8px; align-items: center; font-weight: 700; }
+.gale-canvas-container { border-color: var(--map-line); background: var(--map-inset); }
+.gale-route-results .route-switcher-buttons button {
+  min-height: 42px; border-color: var(--map-line); background: var(--map-panel); color: var(--ink);
+}
+.gale-route-results .route-switcher-buttons button[aria-pressed="true"] {
+  border-color: var(--light); background: #432b27; color: var(--ink);
+}
+.gale-route-results :is(td, th) { border-color: var(--map-line); }
+.gale-route-results th { color: var(--muted); }
+.gale-dem-source a { color: var(--light); }

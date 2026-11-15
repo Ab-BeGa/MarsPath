@@ -99,7 +99,7 @@ function GalePlannerCanvas({terrain}:{terrain:MarsTerrain}) {
     node.width=Math.round(size.width*dpr)
     node.height=Math.round(size.height*dpr)
     ctx.setTransform(dpr,0,0,dpr,0,0)
-    ctx.fillStyle='#0b1c29'
+    ctx.fillStyle='#120e13'
     ctx.fillRect(0,0,size.width,size.height)
     const v=viewport(size,camera,terrain)
     const {grid}=terrain.metadata
@@ -107,7 +107,7 @@ function GalePlannerCanvas({terrain}:{terrain:MarsTerrain}) {
     ctx.imageSmoothingEnabled=true
     ctx.imageSmoothingQuality='high'
     ctx.drawImage(texture,v.ox,v.oy,width,height)
-    ctx.strokeStyle='#a7b9c7'
+    ctx.strokeStyle='#b99482'
     ctx.lineWidth=1
     ctx.strokeRect(v.ox,v.oy,width,height)
     const at=(point:{x:number;y:number})=>{
@@ -194,9 +194,8 @@ function GalePlannerCanvas({terrain}:{terrain:MarsTerrain}) {
   const summary=result?.comparison
   return <section className="gale-planner-panel" aria-label={t('gale.planner.title')}>
     <div className="gale-planner-heading">
-      <div><span className="section-kicker">{t('gale.planner.badge')}</span>
-        <h3>{t('gale.planner.title')}</h3><p>{t('gale.planner.subtitle')}</p></div>
-      <span className="data-pill">{format(terrain.metadata.grid.pixel_size_m[0])} m/px</span>
+      <div><h3>{t('gale.planner.title')}</h3><p>{t('gale.planner.subtitle')}</p></div>
+      <span className="data-pill">{t('region.map.resolution', { size: format(terrain.metadata.grid.pixel_size_m[0]) })}</span>
     </div>
     <div className="browser-planner-actions">
       <button type="button" className={choosing==='start'?'is-selecting':''}
@@ -227,7 +226,7 @@ function GalePlannerCanvas({terrain}:{terrain:MarsTerrain}) {
         <button type="button" onClick={()=>setCamera(c=>({...c,zoom:Math.min(12,c.zoom*1.35)}))}>+</button>
         <span>{format(camera.zoom*100,{maximumFractionDigits:0})}%</span>
         <button type="button" onClick={()=>setCamera(c=>({...c,zoom:Math.max(.75,c.zoom/1.35)}))}>−</button>
-        <button type="button" onClick={()=>setCamera(INITIAL)}>{t('map.zoom.reset')}</button>
+        <button type="button" className="reset-map" onClick={()=>setCamera(INITIAL)}>{t('map.zoom.reset')}</button>
       </div>
     </div>
     {result&&summary&&<div className="gale-route-results">

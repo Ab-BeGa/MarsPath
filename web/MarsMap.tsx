@@ -96,12 +96,13 @@ function toGridPosition(screenX: number, screenY: number, m: ReturnType<typeof m
   return { col: (screenX - m.ox) / m.scale, row: (screenY - m.oy) / m.scale }
 }
 
-export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
+export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin, onShowComparison }: {
   terrain: MarsTerrain
   routes?: RoutePair
   routeStepM?: number
   onPlan?: (comparison: RouteComparison | null) => void
   routeOrigin?: RouteComparison['origin']
+  onShowComparison?: () => void
 }) {
   const { t, format, meters, locale, error: localizeError } = useI18n()
   const elevation = (v: number | null) => v === null ? t('status.nodata') : meters(v)
@@ -330,12 +331,12 @@ export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
     const { width, height } = size
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, width, height)
-    ctx.fillStyle = '#07121e'
+    ctx.fillStyle = '#120e13'
     ctx.fillRect(0, 0, width, height)
 
     // Subtle reference grid outside the cropped DEM.
     ctx.lineWidth = 1
-    ctx.strokeStyle = 'rgba(117,155,169,.075)'
+    ctx.strokeStyle = 'rgba(232,155,117,.085)'
     for (let x = 0; x < width; x += 46) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke()
     }
@@ -499,7 +500,7 @@ export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
       const px = p.ox + x * p.scale
       const py = p.oy + y * p.scale
       ctx.beginPath()
-      ctx.fillStyle = 'rgba(6,16,26,.85)'
+      ctx.fillStyle = 'rgba(25,16,22,.9)'
       ctx.arc(px, py, 15, 0, 2 * Math.PI); ctx.fill()
       ctx.beginPath()
       ctx.fillStyle = color
@@ -515,7 +516,7 @@ export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
       const measured = ctx.measureText(name).width
       const bx = Math.max(6, Math.min(width - measured - 22, px + 18))
       const by = Math.max(10, Math.min(height - 30, py - 15))
-      ctx.fillStyle = '#06131de8'
+      ctx.fillStyle = '#1a1117ed'
       ctx.fillRect(bx, by, measured + 18, 30)
       ctx.fillStyle = '#f1f5f9'
       ctx.textAlign = 'left'
@@ -763,7 +764,6 @@ export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
       <section className="browser-planner" aria-labelledby="browser-planner-title">
         <div className="browser-planner-header">
           <div>
-            <span className="section-kicker">{t('planner.kicker')}</span>
             <h3 id="browser-planner-title">{t('planner.title')}</h3>
             <p>{t('planner.description')}</p>
           </div>
@@ -792,14 +792,17 @@ export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
           {planMode && <span className="browser-planner-hint">{t('planner.clickOnMap')}</span>}
         </div>
         {planError && <p className="alert error-alert" role="alert">{planError}</p>}
-        {planResult && <p className="browser-planner-result" role="status">
+        {planResult && <div className="browser-planner-result"><p role="status">
           {t('planner.completed', {
             short:format(planResult.comparison.rows[0].direct ?? 0,{maximumFractionDigits:0}),
             gentle:format(planResult.comparison.rows[0].detour ?? 0,{maximumFractionDigits:0}),
           })}
           {' '}{planResult.same_grid_path ? t('planner.sameRoute') : t('planner.differentRoute')}
-          {' '}{t('planner.scroll')}
-        </p>}
+        </p>
+          {onShowComparison && <button type="button" className="map-return" onClick={onShowComparison}>
+            {t('nav.compare')} <span aria-hidden="true">↓</span>
+          </button>}
+        </div>}
         <p className="browser-planner-caveat">{t('planner.caveat')}</p>
       </section>
       <div className="map-layout" id="jezero-map-detail">

@@ -6,6 +6,7 @@ import {
   type SiteCategoryFilter,
 } from './marsSiteMapGeometry.ts'
 import { MarsSiteInfoCard } from './MarsSiteInfoCard.tsx'
+import { MapPin, SiteMarkerIcon } from './MapPin.tsx'
 import { MolaElevationLegend } from './MolaElevationLegend.tsx'
 import { loadPhotoCatalog, type JezeroPhoto } from './photoCatalog.ts'
 import { PanoramaDialog } from './PanoramaDialog.tsx'
@@ -207,7 +208,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
     canvas.height = Math.round(size.height * dpr)
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, size.width, size.height)
-    ctx.fillStyle = '#07121e'
+    ctx.fillStyle = '#151016'
     ctx.fillRect(0, 0, size.width, size.height)
 
     const layer = LAYERS[activeLayer]
@@ -482,7 +483,8 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
               title={regionText(region,locale,'name')} onClick={() => {
                 onOpenRegion(region)
               }}>
-              <span>▣</span><b>{regionText(region,locale,'name')}</b><small>{region.detail_status === 'local_map' ? 'DEM' : t('globe.region.report')}</small>
+              <MapPin kind={region.detail_status === 'local_map' ? 'local' : 'region'}/>
+              <b className="marker-label" aria-hidden="true">{regionText(region,locale,'name')}</b>
             </button>)}
           </div>
           {showPanoramas && <div className="global-panorama-markers" aria-label={t('globe.panoramas')}>
@@ -493,7 +495,8 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
               onMouseEnter={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
               onFocus={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
               onClick={() => { setPanoramaGroup(cluster.items); setSelectedPanorama(cluster.items[0]) }}>
-              {cluster.items.length > 1 ? cluster.items.length : '360°'}
+              <MapPin kind={cluster.items.length > 1 ? 'panorama-cluster' : 'panorama'}
+                count={cluster.items.length > 1 ? cluster.items.length : undefined}/>
             </button>)}
           </div>}
           <div className="global-site-markers" aria-label={t('map.sites.title')}>
@@ -510,7 +513,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
                 aria-pressed={cluster.sites.some(site => site.id === selectedSiteId)}
                 title={cluster.sites.map(site => siteText(site,locale,'name')).join(' / ')}
                 onClick={() => openSiteGroup(cluster.sites)}>
-                {grouped ? cluster.sites.length : event ? '✦' : '●'}
+                <SiteMarkerIcon sites={cluster.sites}/>
               </button>
             })}
           </div>

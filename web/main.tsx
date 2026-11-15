@@ -10,6 +10,7 @@ import { DetailedRegionReport } from './DetailedRegionReport.tsx'
 import type { DetailedRegion } from './detailedRegions.ts'
 import { RegionSummary } from './RegionSummary.tsx'
 import './styles.css'
+import './marsPath.css'
 
 const metricKeys: Record<string, string> = {
   'Длина маршрута': 'compare.distance',
@@ -24,9 +25,10 @@ async function readExport(file: File): Promise<unknown> {
   catch { throw new Error(`Не удалось прочитать JSON из файла «${file.name}».`) }
 }
 
-function RouteComparisonPanel({ comparison, onComparison }: {
+function RouteComparisonPanel({ comparison, onComparison, onClose }: {
   comparison: RouteComparison | null
   onComparison: (value: RouteComparison | null) => void
+  onClose: () => void
 }) {
   const {t, locale, format: localizedNumber, error: localizeError} = useI18n()
   const format = (value: number | null, delta = false) =>
@@ -59,11 +61,10 @@ function RouteComparisonPanel({ comparison, onComparison }: {
     <section id="compare" className="comparison-section" aria-labelledby="comparison-title">
       <div className="section-heading">
         <div>
-          <span className="section-kicker">{t('compare.kicker')}</span>
           <h2 id="comparison-title">{t('compare.title')}</h2>
           <p>{t('compare.description')}</p>
         </div>
-        <span className="data-pill">{t('compare.analysis')}</span>
+        <button className="map-return" onClick={onClose}>{t('compare.close')}</button>
       </div>
       <div className="comparison-card">
         <form onSubmit={submit} className="route-form">
@@ -108,6 +109,8 @@ function RouteComparisonPanel({ comparison, onComparison }: {
 
 function App() {
   const {t, error: localizeError} = useI18n()
+  const [entered, setEntered] = useState(false)
+  const [showComparison, setShowComparison] = useState(false)
   const [comparison, setComparison] = useState<RouteComparison | null>(null)
   const [terrain, setTerrain] = useState<MarsTerrain | null>(null)
   const [mapError, setMapError] = useState('')
@@ -116,6 +119,9 @@ function App() {
   useEffect(() => {
     if (selectedRegion) scrollToRegion()
   }, [selectedRegion])
+  useEffect(() => {
+    if (showComparison) document.getElementById('compare')?.scrollIntoView({ behavior: 'smooth' })
+  }, [showComparison])
   useEffect(() => {
     let active = true
     void loadMarsTerrain().then(data => { if (active) setTerrain(data) }).catch(reason => {
@@ -132,37 +138,22 @@ function App() {
     if (region === selectedRegion) scrollToRegion()
     else setSelectedRegion(region)
   }
+  const openComparison = () => {
+    if (showComparison) document.getElementById('compare')?.scrollIntoView({ behavior: 'smooth' })
+    else setShowComparison(true)
+  }
 
   return (
-    <div className="site-shell">
-      <header className="topbar">
-        <a className="brand" href="#globe" aria-label={t('nav.home')}>
-          <span className="brand-mark" aria-hidden="true"><span>◈</span></span>
-          <span className="brand-title">JEZERO <em>TRAVERSE</em><small>{t('brand.subtitle')}</small></span>
-        </a>
-        <nav className="topnav" aria-label={t('nav.label')}>
-          <a href="#globe">{t('nav.globe')}</a>
-          {selectedRegion && <a href="#map">{t('nav.map')}</a>}
-          <a href="#compare">{t('nav.compare')}</a>
-        </nav>
-        <LanguageSwitcher/>
-        <span className="header-mode"><span className="online-indicator"/> {t('mode')}</span>
-      </header>
+    <div className={`site-shell${entered ? '' : ' is-intro'}`}>
+      <LanguageSwitcher/>
       <main className="main-content">
-        <section className="hero">
-          <div className="hero-copy">
-            <span className="eyebrow">NASA SPACE APPS CHALLENGE · 2026</span>
-            <h1>{t('hero.title.start')} <span>{t('hero.title.end')}</span></h1>
-            <p>{t('hero.description')}</p>
-          </div>
-          <div className="hero-stats">
-            <div><small>{t('hero.planet')}</small><strong>MARS</strong></div>
-            <div><small>{t('hero.region')}</small><strong>JEZERO DELTA</strong></div>
-            <div><small>{t('hero.source')}</small><strong>NASA / USGS</strong></div>
-          </div>
-        </section>
-        <MarsGlobe onOpenDetail={openRegion}/>
-        {selectedRegion && <div id="map">
+        <MarsGlobe entered={entered} onEnter={() => {
+          if (window.location.hash) history.replaceState(history.state, '', window.location.pathname + window.location.search)
+          setEntered(true)
+        }} onOpenDetail={openRegion} onToggleComparison={() => setShowComparison(value => !value)}
+          comparisonOpen={showComparison}/>
+        {entered && selectedRegion && <div id="map">
+          <a className="map-return" href="#globe" onClick={() => setSelectedRegion(null)}>↑ {t('globe.title')}</a>
           {selectedRegion.detail_status === 'report' ? <DetailedRegionReport key={selectedRegion.id} region={selectedRegion}/> :
             <>
               {mapError && <section className="load-state" role="alert">
@@ -176,20 +167,28 @@ function App() {
               {terrain && <>
                 <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}
                   routeStepM={mapSourceMatches ? comparison?.source.step : undefined}
-                  routeOrigin={mapSourceMatches ? comparison?.origin : undefined} onPlan={setComparison}/>
+                  routeOrigin={mapSourceMatches ? comparison?.origin : undefined}
+                  onPlan={setComparison} onShowComparison={openComparison}/>
                 <RegionSummary region={selectedRegion} />
               </>}
             </>}
         </div>}
+        {entered && <>
+        <div className="comparison-workspace" hidden={!showComparison}>
         {comparison && terrain && !mapSourceMatches && <p className="alert" role="status">{t('compare.mapNotMatched')}</p>}
         {mapSourceMatches && selectedRegion?.detail_status !== 'local_map' && <p className="alert" role="status">
           {t('compare.selectJezero')}{' '}<a href="#globe">{t('nav.globe')}</a>
         </p>}
-        <RouteComparisonPanel comparison={comparison} onComparison={setComparison}/>
-        <footer className="page-footer"><span>JEZERO TRAVERSE © 2026</span>
+        <RouteComparisonPanel comparison={comparison} onComparison={setComparison} onClose={() => {
+          setShowComparison(false)
+          document.getElementById('globe')?.scrollIntoView({ behavior: 'smooth' })
+        }}/>
+        </div>
+        <footer className="page-footer"><span>MarsPath · 2026</span>
           <span>{t('app.footer.demo')}</span>
           <a href="https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.tif" target="_blank" rel="noopener noreferrer">{t('app.footer.usgs')}</a>
         </footer>
+        </>}
       </main>
     </div>
   )

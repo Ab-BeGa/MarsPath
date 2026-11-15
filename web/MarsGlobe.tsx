@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { useI18n } from './i18n.tsx'
 import { clampGlobeView, marsToGlobeScreen, screenUnitToMars, texturePixel, type GlobeView } from './marsGlobe.ts'
 import { MarsGlobalMap, type GlobalLayer } from './MarsGlobalMap.tsx'
@@ -13,10 +14,17 @@ import { loadDetailedRegions, type DetailedRegion } from './detailedRegions.ts'
 import { regionText } from './scienceRegionTranslations.ts'
 import { siteText } from './scienceSiteTranslations.ts'
 import { photoText } from './sciencePhotoTranslations.ts'
+import { MapPin, SiteMarkerIcon } from './MapPin.tsx'
 
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
 const INITIAL_VIEW: GlobeView = { longitude: 58, latitude: 18, zoom: 1 }
 const GLOBE_RENDER_SIZE = 360
+const STAR_FIELD = Array.from({ length: 105 }, (_, index) => ({
+  left: `${((index * 431 + 103) % 997) / 10}%`,
+  top: `${((index * index * 173 + index * 59) % 991) / 10}%`,
+  opacity: .25 + (index % 7) * .1,
+  animationDelay: `-${index % 11}s`,
+}))
 type GlobeLayer = GlobalLayer
 const TEXTURE_FILES: Record<GlobeLayer, [string, string]> = {
   relief: ['mola-col0.jpg', 'mola-col1.jpg'],
@@ -46,7 +54,10 @@ function validateMetadata(value: unknown): Metadata {
   return data as Metadata
 }
 
-export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedRegion) => void }) {
+export function MarsGlobe({ entered, onEnter, onOpenDetail, onToggleComparison, comparisonOpen }: {
+  entered: boolean; onEnter: () => void; onOpenDetail: (region: DetailedRegion) => void
+  onToggleComparison: () => void; comparisonOpen: boolean
+}) {
   const { t, format, locale } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textureRef = useRef<Partial<Record<GlobeLayer, ImageData>>>({})
@@ -62,7 +73,15 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
   const [size, setSize] = useState(520)
   const [mode, setMode] = useState<'globe' | 'flat'>('globe')
   const [transitioning, setTransitioning] = useState(false)
-  const [activeLayer, setActiveLayer] = useState<GlobeLayer>('relief')
+  const [activeLayer, setActiveLayer] = useState<GlobeLayer>('color')
+  const [rotationPaused, setRotationPaused] = useState(false)
+  const resumeTimer = useRef<number | null>(null)
+  const atlasHeading = useRef<HTMLHeadingElement>(null)
+  const [showRegions, setShowRegions] = useState(false)
+  const [showInfo, setShowInfo] = useState(false)
+  const [showPlaces, setShowPlaces] = useState(false)
+  const [sceneVisible, setSceneVisible] = useState(true)
+  const sceneRef = useRef<HTMLElement>(null)
   const [sites, setSites] = useState<MarsSite[]>([])
   const [siteError, setSiteError] = useState('')
   const [siteFilter, setSiteFilter] = useState<'all' | MarsSite['category']>('all')
@@ -71,8 +90,34 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
   const [panoramas, setPanoramas] = useState<JezeroPhoto[]>([])
   const [selectedPanorama, setSelectedPanorama] = useState<JezeroPhoto | null>(null)
   const [panoramaGroup, setPanoramaGroup] = useState<JezeroPhoto[]>([])
-  const [showPanoramas, setShowPanoramas] = useState(true)
+  const [showPanoramas, setShowPanoramas] = useState(false)
   const [detailedRegions, setDetailedRegions] = useState<DetailedRegion[]>([])
+  const regionName = (region: DetailedRegion) => regionText(region, locale, 'name')
+
+  useEffect(() => {
+    if (!sceneRef.current) return
+    const observer = new IntersectionObserver(([entry]) => setSceneVisible(entry.isIntersecting))
+    observer.observe(sceneRef.current)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (rotationPaused || !sceneVisible || !metadata || mode !== 'globe' || transitioning ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let last = performance.now()
+    const timer = window.setInterval(() => {
+      const now = performance.now()
+      const delta = Math.min(now - last, 80)
+      last = now
+      if (document.hidden) return
+      setView(current => clampGlobeView({ ...current, longitude: current.longitude + delta * .0045 }))
+    }, 42)
+    return () => window.clearInterval(timer)
+  }, [rotationPaused, sceneVisible, metadata, mode, transitioning])
+
+  useEffect(() => {
+    if (entered) atlasHeading.current?.focus({ preventScroll: true })
+  }, [entered])
 
   useEffect(() => {
     let active = true
@@ -145,6 +190,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
   useEffect(() => () => {
     if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
     if (viewFrameRef.current !== null) cancelAnimationFrame(viewFrameRef.current)
+    if (resumeTimer.current !== null) window.clearTimeout(resumeTimer.current)
   }, [])
 
   useEffect(() => {
@@ -156,11 +202,11 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
     if (!canvas) return
     const observer = new ResizeObserver(entries => {
       const width = entries[0]?.contentRect.width
-      if (width) setSize(Math.max(260, Math.min(560, Math.round(width))))
+      if (width) setSize(Math.round(width))
     })
     observer.observe(canvas)
     return () => observer.disconnect()
-  }, [])
+  }, [mode])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -186,17 +232,32 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
         }
         const source = texturePixel(mars.longitude, mars.latitude, texture.width, texture.height)
         const sourceIndex = (source.y * texture.width + source.x) * 4
-        const limb = .62 + .38 * Math.sqrt(Math.max(0, 1 - unitX * unitX - unitY * unitY))
-        output.data[target] = texture.data[sourceIndex] * limb
-        output.data[target + 1] = texture.data[sourceIndex + 1] * limb
-        output.data[target + 2] = texture.data[sourceIndex + 2] * limb
+        const depth = Math.sqrt(Math.max(0, 1 - unitX * unitX - unitY * unitY))
+        const light = activeLayer === 'color'
+          ? .075 + .99 * Math.max(0, -.60 * unitX + .46 * unitY + .65 * depth)
+          : .62 + .38 * depth
+        const rim = activeLayer === 'color' ? Math.pow(1 - depth, 5) * Math.max(0, -unitX + unitY) : 0
+        output.data[target] = texture.data[sourceIndex] * light + 58 * rim
+        output.data[target + 1] = texture.data[sourceIndex + 1] * light + 30 * rim
+        output.data[target + 2] = texture.data[sourceIndex + 2] * light + 18 * rim
         output.data[target + 3] = 255
       }
     }
     context.putImageData(output, 0, 0)
   }, [activeLayer, metadata, size, view])
 
-  const updateZoom = useCallback((factor: number) => setView(current => clampGlobeView({ ...current, zoom: current.zoom * factor })), [])
+  const pauseRotation = (scheduleResume = true) => {
+    if (resumeTimer.current !== null) window.clearTimeout(resumeTimer.current)
+    setRotationPaused(true)
+    resumeTimer.current = scheduleResume ? window.setTimeout(() => {
+      resumeTimer.current = null
+      setRotationPaused(false)
+    }, 1000) : null
+  }
+  const updateZoom = (factor: number) => {
+    pauseRotation(pointersRef.current.size === 0)
+    setView(current => clampGlobeView({ ...current, zoom: current.zoom * factor }))
+  }
   const scheduleView = (next: GlobeView) => {
     pendingViewRef.current = next
     if (viewFrameRef.current !== null) return
@@ -210,6 +271,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
     return { x: event.clientX - bounds.left, y: event.clientY - bounds.top }
   }
   const onPointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
+    pauseRotation(false)
     event.currentTarget.setPointerCapture(event.pointerId)
     const point = pointerPosition(event)
     pointersRef.current.set(event.pointerId, point)
@@ -240,9 +302,10 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
     }))
   }
   const endPointer = (event: PointerEvent<HTMLCanvasElement>) => {
-    pointersRef.current.delete(event.pointerId)
+    if (!pointersRef.current.delete(event.pointerId)) return
     dragRef.current = null
     pinchRef.current = null
+    if (pointersRef.current.size === 0) pauseRotation()
   }
   const onWheel = (event: WheelEvent<HTMLCanvasElement>) => {
     event.preventDefault()
@@ -266,6 +329,8 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
     return [{ item:panorama, x:(.5 + point.x * .43 * view.zoom) * size, y:(.5 - point.y * .43 * view.zoom) * size }]
   }), 36)
   const focusSite = (site: MarsSite) => {
+    pauseRotation()
+    setShowPlaces(true)
     setView(current => clampGlobeView({ ...current, longitude: site.longitude_east_deg, latitude: site.latitude_deg }))
     setSelectedSiteIds([site.id])
     setSelectedSiteId(site.id)
@@ -280,43 +345,72 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
     setMode('globe')
   }
 
-  return <section id="globe" className="mars-globe-section" aria-labelledby="globe-title">
-    <div className="section-heading">
-      <div><span className="section-kicker">{t('globe.kicker')}</span><h2 id="globe-title">{t('globe.title')}</h2><p>{t('globe.description')}</p></div>
-      <span className="data-pill">{activeLayer === 'relief' ? 'MOLA' : activeLayer === 'satellite' ? 'MOC' : 'VIKING'} · {LAYER_RESOLUTION[activeLayer]} m/px</span>
+  return <section id="globe" ref={sceneRef} className={`mars-globe-section orbital-scene mode-${mode}`} aria-labelledby={entered ? 'globe-title' : 'entrance-title'}>
+    <div className="orbital-stars" aria-hidden="true">{STAR_FIELD.map((style, index) => <i key={index} style={style}/>)}</div>
+    <div className="orbital-entrance" inert={entered}>
+      <div className="entrance-copy">
+        <span className="orbital-eyebrow">NASA SPACE APPS · 2026</span>
+        <h1 id="entrance-title">{t('orbital.mars')}</h1>
+        <p>{t('orbital.tagline')}</p>
+      </div>
+      <button className="entrance-hit" onClick={onEnter}>
+        <span>{t('hero.explore')}</span><i aria-hidden="true">↑</i>
+      </button>
     </div>
-    <div className="globe-mode-switch" role="group" aria-label={t('globe.mode')}>
-      <button aria-pressed={mode === 'globe'} onClick={returnToGlobe}>{t('globe.mode.3d')}</button>
-      <button aria-pressed={mode === 'flat'} onClick={startFlatTransition}>{t('globe.mode.flat')}</button>
+    <div className="orbital-toolbar" inert={!entered}>
+      <div className="globe-mode-switch" role="group" aria-label={t('globe.mode')}>
+        <button aria-pressed={mode === 'globe'} onClick={returnToGlobe}>{t('globe.mode.3d')}</button>
+        <button aria-pressed={mode === 'flat'} onClick={startFlatTransition}>{t('globe.mode.flat')}</button>
+      </div>
+      {mode === 'flat' && <button aria-pressed={comparisonOpen} onClick={onToggleComparison}>{t('nav.compare')}</button>}
+      {mode === 'globe' &&
+        <div className="globe-layer-switch" role="group" aria-label={t('map.global.layerSelect')}>
+          {(['color','relief','satellite'] as GlobeLayer[]).map(layer => <button key={layer}
+            aria-pressed={activeLayer === layer} onClick={() => setActiveLayer(layer)}>{t(`map.global.layer.${layer}`)}</button>)}
+        </div>
+      }
     </div>
     {mode === 'flat' ? <div className="globe-flat-mode">
+      <h1 id="globe-title" className="orbital-flat-title">{t('globe.title')}</h1>
       <p className="globe-transition-note">{t('globe.flatNote')}</p>
       <MarsGlobalMap onOpenRegion={onOpenDetail} onReturnGlobe={returnToGlobe}
         initialLayer={activeLayer} onLayerChange={setActiveLayer}/>
     </div> : <div className={`mars-globe-layout${transitioning ? ' is-unfolding' : ''}`}>
-      <div className="mars-globe-stage">
-        <div className="globe-layer-switch" role="group" aria-label={t('map.global.layerSelect')}>
-          {(['relief','satellite','color'] as GlobeLayer[]).map(layer => <button key={layer}
-            aria-pressed={activeLayer === layer} onClick={() => setActiveLayer(layer)}>{t(`map.global.layer.${layer}`)}</button>)}
-        </div>
+      <div className="orbital-rail" inert={!entered}>
+        <button aria-pressed={showRegions} disabled={!detailedRegions.length}
+          onClick={() => setShowRegions(value => !value)}>{t('orbital.regions')} <i aria-hidden="true">◇</i></button>
+        <button aria-pressed={showPlaces} onClick={() => { closeSite(); setShowPlaces(!showPlaces) }}>{t('orbital.places')} <i aria-hidden="true">✦</i></button>
+        <button aria-pressed={showPanoramas} onClick={() => {
+          setShowPanoramas(!showPanoramas)
+          setSelectedPanorama(null)
+        }}>{t('globe.panoramas')} <i aria-hidden="true">◎</i></button>
+        <button aria-pressed={comparisonOpen} aria-controls="compare" onClick={onToggleComparison}>
+          {t('nav.compare')} <i aria-hidden="true">↘</i>
+        </button>
+        <button aria-pressed={showInfo} aria-controls="atlas-information" onClick={() => setShowInfo(value => !value)}>
+          {t('orbital.about')} <i aria-hidden="true">i</i>
+        </button>
+      </div>
+      <div className="mars-globe-stage" inert={!entered}>
         <div className="mars-globe-sphere-wrap">
           <canvas ref={canvasRef} className="mars-globe-canvas" aria-label={t('globe.accessibility')}
             onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endPointer}
-            onPointerCancel={endPointer} onWheel={onWheel}/>
+            onPointerCancel={endPointer} onLostPointerCapture={endPointer} onWheel={onWheel}/>
           {!metadata && !error && <span className="globe-loading">{t('globe.loading')}</span>}
-          <div className="globe-region-markers" aria-label={t('globe.detailedRegions')}>
+          {showRegions && <div className="globe-region-markers" aria-label={t('globe.detailedRegions')}>
             {detailedRegions.map(region => {
               const point = marsToGlobeScreen(region.longitude_east_deg, region.latitude_deg, view)
               if (!point.visible) return null
               return <button key={region.id} className={`globe-region-pin${region.detail_status === 'local_map' ? ' is-local' : ''}`}
                 style={{left:`${50 + point.x * 43 * view.zoom}%`,top:`${50 - point.y * 43 * view.zoom}%`}}
-                title={regionText(region,locale,'name')} aria-label={t('region.report.open',{name:regionText(region,locale,'name')})}
+                title={regionName(region)} aria-label={t('orbital.openRegion', { name: regionName(region) })}
                 onClick={() => {
                   onOpenDetail(region)
-                }}><span>▣</span>{regionText(region,locale,'name')}</button>
+                }}><MapPin kind={region.detail_status === 'local_map' ? 'local' : 'region'}/>
+                  <b className="marker-label" aria-hidden="true">{regionName(region)}</b></button>
             })}
-          </div>
-          <div className="globe-site-markers" aria-label={t('map.sites.title')}>
+          </div>}
+          {showPlaces && <div className="globe-site-markers" aria-label={t('map.sites.title')}>
             {siteGroups.map(group => {
               const point = marsToGlobeScreen(group[0].longitude_east_deg, group[0].latitude_deg, view)
               if (!point.visible) return null
@@ -327,12 +421,12 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
                 style={{ left: `${50 + point.x * 43 * view.zoom}%`, top: `${50 - point.y * 43 * view.zoom}%` }}
                 aria-label={group.length > 1 ? t('map.sites.pinGroup', {count:group.length}) : t('map.sites.pin', {name:siteText(group[0],locale,'name')})}
                 aria-pressed={group.some(site => site.id === selectedSiteId)}
-                title={group.map(site => siteText(site,locale,'name')).join(' / ')}
-                onClick={() => { setSelectedSiteIds(group.map(site => site.id)); setSelectedSiteId(group[0].id) }}>
-                {group.length > 1 ? group.length : isEvent ? '✦' : '●'}
+                title={group.map(site => siteText(site, locale, 'name')).join(' / ')}
+                onClick={() => { pauseRotation(); setSelectedSiteIds(group.map(site => site.id)); setSelectedSiteId(group[0].id) }}>
+                <SiteMarkerIcon sites={group}/>
               </button>
             })}
-          </div>
+          </div>}
           {showPanoramas && <div className="globe-panorama-markers" aria-label={t('globe.panoramas')}>
             {panoramaClusters.map(cluster => <button key={cluster.id} className="globe-panorama-pin"
               style={{ left: `${cluster.x / size * 100}%`, top: `${cluster.y / size * 100}%` }}
@@ -341,33 +435,40 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
               onMouseEnter={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
               onFocus={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
               onClick={() => { setPanoramaGroup(cluster.items); setSelectedPanorama(cluster.items[0]) }}>
-              {cluster.items.length > 1 ? cluster.items.length : '360°'}
+              <MapPin kind={cluster.items.length > 1 ? 'panorama-cluster' : 'panorama'}
+                count={cluster.items.length > 1 ? cluster.items.length : undefined}/>
             </button>)}
           </div>}
         </div>
         {activeLayer === 'relief' && <MolaElevationLegend compact/>}
         {selectedSiteId && selectedSites.length > 0 && <MarsSiteInfoCard sites={selectedSites} selectedId={selectedSiteId}
           onSelect={setSelectedSiteId} onClose={closeSite}/>}
-        {selectedPanorama && <PanoramaDialog panoramas={panoramaGroup.length ? panoramaGroup : panoramas} selected={selectedPanorama}
-          onSelect={setSelectedPanorama} onClose={() => setSelectedPanorama(null)}/>}
+        {selectedPanorama && createPortal(
+          <PanoramaDialog panoramas={panoramaGroup.length ? panoramaGroup : panoramas} selected={selectedPanorama}
+            onSelect={setSelectedPanorama} onClose={() => setSelectedPanorama(null)}/>,
+          document.body,
+        )}
         <div className="globe-controls" aria-label={t('globe.controls')}>
           <button onClick={() => updateZoom(1.15)} aria-label="+">+</button>
           <button onClick={() => updateZoom(1 / 1.15)} aria-label="−">−</button>
-          <button onClick={() => setView(INITIAL_VIEW)}>{t('globe.reset')}</button>
+          <button onClick={() => { pauseRotation(); setView(INITIAL_VIEW) }}>{t('globe.reset')}</button>
         </div>
       </div>
-      <aside className="globe-panel">
+      <h1 id="globe-title" className="sr-only" ref={atlasHeading} tabIndex={-1}>{t('globe.title')}</h1>
+      <aside className="globe-panel" inert={!entered} hidden={!error && !showInfo && !showPlaces && !showRegions}>
         {error ? <p role="alert" className="alert error-alert">{t('globe.error')}: {error}</p> : <>
-          <span className="section-kicker">{t('globe.shape')}</span>
-          <strong>{t('globe.sphere')}</strong>
-          <dl className="globe-readout">
-            <div><dt>{t('globe.center')}</dt><dd>{format(view.latitude, { maximumFractionDigits: 1 })}°, {format(view.longitude, { maximumFractionDigits: 1 })}°</dd></div>
-            <div><dt>{t('globe.texture')}</dt><dd>{metadata?.globe_textures[activeLayer].title ?? '—'}</dd></div>
-            <div><dt>{t('globe.resolution')}</dt><dd>{metadata ? t('region.map.resolution',{size:format(LAYER_RESOLUTION[activeLayer])}) : '—'}</dd></div>
-          </dl>
-          <p>{t('globe.limit')}</p>
-          <p className="globe-help">{t('globe.help')}</p>
-          <div className="globe-site-controls">
+          {showRegions && <label className="globe-site-picker region-picker"><span>{t('orbital.regions')}</span>
+            <select value="" onChange={event => {
+              const region = detailedRegions.find(item => item.id === event.currentTarget.value)
+              if (!region) return
+              pauseRotation()
+              setView(current => ({ ...current, longitude: region.longitude_east_deg, latitude: region.latitude_deg }))
+            }}>
+              <option value="">{t('orbital.selectRegion')}</option>
+              {detailedRegions.map(region => <option key={region.id} value={region.id}>{regionName(region)}</option>)}
+            </select>
+          </label>}
+          {showPlaces && <div className="globe-site-controls">
             <strong>{t('map.sites.title')}</strong>
             <div className="global-site-filters" role="group" aria-label={t('map.sites.title')}>
               {([['all','map.sites.all'],['landing_site','map.sites.landing'],['science_event','map.sites.science']] as const).map(([value,label]) =>
@@ -380,11 +481,14 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
               }}><option value="">{t('map.sites.pickPlaceholder')}</option>{filteredSites.map(site => <option key={site.id} value={site.id}>{siteText(site,locale,'name')}</option>)}</select>
             </label>
             {siteError && <span className="global-site-error">{t('map.sites.loadError')} {siteError}</span>}
-          </div>
-          <div className="globe-extra-layers">
-            <button aria-pressed={showPanoramas} onClick={() => { setShowPanoramas(value => !value); setSelectedPanorama(null) }}>
-              <span>360°</span><b>{t('globe.panoramas')}</b><small>{panoramas.length}</small>
-            </button>
+          </div>}
+          <div id="atlas-information" hidden={!showInfo}>
+          <p className="orbital-intro">{t('orbital.intro')}</p>
+          <dl className="globe-readout">
+            <div><dt>{t('globe.center')}</dt><dd>{format(view.latitude, { maximumFractionDigits: 1 })}°, {format(view.longitude, { maximumFractionDigits: 1 })}°</dd></div>
+            <div><dt>{t('globe.texture')}</dt><dd>{metadata?.globe_textures[activeLayer].title ?? '—'}</dd></div>
+            <div><dt>{t('globe.resolution')}</dt><dd>{metadata ? t('region.map.resolution',{size:format(LAYER_RESOLUTION[activeLayer])}) : '—'}</dd></div>
+          </dl>
           </div>
         </>}
       </aside>

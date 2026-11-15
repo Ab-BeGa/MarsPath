@@ -38,7 +38,7 @@ export function I18nProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     document.documentElement.lang = locale
-    document.title = t('map.title') + ' · Jezero Traverse'
+    document.title = 'MarsPath · ' + t('globe.title')
     try { window.localStorage.setItem(STORAGE_KEY, locale) }
     catch { /* Persist only where allowed. Switching still works. */ }
   }, [locale, t])
@@ -56,9 +56,8 @@ export function useI18n(): I18nValue {
 
 export function LanguageSwitcher() {
   const { locale, setLocale, t } = useI18n()
-  return <label className="language-switcher">
-    <span aria-hidden="true">🌐</span>
-    <span className="sr-only">{t('language.label')}</span>
+  return <label className="orbital-language" title={t('language.label')}>
+    <span className="language-globe-icon" aria-hidden="true"><i/></span>
     <select aria-label={t('language.label')} value={locale}
       onChange={event => setLocale(normalizeLocale(event.currentTarget.value))}>
       <option value="ru">Русский</option>
