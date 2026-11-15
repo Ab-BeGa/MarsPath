@@ -85,9 +85,7 @@ export function parseMarsMetadata(raw: unknown): MarsMetadata {
   const wkt = string(root.crs_wkt, 'crs_wkt')
   const region = string(root.region_id, 'region_id')
   const isGale = region === 'gale_crater_curiosity_demo'
-  const isJezero = region === 'jezero_west_delta_demo'
-  if ((!isJezero && !isGale) || /WGS[_ ]?84/i.test(wkt) ||
-      !/GCS_Mars_2000_Sphere/.test(wkt) ||
+  if (/WGS[_ ]?84/i.test(wkt) || !/GCS_Mars_2000_Sphere/.test(wkt) ||
       !(isGale ? /Equirectangular/.test(wkt)
         : /Jezero_Crater_Projection/i.test(wkt))) {
     throw new Error('Для карты требуется подтверждённая марсианская проекция Jezero или Gale, не WGS84')
