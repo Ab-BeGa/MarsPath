@@ -22,7 +22,7 @@ This feature adds route planning by clicking on the **existing local Jezero CTX 
 - A* simplifies **only collinear grid steps**; cannot skip unknown/forbidden tiles. The reported polyline includes exact selected endpoints, like the Python implementation.
 - Route profiles, 20 m samples, measurable ascent, grade categories, coverage and NoData notes reuse the *existing* `measureRouteSlope` / `sampleRouteElevation` implementations; new metrics are not computed from visual texture.
 - **Important:** weight 12 is experimental, not a NASA EVA safety rule. Grid 20 m misses small rocks, soil conditions and cross-slope hazards; no displayed route certifies human traversability.
-- The text “direct” in the reused comparison panel represents **shortest valid grid route**, not necessarily the straight Euclidean segment. This is a UI compatibility detail that should be made more explicit in any later redesign.
+- In the browser-planned mode, the route switches, overview and comparison table explicitly label the two objectives **shortest valid grid route** and **slope-penalized A***. Imported Python files retain their existing “direct / detour” labels.
 
 ### Files
 
