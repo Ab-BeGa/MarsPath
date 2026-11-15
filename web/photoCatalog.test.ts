@@ -41,4 +41,8 @@ test('rejects duplicate ids, invented coordinates and unapproved sources', async
   const external = JSON.parse(await readFile(catalogPath, 'utf8'))
   external.records[0].page_url = 'https://example.com/photo'
   assert.throws(() => validatePhotoCatalog(external), /approved NASA/)
+
+  const traversal = JSON.parse(await readFile(catalogPath, 'utf8'))
+  traversal.records[0].image_url = '/data/../secret.jpg'
+  assert.throws(() => validatePhotoCatalog(traversal), /HTTPS|URL/)
 })

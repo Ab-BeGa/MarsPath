@@ -6,6 +6,8 @@ import { RouteOverview } from './RouteOverview.tsx'
 import { loadMarsTerrain, type MarsTerrain } from './marsTerrain.ts'
 import { compareRoutes, type RouteComparison } from './compareRoutes.ts'
 import { I18nProvider, LanguageSwitcher, useI18n } from './i18n.tsx'
+import { DetailedRegionReport } from './DetailedRegionReport.tsx'
+import type { DetailedRegion } from './detailedRegions.ts'
 import './styles.css'
 
 const metricKeys: Record<string, string> = {
@@ -102,6 +104,7 @@ function App() {
   const [comparison, setComparison] = useState<RouteComparison | null>(null)
   const [terrain, setTerrain] = useState<MarsTerrain | null>(null)
   const [mapError, setMapError] = useState('')
+  const [selectedRegion, setSelectedRegion] = useState<DetailedRegion | null>(null)
   useEffect(() => {
     let active = true
     void loadMarsTerrain().then(data => { if (active) setTerrain(data) }).catch(reason => {
@@ -113,6 +116,11 @@ function App() {
   const mapSourceMatches = Boolean(terrain && comparison?.demVerified &&
     comparison.source.demHash === terrain.metadata.source.source_sha256 &&
     comparison.source.crs === terrain.metadata.crs_wkt)
+
+  const openRegion = (region?: DetailedRegion) => {
+    setSelectedRegion(region?.detail_status === 'report' ? region : null)
+    window.setTimeout(() => document.getElementById('map')?.scrollIntoView({behavior:'smooth'}), 0)
+  }
 
   return (
     <div className="site-shell">
@@ -142,7 +150,7 @@ function App() {
             <div><small>{t('hero.source')}</small><strong>NASA / USGS</strong></div>
           </div>
         </section>
-        <MarsGlobe onOpenDetail={() => document.getElementById('map')?.scrollIntoView({behavior:'smooth'})}/>
+        <MarsGlobe onOpenDetail={openRegion}/>
         {mapError && <section className="load-state" role="alert">
           <h2>{t('app.loadFailed')}</h2>
           <p>{localizeError(mapError)}</p>
@@ -151,7 +159,8 @@ function App() {
         {!terrain && !mapError && <section className="load-state" role="status" aria-live="polite">
           <div className="loading-ring" aria-hidden="true"/><p>{t('app.loadingDEM')}</p>
         </section>}
-        {terrain && <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}
+        {selectedRegion && <DetailedRegionReport region={selectedRegion}/>}
+        {!selectedRegion && terrain && <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}
           routeStepM={mapSourceMatches ? comparison?.source.step : undefined}/>}
         {comparison && terrain && !mapSourceMatches && <p className="alert" role="status">{t('compare.mapNotMatched')}</p>}
         <RouteComparisonPanel onComparison={setComparison}/>

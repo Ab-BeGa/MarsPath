@@ -9,9 +9,9 @@ import { loadPhotoCatalog, type JezeroPhoto } from './photoCatalog.ts'
 import { PanoramaDialog } from './PanoramaDialog.tsx'
 import { clusterPanoramas } from './panoramaClusters.ts'
 import { preloadPanoramaImage } from './PanoramaViewer.tsx'
+import { loadDetailedRegions, type DetailedRegion } from './detailedRegions.ts'
 
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
-const JEZERO = { longitude: 77.40974302, latitude: 18.45616697 }
 const INITIAL_VIEW: GlobeView = { longitude: 58, latitude: 18, zoom: 1 }
 const GLOBE_RENDER_SIZE = 360
 type GlobeLayer = GlobalLayer
@@ -31,12 +31,6 @@ type Metadata = {
   display_mosaic: { file: string; width: number; height: number; sha256: string }
   globe_textures: Record<GlobeLayer, { files: [string, string]; title: string; source_layer: string }>
 }
-type DetailedRegion = {
-  id: string; name: string; latitude_deg: number; longitude_east_deg: number
-  coverage_km: [number, number]; detail_status: 'available'; detail_target: string
-  dem_resolution_m: number; optical_resolution_m: number; metadata: string
-}
-
 function validateMetadata(value: unknown): Metadata {
   const data = value as Partial<Metadata>
   if (data.mission !== 'Mars Global Surveyor' || !data.instrument?.includes('MOLA') ||
@@ -49,7 +43,7 @@ function validateMetadata(value: unknown): Metadata {
   return data as Metadata
 }
 
-export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
+export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region?: DetailedRegion) => void }) {
   const { t, format } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textureRef = useRef<Partial<Record<GlobeLayer, ImageData>>>({})
@@ -111,13 +105,12 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
     let active = true
     Promise.all([
       loadPhotoCatalog('/data/jezero/photos.json'),
-      fetch('/data/mars-global/detailed_regions.json').then(response => {
-        if (!response.ok) throw new Error(`Detailed regions unavailable (HTTP ${response.status})`)
-        return response.json() as Promise<{ regions: DetailedRegion[] }>
-      }),
-    ]).then(([catalogue, regions]) => {
+      loadPhotoCatalog('/data/mars-global/panoramas.json'),
+      loadDetailedRegions(),
+    ]).then(([jezeroCatalogue, globalCatalogue, regions]) => {
       if (!active) return
-      setPanoramas(catalogue.records.filter(photo => photo.coordinates && /panorama/i.test(`${photo.title} ${photo.caption}`)))
+      setPanoramas([...jezeroCatalogue.records, ...globalCatalogue.records]
+        .filter(photo => photo.coordinates && /panorama|degree|градус/i.test(`${photo.title} ${photo.caption}`)))
       setDetailedRegions(regions.regions)
     }).catch(reason => { if (active) setSiteError(reason instanceof Error ? reason.message : String(reason)) })
     return () => { active = false }
@@ -246,9 +239,6 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
     event.preventDefault()
     updateZoom(event.deltaY < 0 ? 1.1 : 1 / 1.1)
   }
-  const marker = marsToGlobeScreen(JEZERO.longitude, JEZERO.latitude, view)
-  const markerLeft = 50 + marker.x * 43 * view.zoom
-  const markerTop = 50 - marker.y * 43 * view.zoom
   const filteredSites = sites.filter(site => siteFilter === 'all' || site.category === siteFilter)
   const siteGroups = useMemo(() => {
     const groups = new Map<string, MarsSite[]>()
@@ -305,8 +295,18 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
             onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endPointer}
             onPointerCancel={endPointer} onWheel={onWheel}/>
           {!metadata && !error && <span className="globe-loading">{t('globe.loading')}</span>}
-          {marker.visible && <button className="globe-jezero-marker" style={{ left: `${markerLeft}%`, top: `${markerTop}%` }}
-            onClick={onOpenDetail} aria-label={t('globe.detail')}><i/>JEZERO · {t('globe.region.report')}</button>}
+          <div className="globe-region-markers" aria-label={t('globe.detailedRegions')}>
+            {detailedRegions.map(region => {
+              const point = marsToGlobeScreen(region.longitude_east_deg, region.latitude_deg, view)
+              if (!point.visible) return null
+              return <button key={region.id} className={`globe-region-pin${region.detail_status === 'local_map' ? ' is-local' : ''}`}
+                style={{left:`${50 + point.x * 43 * view.zoom}%`,top:`${50 - point.y * 43 * view.zoom}%`}}
+                title={region.name_ru} aria-label={`Открыть отчёт: ${region.name_ru}`}
+                onClick={() => {
+                  onOpenDetail(region)
+                }}><span>▣</span>{region.name_ru}</button>
+            })}
+          </div>
           <div className="globe-site-markers" aria-label={t('map.sites.title')}>
             {siteGroups.map(group => {
               const point = marsToGlobeScreen(group[0].longitude_east_deg, group[0].latitude_deg, view)
@@ -376,11 +376,11 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: () => void }) {
             <button aria-pressed={showPanoramas} onClick={() => { setShowPanoramas(value => !value); setSelectedPanorama(null) }}>
               <span>360°</span><b>{t('globe.panoramas')}</b><small>{panoramas.length}</small>
             </button>
-            <button aria-pressed="true" onClick={onOpenDetail}>
+            <button aria-pressed="true" onClick={() => onOpenDetail(detailedRegions[0])}>
               <span>▣</span><b>{t('globe.detailedRegions')}</b><small>{detailedRegions.length}</small>
             </button>
           </div>
-          <button className="globe-detail-button" onClick={onOpenDetail}>{t('globe.detail')}</button>
+          <button className="globe-detail-button" onClick={() => onOpenDetail()}>{t('globe.detail')}</button>
         </>}
       </aside>
     </div>}
