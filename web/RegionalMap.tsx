@@ -4,6 +4,7 @@ import { useI18n } from './i18n.tsx'
 import type { DetailedRegion } from './detailedRegions.ts'
 import { MolaElevationLegend } from './MolaElevationLegend.tsx'
 import { GaleRoutePlanner } from './GaleRoutePlanner.tsx'
+import { regionText } from './scienceRegionTranslations.ts'
 
 const MAPS = '/data/mars-global'
 const RASTERS = {
@@ -22,7 +23,7 @@ function clampOffset(offset: number, zoom: number) {
 }
 
 export function RegionalMap({ region, photos }: { region: DetailedRegion; photos: ReactNode }) {
-  const { t, format } = useI18n()
+  const { t, format, locale } = useI18n()
   const { lat, lon } = regionCoordinates(region)
   const [layer, setLayer] = useState<Layer>(region.id === 'gale-crater' ? 'routes' : 'mola')
   const [coverage, setCoverage] = useState<Coverage>()
@@ -75,7 +76,7 @@ export function RegionalMap({ region, photos }: { region: DetailedRegion; photos
           </button>)}
         </div>
         {layer === 'routes' && region.id === 'gale-crater'
-          ? <GaleRoutePlanner />
+          ? <GaleRoutePlanner/>
           : showRaster ? <div className="regional-stage map-canvas-wrap"><div className="regional-viewport" tabIndex={0} aria-label={t('region.map.controls')}
           onKeyDown={event => {
             if (event.target !== event.currentTarget) return
@@ -105,14 +106,14 @@ export function RegionalMap({ region, photos }: { region: DetailedRegion; photos
               onError={() => setFailedLayer(raster)} />
           </div>
           {scaleKm > 0 && <div className="map-scale" style={{ width: `${scaleKm / widthKm * view.zoom * 100}%` }}>
-            <span className="scale-stroke" style={{ width: '100%' }}/><span>{format(scaleKm)} km</span></div>}
+            <span className="scale-stroke" style={{ width: '100%' }}/><span>{t('region.map.scaleKm', {size:format(scaleKm)})}</span></div>}
           <div className="map-controls" aria-label={t('map.zoom.aria')}>
             <button type="button" aria-label={t('map.zoom.in')} disabled={view.zoom === 6} onClick={() => zoom(1.4)}>+</button>
             <span>{format(view.zoom * 100, { maximumFractionDigits: 0 })}%</span>
             <button type="button" aria-label={t('map.zoom.out')} disabled={view.zoom === 1} onClick={() => zoom(1 / 1.4)}>−</button>
             <button type="button" className="reset-map" onClick={resetView}>{t('map.zoom.reset')}</button>
           </div>
-          <div className="map-overlay-head"><span className="map-head-indicator"/> {region.name_ru} <small>{lat} · {lon}</small></div>
+          <div className="map-overlay-head"><span className="map-head-indicator"/> {regionText(region,locale,'name')} <small>{lat} · {lon}</small></div>
           <div className="map-compass" aria-hidden="true"><b>↑</b>N</div>
         </div></div> : <p className="regional-layer-note" role="status">
           {loading ? t('region.map.loading') : t('region.map.unavailable')}
@@ -122,8 +123,8 @@ export function RegionalMap({ region, photos }: { region: DetailedRegion; photos
         <div className="telemetry-title"><span className="pulse-circle"/> {t('map.telemetry.title')} <span>{t('map.telemetry.subtitle')}</span></div>
         <div className="telemetry-block">
           <span className="telemetry-label">{t('map.telemetry.center')}</span>
-          <strong>{region.name_ru}</strong>
-          <span className="telemetry-muted">{region.feature_type_ru}</span>
+          <strong>{regionText(region,locale,'name')}</strong>
+          <span className="telemetry-muted">{regionText(region,locale,'type')}</span>
         </div>
         <div className="telemetry-block">
           <span className="telemetry-label">{t('map.telemetry.coordinates')}</span>
@@ -131,8 +132,8 @@ export function RegionalMap({ region, photos }: { region: DetailedRegion; photos
           <div className="coord-pair"><span>{t('map.telemetry.lon')}</span><strong>{lon}</strong></div>
         </div>
         {coverage && <div className="telemetry-block bottom">
-          <div className="coord-pair"><span>{t('map.telemetry.area')}</span><strong>{format(widthKm, { maximumFractionDigits: 0 })} × {format((coverage.bounds[3] - coverage.bounds[1]) * Math.PI / 180 * 3396.19, { maximumFractionDigits: 0 })} km</strong></div>
-          {showRaster && <div className="coord-pair"><span>{t('map.source.resolution')}</span><strong>{t('region.map.preview', { size: format(renderedResolution, { maximumFractionDigits: 0 }) })}</strong></div>}
+          <div className="coord-pair"><span>{t('map.telemetry.area')}</span><strong>{t('region.map.scaleKm', {size:format(widthKm, { maximumFractionDigits: 0 })})} × {t('region.map.scaleKm', {size:format((coverage.bounds[3] - coverage.bounds[1]) * Math.PI / 180 * 3396.19, { maximumFractionDigits: 0 })})}</strong></div>
+          {showRaster && layer !== 'routes' && <div className="coord-pair"><span>{t('map.source.resolution')}</span><strong>{t('region.map.preview', { size: format(renderedResolution, { maximumFractionDigits: 0 }) })}</strong></div>}
         </div>}
       </aside>
     </div>

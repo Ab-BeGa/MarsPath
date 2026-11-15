@@ -1030,7 +1030,6 @@ thead { background: #132734; color: #afc9d4; }
   .browser-planner-actions button {flex:1 1 135px;}
 }
 
-
 /* Gale crater planner: numerical terrain subset only, independent of orbital JPEGs. */
 .gale-planner-panel {
   margin: 22px 0; padding: 20px; border: 1px solid #3b5b63;
@@ -1062,7 +1061,6 @@ thead { background: #132734; color: #afc9d4; }
   .gale-planner-heading {flex-direction:column;}
   .gale-canvas-container {min-height:290px;height:390px;}
 }
-
 
 /* Gale routes share the same region map frame as orbital overview layers.
  * The DEM is a separate numerical layer; no click coordinates are inferred
