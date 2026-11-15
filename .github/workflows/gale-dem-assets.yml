@@ -1,13 +1,29 @@
-name: Gale DEM validation
+name: Prepare Gale numerical DEM
 on:
   push:
     branches:
       - feature/gale-route-planner
     paths:
       - ".github/workflows/gale-dem-assets.yml"
+permissions:
+  contents: write
 jobs:
-  validate:
+  prepare:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Check workflow availability
-        run: echo "Gale DEM workflow available"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install numerical geospatial dependencies
+        run: pip install numpy rasterio affine
+      - name: Read the actual USGS Gale GeoTIFF and export compact numeric DEM
+        run: python scripts/preprocess_gale_dem.py --size 251 --spacing 20
+      - name: Persist only validated compact data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/gale/heights.f32 public/data/gale/mask.u8 public/data/gale/metadata.json public/data/gale/checksums.sha256
+          git commit -m "data(gale): commit verified USGS DEM subset"
+          git push origin HEAD:feature/gale-route-planner
