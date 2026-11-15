@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { cellAtGrid, parseMarsMetadata, decodeMarsTerrain, type MarsTerrain } from './marsTerrain.ts'
 import { planGridRoute, planBrowserRoutes, BROWSER_PLANNER_PENALTY } from './routePlanner.ts'
 
