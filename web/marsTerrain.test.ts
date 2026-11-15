@@ -98,3 +98,26 @@ test('rejects Earth projection, non north-up transforms, missing checkpoints and
   path.grid.heights_file = '../bad.f32'
   assert.throws(() => parseMarsMetadata(path), /имя файла/)
 })
+
+
+test('Gale projection parameters are regional, Mars-native and round-trip accurately', () => {
+  const gale = structuredClone(raw)
+  gale.region_id = 'gale_crater_curiosity_demo'
+  gale.crs_wkt = 'PROJCS["Mars_Gale_Equirectangular",GEOGCS["GCS_Mars_2000_Sphere"],PROJECTION["Equirectangular"]]'
+  gale.coordinate_convention = {
+    source_crs_sphere_radius_m: 3396190,
+    projection_standard_parallel_deg: 0,
+    projection_central_meridian_deg: 0,
+    projection_false_easting_m: 0,
+    projection_false_northing_m: 0,
+  }
+  const meta = parseMarsMetadata(gale)
+  const point = marsDegreesToProjected(meta, 137.44, -4.59)
+  assert.ok(Math.abs(point.x - 3396190 * 137.44 * Math.PI / 180) < 1e-6)
+  assert.ok(Math.abs(point.y - 3396190 * -4.59 * Math.PI / 180) < 1e-6)
+  const reversed = projectedToMarsDegrees(meta, point.x, point.y)
+  assert.ok(Math.abs(reversed.longitude - 137.44) < 1e-9)
+  assert.ok(Math.abs(reversed.latitude - -4.59) < 1e-9)
+  assert.throws(() => parseMarsMetadata({...gale, crs_wkt:raw.crs_wkt}), /марсианская/)
+  assert.throws(() => parseMarsMetadata({...gale, crs_wkt:'GEOGCS["WGS_84"]'}), /марсианская/)
+})
