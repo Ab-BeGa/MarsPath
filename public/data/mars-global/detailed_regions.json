@@ -1,18 +1,53 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "coordinate_reference": "IAU Mars 2000; planetocentric latitude; east-positive longitude",
   "regions": [
     {
       "id": "jezero-west-delta",
-      "name": "Jezero / western delta",
+      "name": "Jezero / western delta", "name_ru": "Езеро — западная дельта", "feature_type_ru": "ударный кратер и древняя дельта",
       "latitude_deg": 18.45616697,
       "longitude_east_deg": 77.40974302,
+      "coordinate_status": "feature_center",
+      "summary_ru": "Участок посадки и исследований Perseverance в западной части кратера Езеро.",
+      "science_ru": "Дельтовые и озёрные отложения сохраняют запись древней водной среды и являются целями поиска признаков прошлой обитаемости.",
+      "data_note_ru": "Для этого участка опубликованы совмещённые CTX-снимок 5 м/пиксель и DEM 20 м/ячейку. Это единственный участок каталога с локальной DEM-картой.",
       "coverage_km": [7.5, 7.5],
-      "detail_status": "available",
+      "detail_status": "local_map",
       "detail_target": "#map",
       "dem_resolution_m": 20,
       "optical_resolution_m": 5,
-      "metadata": "/data/jezero/metadata.json"
+      "metadata": "/data/jezero/metadata.json",
+      "sources": [{"title":"NASA Mars 2020 — Jezero Crater","url":"https://science.nasa.gov/mission/mars-2020-perseverance/science/jezero-crater/"},{"title":"USGS Mars 2020 CTX products","url":"https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/"}]
+    },
+    {
+      "id":"hecates-tholus","name":"Hecates Tholus","name_ru":"Купол Гекаты","feature_type_ru":"вулканический купол","latitude_deg":32.1,"longitude_east_deg":150.2,"coordinate_status":"feature_center","summary_ru":"Вулканический комплекс на северной окраине провинции Элизий с крупной кальдерой и каналами на склонах.","science_ru":"Сочетание вулканических и эрозионных форм помогает изучать историю вулканизма и возможного взаимодействия льда, воды и горячих пород.","data_note_ru":"Показан глобальный обзор MOLA/MOC/Viking; локальная DEM и детальный ортофотоплан в проект пока не добавлены.","detail_status":"report","sources":[{"title":"NASA/JPL Photojournal — Hecates Tholus","url":"https://photojournal.jpl.nasa.gov/catalog/PIA02791"}]
+    },
+    {
+      "id":"olympus-mons","name":"Olympus Mons","name_ru":"Гора Олимп","feature_type_ru":"щитовой вулкан","latitude_deg":18.0,"longitude_east_deg":225.0,"coordinate_status":"feature_center","summary_ru":"Крупнейший вулкан Марса и самая высокая известная гора Солнечной системы.","science_ru":"Его кальдера, лавовые потоки и уступ у основания показывают длительную историю марсианского вулканизма.","data_note_ru":"Координата центра приведена по глобальной топографической карте MOLA; показан глобальный слой, не локальная DEM.","detail_status":"report","sources":[{"title":"NASA — Maps of Mars Global Topography","url":"https://science.nasa.gov/photojournal/maps-of-mars-global-topography/"},{"title":"NASA Odyssey — THEMIS Views Olympus Mons","url":"https://science.nasa.gov/resource/odysseys-themis-views-olympus-mons/"}]
+    },
+    {
+      "id":"arsia-mons","name":"Arsia Mons","name_ru":"Гора Арсия","feature_type_ru":"щитовой вулкан","latitude_deg":-9.0,"longitude_east_deg":239.0,"coordinate_status":"feature_center","summary_ru":"Южный вулкан цепи Tharsis Montes с одной из крупнейших кальдер Марса.","science_ru":"Арсия позволяет сравнивать строение, возраст потоков и облачные процессы над гигантскими вулканами Фарсиды.","data_note_ru":"Координата центра по MOLA; детальная локальная поверхность пока не опубликована в проекте.","detail_status":"report","sources":[{"title":"NASA — Maps of Mars Global Topography","url":"https://science.nasa.gov/photojournal/maps-of-mars-global-topography/"},{"title":"NASA — Mars Tharsis","url":"https://science.nasa.gov/3d-resources/mars-tharsis/"}]
+    },
+    {
+      "id":"alba-patera","name":"Alba Patera / Alba Mons","name_ru":"Патера Альба","feature_type_ru":"низкопрофильный щитовой вулкан","latitude_deg":42.0,"longitude_east_deg":252.0,"coordinate_status":"feature_center","summary_ru":"Очень широкий вулканический комплекс к северу от Фарсиды с пологими склонами и протяжёнными потоками.","science_ru":"Альба показывает иной стиль построения вулкана, чем крутые гигантские щиты Фарсиды.","data_note_ru":"На карте дана опорная координата MOLA; граница огромного вулканического сооружения значительно шире маркера.","detail_status":"report","sources":[{"title":"NASA — Maps of Mars Global Topography","url":"https://science.nasa.gov/photojournal/maps-of-mars-global-topography/"},{"title":"NASA — Scoria Cones on Earth and Mars","url":"https://science.nasa.gov/earth/earth-observatory/scoria-cones-on-earth-and-mars/"}]
+    },
+    {
+      "id":"gale-crater","name":"Gale Crater","name_ru":"Кратер Гейла","feature_type_ru":"ударный кратер","latitude_deg":-5.4,"longitude_east_deg":137.8,"coordinate_status":"feature_center","summary_ru":"Кратер посадки Curiosity с центральной слоистой горой Эолида (Mount Sharp).","science_ru":"Озёрные и речные осадки кратера сохраняют многомиллиардную историю изменения воды, климата и пригодности среды для жизни.","data_note_ru":"Маркер обозначает центр кратера, а не положение Curiosity; локальный роверный маршрут здесь не загружен.","detail_status":"report","sources":[{"title":"NASA — A Guide to Gale Crater","url":"https://science.nasa.gov/wp-content/uploads/2024/03/32063_AGuideToGaleCrater-ts.pdf"},{"title":"NASA Mars Science Laboratory","url":"https://science.nasa.gov/mission/msl-curiosity/"}]
+    },
+    {
+      "id":"utopia-planitia","name":"Utopia Planitia","name_ru":"Равнина Утопия","feature_type_ru":"северная низменная равнина","latitude_deg":45.0,"longitude_east_deg":110.0,"coordinate_status":"representative","summary_ru":"Обширная равнина внутри крупнейшего ударного бассейна северного полушария.","science_ru":"Радарные наблюдения указывают на крупные подповерхностные залежи льда, важные для истории климата и будущего освоения.","data_note_ru":"Маркер — репрезентативная точка огромного региона, а не его геометрический центр или граница.","detail_status":"report","sources":[{"title":"NASA — Maps of Mars Global Topography","url":"https://science.nasa.gov/photojournal/maps-of-mars-global-topography/"},{"title":"NASA — Lake Superior-Sized Ice Deposit on Mars","url":"https://science.nasa.gov/wp-content/uploads/2023/05/NuggetUtopiaWater20170127.pdf"}]
+    },
+    {
+      "id":"elysium-planitia","name":"Elysium Planitia","name_ru":"Равнина Элизий","feature_type_ru":"экваториальная вулканическая равнина","latitude_deg":4.5,"longitude_east_deg":135.9,"coordinate_status":"representative","summary_ru":"Гладкая равнина, где в 2018 году сел аппарат InSight.","science_ru":"Район сочетает молодые вулканические поверхности и сейсмическую активность; InSight исследовал внутреннее строение планеты.","data_note_ru":"Использована опубликованная NASA точка центра посадочного эллипса InSight как опорная точка более широкой равнины.","detail_status":"report","sources":[{"title":"NASA — InSight's Landing Site: Elysium Planitia","url":"https://science.nasa.gov/resource/insights-landing-site-elysium-planitia/"}]
+    },
+    {
+      "id":"cerberus-fossae","name":"Cerberus Fossae","name_ru":"Борозды Цербера","feature_type_ru":"система тектонических трещин","latitude_deg":9.0,"longitude_east_deg":159.0,"coordinate_status":"representative","summary_ru":"Протяжённая молодая система трещин к востоку от Элизия.","science_ru":"Регион связан с молодым вулканизмом, каналами и источниками зарегистрированных InSight марсотрясений.","data_note_ru":"Линейная система занимает большую площадь; маркер показывает только репрезентативную точку.","detail_status":"report","sources":[{"title":"NASA/JPL — Cerberus Fossae marsquakes","url":"https://www.jpl.nasa.gov/news/nasas-insight-detects-two-sizable-quakes-on-mars/"}]
+    },
+    {
+      "id":"oxia-planum","name":"Oxia Planum","name_ru":"Равнина Оксия","feature_type_ru":"глинистая равнина","latitude_deg":18.275,"longitude_east_deg":335.368,"coordinate_status":"representative","summary_ru":"Посадочный район ровера Rosalind Franklin на границе древних южных возвышенностей и северных равнин.","science_ru":"Широкие выходы железо-магниевых глин сформировались в присутствии воды и являются целями поиска древних биосигнатур.","data_note_ru":"Точка соответствует центру опубликованного ESA изображения; посадочный эллипс и геологический район значительно больше маркера.","detail_status":"report","sources":[{"title":"ESA — Oxia Planum close up","url":"https://www.esa.int/ESA_Multimedia/Images/2018/11/Oxia_Planum_close_up"},{"title":"ESA — Rosalind Franklin landing site","url":"https://explorationscience.esa.int/project/exomars-rosalind-franklin-rfm/"}]
+    },
+    {
+      "id":"syrtis-major","name":"Syrtis Major Planum","name_ru":"Большой Сирт","feature_type_ru":"вулканическое плато и тёмная альбедная область","latitude_deg":8.4,"longitude_east_deg":69.5,"coordinate_status":"representative","summary_ru":"Одна из самых заметных тёмных областей Марса, связанная с древним низким щитовым вулканом.","science_ru":"Изменения яркости поверхности и древний вулканизм делают регион важным для исследований ветрового переноса пыли и эволюции коры.","data_note_ru":"Маркер представляет крупный регион; его границы зависят от геологического или альбедного определения.","detail_status":"report","sources":[{"title":"USGS — Syrtis Major Quadrangle map","url":"https://astrogeology.usgs.gov/ckan/dataset/980917b2-d762-4ef9-87d2-d62bf4e1bb3b"}]
     }
   ]
 }

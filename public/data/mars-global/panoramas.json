@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "catalog_id": "mars_regions_verified_surface_panoramas",
+  "title": "Verified surface panoramas for detailed Mars regions",
+  "last_verified": "2026-11-15",
+  "coordinate_reference": "IAU Mars 2000; planetocentric latitude; east-positive longitude",
+  "location_type_definitions": {
+    "exact_rover": "The fixed lander or rover position is documented by an official mission source.",
+    "approximate_area": "The marker identifies a documented landing or rover area, not an exact camera pose or target.",
+    "none": "No defensible single coordinate is published for this catalog item."
+  },
+  "records": [
+    {
+      "id": "pia16029-gale-first-color-360",
+      "region_id": "gale-crater",
+      "title": "Gale Crater Vista, in Glorious Color",
+      "caption": "Curiosity's first 360-degree color panorama of the Gale Crater landing site, assembled from 130 Mastcam thumbnail images.",
+      "mission": "Mars Science Laboratory Curiosity",
+      "camera": "Mastcam 34 mm",
+      "acquisition": { "sols": [3], "earth_dates": ["2012-08-09"] },
+      "credit": "NASA/JPL-Caltech/MSSS",
+      "page_url": "https://science.nasa.gov/photojournal/gale-crater-vista-in-glorious-color/",
+      "image_url": "/data/mars-global/panoramas/pia16029-gale-color.jpg",
+      "thumbnail_url": "/data/mars-global/panoramas/pia16029-gale-color.jpg",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": -4.5895,
+        "longitude_deg": 137.4417,
+        "localization_sol": 3,
+        "note": "Approximate Bradbury Landing area; this marker is not a reconstructed Mastcam camera pose."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/photojournal/gale-crater-vista-in-glorious-color/",
+        "image": "https://science.nasa.gov/photojournal/gale-crater-vista-in-glorious-color/",
+        "coordinates": "https://science.nasa.gov/mission/msl-curiosity/"
+      }
+    },
+    {
+      "id": "pia16026-gale-crisp-360",
+      "region_id": "gale-crater",
+      "title": "Crisp View from Inside Gale Crater",
+      "caption": "A full-resolution 360-degree Navigation Camera panorama from Curiosity's first days inside Gale Crater.",
+      "mission": "Mars Science Laboratory Curiosity",
+      "camera": "Navigation Camera",
+      "acquisition": { "sols": [2], "earth_dates": ["2012-08-08"] },
+      "credit": "NASA/JPL-Caltech",
+      "page_url": "https://science.nasa.gov/photojournal/crisp-view-from-inside-gale-crater/",
+      "image_url": "/data/mars-global/panoramas/pia16026-gale-navcam.jpg",
+      "thumbnail_url": "/data/mars-global/panoramas/pia16026-gale-navcam.jpg",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": -4.5895,
+        "longitude_deg": 137.4417,
+        "localization_sol": 2,
+        "note": "Approximate Bradbury Landing area; the marker denotes the rover area rather than an imaged target."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/photojournal/crisp-view-from-inside-gale-crater/",
+        "image": "https://science.nasa.gov/photojournal/crisp-view-from-inside-gale-crater/",
+        "coordinates": "https://science.nasa.gov/mission/msl-curiosity/"
+      }
+    },
+    {
+      "id": "pia23140-insight-sol-14-panorama",
+      "region_id": "elysium-planitia",
+      "title": "InSight Sol 14 Panorama",
+      "caption": "A surface panorama acquired by InSight's arm-mounted Instrument Deployment Camera on Elysium Planitia.",
+      "mission": "InSight",
+      "camera": "Instrument Deployment Camera",
+      "acquisition": { "sols": [14], "earth_dates": ["2018-12-11"] },
+      "credit": "NASA/JPL-Caltech",
+      "page_url": "https://science.nasa.gov/photojournal/insight-sol-14-panorama-2/",
+      "image_url": "/data/mars-global/panoramas/pia23140-insight-sol14.jpg",
+      "thumbnail_url": "/data/mars-global/panoramas/pia23140-insight-sol14.jpg",
+      "location_type": "approximate_area",
+      "coordinates": {
+        "latitude_deg": 4.5024,
+        "longitude_deg": 135.6234,
+        "localization_sol": 14,
+        "note": "Approximate fixed InSight landing location on Elysium Planitia; not a pixel-level camera reconstruction."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/photojournal/insight-sol-14-panorama-2/",
+        "image": "https://science.nasa.gov/photojournal/insight-sol-14-panorama-2/",
+        "coordinates": "https://science.nasa.gov/mission/insight/"
+      }
+    },
+    {
+      "id": "pia00399-viking-2-utopia-330",
+      "region_id": "utopia-planitia",
+      "title": "Northern Plains of Mars — Viking 2",
+      "caption": "A 330-degree panoramic sweep recorded by Viking Lander 2 shortly after touchdown on Utopia Planitia.",
+      "mission": "Viking 2",
+      "camera": "Viking Lander Camera 2",
+      "acquisition": { "sols": [0], "earth_dates": ["1976-09-03"] },
+      "credit": "NASA/JPL",
+      "page_url": "https://science.nasa.gov/photojournal/northern-plains-of-mars/",
+      "image_url": "/data/mars-global/panoramas/pia00399-viking2-utopia.jpg",
+      "thumbnail_url": "/data/mars-global/panoramas/pia00399-viking2-utopia.jpg",
+      "location_type": "exact_rover",
+      "coordinates": {
+        "latitude_deg": 47.64,
+        "longitude_deg": 134.29,
+        "localization_sol": 0,
+        "note": "Fixed Viking 2 landing site; the published scene covers about 330 degrees rather than a complete 360-degree circle."
+      },
+      "sources": {
+        "metadata": "https://science.nasa.gov/photojournal/northern-plains-of-mars/",
+        "image": "https://science.nasa.gov/photojournal/northern-plains-of-mars/",
+        "coordinates": "https://science.nasa.gov/mission/viking/"
+      }
+    }
+  ]
+}

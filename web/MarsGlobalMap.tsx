@@ -11,6 +11,7 @@ import { loadPhotoCatalog, type JezeroPhoto } from './photoCatalog.ts'
 import { PanoramaDialog } from './PanoramaDialog.tsx'
 import { clusterPanoramas } from './panoramaClusters.ts'
 import { preloadPanoramaImage } from './PanoramaViewer.tsx'
+import { loadDetailedRegions, type DetailedRegion } from './detailedRegions.ts'
 
 type Size = { width: number; height: number }
 type Camera = { zoom: number; panX: number; panY: number }
@@ -41,7 +42,7 @@ function constrainPan(camera: Camera, size: Size): Camera {
 }
 
 export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'relief', onLayerChange }: {
-  onOpenRegion: () => void; onReturnGlobe?: () => void
+  onOpenRegion: (region?: DetailedRegion) => void; onReturnGlobe?: () => void
   initialLayer?: GlobalLayer; onLayerChange?: (layer: GlobalLayer) => void
 }) {
   const { t } = useI18n()
@@ -71,6 +72,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
   const [showPanoramas, setShowPanoramas] = useState(true)
   const [selectedPanorama, setSelectedPanorama] = useState<JezeroPhoto | null>(null)
   const [panoramaGroup, setPanoramaGroup] = useState<JezeroPhoto[]>([])
+  const [detailedRegions, setDetailedRegions] = useState<DetailedRegion[]>([])
 
   const sites = siteCatalog?.sites ?? EMPTY_SITES
   const clusters = useMemo(() =>
@@ -121,8 +123,19 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
 
   useEffect(() => {
     let active = true
-    loadPhotoCatalog('/data/jezero/photos.json').then(catalogue => {
-      if (active) setPanoramas(catalogue.records.filter(photo => photo.coordinates && /panorama/i.test(`${photo.title} ${photo.caption}`)))
+    void loadDetailedRegions().then(catalog => { if (active) setDetailedRegions(catalog.regions) })
+      .catch(cause => { if (active) setSiteError(cause instanceof Error ? cause.message : String(cause)) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    Promise.all([
+      loadPhotoCatalog('/data/jezero/photos.json'),
+      loadPhotoCatalog('/data/mars-global/panoramas.json'),
+    ]).then(([jezeroCatalogue, globalCatalogue]) => {
+      if (active) setPanoramas([...jezeroCatalogue.records, ...globalCatalogue.records]
+        .filter(photo => photo.coordinates && /panorama|degree|градус/i.test(`${photo.title} ${photo.caption}`)))
     }).catch(cause => { if (active) setSiteError(cause instanceof Error ? cause.message : String(cause)) })
     return () => { active = false }
   }, [])
@@ -264,22 +277,6 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
       ctx.beginPath(); ctx.moveTo(Math.max(0, left), y); ctx.lineTo(Math.min(size.width, left + worldWidth), y); ctx.stroke()
     }
 
-    const markerX = left + ((JEZERO.longitude + 180) / 360) * worldWidth
-    const markerY = top + ((90 - JEZERO.latitude) / 180) * worldHeight
-    ctx.shadowColor = '#08121a'
-    ctx.shadowBlur = 8
-    ctx.fillStyle = '#ffb45b'
-    ctx.strokeStyle = '#ffffff'
-    ctx.lineWidth = 2
-    ctx.beginPath(); ctx.arc(markerX, markerY, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
-    ctx.shadowBlur = 0
-    ctx.font = '700 12px system-ui, sans-serif'
-    ctx.textAlign = 'center'
-    ctx.lineWidth = 3
-    ctx.strokeStyle = '#06131c'
-    ctx.strokeText('Jezero', markerX, markerY - 11)
-    ctx.fillStyle = '#f3f7f8'
-    ctx.fillText('Jezero', markerX, markerY - 11)
     ctx.restore()
   }, [activeLayer, camera, size, tileVersion])
 
@@ -383,12 +380,10 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
   const markerWorldHeight = markerWorldWidth / 2
   const markerLeft = size.width / 2 + camera.panX - markerWorldWidth / 2
   const markerTop = size.height / 2 + camera.panY - markerWorldHeight / 2
-  const detailedRegionMarker = {
-    x: markerLeft + ((JEZERO.longitude + 180) / 360) * markerWorldWidth,
-    y: markerTop + ((90 - JEZERO.latitude) / 180) * markerWorldHeight,
-  }
-  const detailedRegionVisible = detailedRegionMarker.x >= 0 && detailedRegionMarker.x <= size.width &&
-    detailedRegionMarker.y >= 0 && detailedRegionMarker.y <= size.height
+  const detailedRegionMarkers = detailedRegions.map(region => ({region,
+    x: markerLeft + ((normalizeMarsLongitude(region.longitude_east_deg) + 180) / 360) * markerWorldWidth,
+    y: markerTop + ((90 - region.latitude_deg) / 180) * markerWorldHeight,
+  })).filter(marker => marker.x >= 0 && marker.x <= size.width && marker.y >= 0 && marker.y <= size.height)
   const panoramaMarkers = panoramas.map(panorama => {
     const coordinates = panorama.coordinates!
     return {
@@ -409,7 +404,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
         <div className="global-map-actions">
           {onReturnGlobe && <button type="button" className="global-map-detail" onClick={onReturnGlobe}>{t('globe.return3d')}</button>}
           <button type="button" className="global-map-jump" onClick={zoomToJezero}>{t('map.global.zoomJezero')}</button>
-          <button type="button" className="global-map-detail" onClick={onOpenRegion}>{t('map.global.jump')}</button>
+          <button type="button" className="global-map-detail" onClick={() => onOpenRegion()}>{t('map.global.jump')}</button>
         </div>
       </div>
       <div className="global-map-frame">
@@ -478,11 +473,16 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
             onPointerDown={handlePointerDown} onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp} onPointerCancel={() => { drag.current = null }}
             onPointerLeave={() => setCursorCoordinates(null)} />
-          {detailedRegionVisible && <button type="button" className="global-detailed-region-pin"
-            style={{left:detailedRegionMarker.x,top:detailedRegionMarker.y}}
-            aria-label={t('globe.detail')} onClick={onOpenRegion}>
-            <span>▣</span><b>Jezero</b><small>{t('globe.region.report')}</small>
-          </button>}
+          <div className="global-region-markers" aria-label={t('globe.detailedRegions')}>
+            {detailedRegionMarkers.map(({region,x,y}) => <button key={region.id} type="button"
+              className={`global-detailed-region-pin${region.detail_status === 'local_map' ? ' is-local' : ''}`}
+              style={{left:x,top:y}} aria-label={`Открыть отчёт: ${region.name_ru}`}
+              title={region.name_ru} onClick={() => {
+                onOpenRegion(region)
+              }}>
+              <span>▣</span><b>{region.name_ru}</b><small>{region.detail_status === 'local_map' ? 'DEM' : 'ОТЧЁТ'}</small>
+            </button>)}
+          </div>
           {showPanoramas && <div className="global-panorama-markers" aria-label={t('globe.panoramas')}>
             {panoramaClusters.map(cluster => <button key={cluster.id} type="button"
               className="global-panorama-pin" style={{left:cluster.x,top:cluster.y}}

@@ -9,6 +9,7 @@ export type PhotoCoordinates = {
 
 export type JezeroPhoto = {
   id: string
+  region_id?: string
   title: string
   caption: string
   mission: string
@@ -49,6 +50,11 @@ function url(value: unknown, field: string): string {
     parsed.hostname === 'd2pn8kiwq2w21t.cloudfront.net' || parsed.hostname === 'pds-geosciences.wustl.edu'
   if (!official) throw new Error(`Photo catalog URL is not an approved NASA/JPL/PDS source: ${field}`)
   return parsed.toString()
+}
+function imageAsset(value: unknown, field: string): string {
+  const source = text(value, field)
+  if (source.startsWith('/data/') && !source.includes('..') && /\.(?:jpe?g|png|webp)$/i.test(source)) return source
+  return url(source, field)
 }
 function integer(value: unknown, field: string): number {
   if (!Number.isInteger(value) || (value as number) < 0) throw new Error(`Invalid non-negative integer: ${field}`)
@@ -103,6 +109,7 @@ export function validatePhotoCatalog(raw: unknown): PhotoCatalog {
     if (kind !== 'none' && (coordinates === null || coordinateSource === null)) throw new Error(`Located photo requires coordinates and a source: ${id}`)
     return {
       id,
+      region_id: record.region_id === undefined ? undefined : text(record.region_id, `${id}.region_id`),
       title: text(record.title, `${id}.title`),
       caption: text(record.caption, `${id}.caption`),
       mission: text(record.mission, `${id}.mission`),
@@ -110,8 +117,8 @@ export function validatePhotoCatalog(raw: unknown): PhotoCatalog {
       acquisition: { sols, earth_dates: earthDates },
       credit: text(record.credit, `${id}.credit`),
       page_url: url(record.page_url, `${id}.page_url`),
-      image_url: url(record.image_url, `${id}.image_url`),
-      thumbnail_url: url(record.thumbnail_url, `${id}.thumbnail_url`),
+      image_url: imageAsset(record.image_url, `${id}.image_url`),
+      thumbnail_url: imageAsset(record.thumbnail_url, `${id}.thumbnail_url`),
       location_type: kind,
       coordinates,
       sources: {
