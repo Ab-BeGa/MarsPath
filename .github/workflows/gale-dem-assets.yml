@@ -1,31 +1,36 @@
-name: Prepare Gale numerical DEM
+name: Gale DEM verification
 on:
   push:
     branches:
       - feature/gale-route-planner
-    paths:
-      - ".github/workflows/gale-dem-assets.yml"
 permissions:
-  contents: write
+  contents: read
 jobs:
-  prepare:
+  check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install exact Node dependencies
+        run: npm ci
+      - name: Run browser and real Gale DEM integration tests
+        run: npm test
+      - name: Typecheck and production build
+        run: npm run build
+      - name: Verify bundled Gale DEM assets
+        run: |
+          test -s dist/data/gale/metadata.json
+          test -s dist/data/gale/heights.f32
+          test -s dist/data/gale/mask.u8
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Install numerical geospatial dependencies
-        run: pip install numpy rasterio affine
-      - name: Read the actual USGS Gale GeoTIFF and export compact numeric DEM
-        run: python scripts/preprocess_gale_dem.py --size 251 --spacing 20
-      - name: Persist only validated compact data
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/gale/heights.f32 public/data/gale/mask.u8 public/data/gale/metadata.json public/data/gale/checksums.sha256
-          git commit -m "data(gale): commit verified USGS DEM subset"
-          git fetch origin feature/gale-route-planner
-          git rebase origin/feature/gale-route-planner
-          git push origin HEAD:feature/gale-route-planner
+          python-version: "3.11"
+          cache: pip
+      - name: Install Python geospatial dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run Python ETL and scientific tests
+        run: python -m unittest discover -s tests -v
