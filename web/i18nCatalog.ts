@@ -315,6 +315,8 @@ export const catalog = {
   'planner.clickOnMap': ['Нажмите на действительную ячейку карты. Enter — выбрать центр экрана.', 'Click a valid DEM cell. Enter selects the screen centre.', 'DEM торындағы жарамды ұяшықты басыңыз. Enter экран ортасын таңдайды.'],
   'planner.invalidCell': ['Выберите ячейку с действительной высотой DEM внутри участка.', 'Select a valid DEM elevation cell inside the study region.', 'Зерттеу аймағындағы биіктігі бар жарамды DEM ұяшығын таңдаңыз.'],
   'planner.noDemoPoints': ['Контрольные точки A/B не найдены в метаданных DEM.', 'Demo endpoints A/B are missing from DEM metadata.', 'DEM метадеректерінде A/B бақылау нүктелері жоқ.'],
+  'planner.sameCell': ['Начало и цель должны быть в разных ячейках DEM.', 'Start and goal must be in different DEM cells.', 'Бастау мен мақсат DEM-нің әртүрлі ұяшықтарында болуы тиіс.'],
+  'planner.tooLong': ['Маршрут слишком длинный для подробного профиля; выберите более близкие точки.', 'Route is too long for the detailed profile; choose closer endpoints.', 'Бағыт толық профиль үшін тым ұзын; жақынырақ нүктелерді таңдаңыз.'],
   'planner.noPath': ['Путь по заданным ограничениям не найден.', 'No path matches the given constraints.', 'Берілген шектеулерге сай жол табылмады.'],
   'planner.completed': ['Готово: минимум расстояния {short} м; штраф за уклон {gentle} м.', 'Done: shortest grid route {short} m; slope-penalized {gentle} m.', 'Дайын: ең қысқа бағыт {short} м; еңіс үшін айыппұлмен {gentle} м.'],
   'planner.sameRoute': ['На этой паре точек обе цели оптимизации дали один путь.', 'Both optimization objectives gave the same path for these endpoints.', 'Бұл нүктелер үшін екі оңтайландыру мақсаты бір бағытты берді.'],
