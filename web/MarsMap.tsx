@@ -691,6 +691,11 @@ export function MarsMap({ terrain, routes, routeStepM, onPlan }: {
     }
   }
   function handleKeys(event: KeyboardEvent<HTMLCanvasElement>) {
+    if (event.key === 'Enter' && planMode) {
+      event.preventDefault()
+      selectPlanPoint(getCell(size.width / 2, size.height / 2))
+      return
+    }
     const amount = event.shiftKey ? 110 : 40
     const arrows: Record<string, [number, number]> = {
       ArrowUp: [0, amount], ArrowDown: [0, -amount], ArrowLeft: [amount, 0], ArrowRight: [-amount, 0],
