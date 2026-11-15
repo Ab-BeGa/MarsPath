@@ -192,3 +192,41 @@ export function siteText(site: MarsSite, locale: Locale, field: SiteField): stri
   return siteCopy[site.id as keyof typeof siteCopy]?.[locale]?.[siteIndex[field]] ??
     (field === 'name' ? site.name : '—')
 }
+
+/** Present source georeferencing method names without changing source catalog values. */
+export const methodCopy = {
+  'PDS ODE catalogue landing-site coordinate': [
+    'Координаты места посадки по каталогу PDS ODE',
+    'PDS ODE каталогындағы қону орнының координаты',
+  ],
+  'PDS ODE radiometric Doppler solution': [
+    'Радиометрическое определение координат по эффекту Доплера (PDS ODE)',
+    'PDS ODE бойынша Доплер әсеріне негізделген радиометриялық координат анықтамасы',
+  ],
+  'PDS ODE / NASA published landing site': [
+    'Опубликованная координата места посадки PDS ODE / NASA',
+    'PDS ODE / NASA жариялаған қону орнының координаты',
+  ],
+  'NASA-hosted peer-reviewed landing site research': [
+    'Рецензируемое исследование места посадки, опубликованное NASA',
+    'NASA жариялаған рецензияланған қону орны зерттеуі',
+  ],
+  'NASA Langley EDL reconstructed landing coordinate': [
+    'Реконструкция координат посадки NASA Langley (EDL)',
+    'NASA Langley (EDL) қайта есептеген қону координаты',
+  ],
+  "Co-located instrument/lander anchor — NOT the physical event's location": [
+    'Местоположение прибора и посадочного аппарата, НЕ место физического события',
+    'Аспап пен қону аппаратының орны, физикалық оқиға болған жер ЕМЕС',
+  ],
+  'PDS ODE cartographic triangulation': [
+    'Картографическая триангуляция PDS ODE',
+    'PDS ODE картографиялық триангуляциясы',
+  ],
+} as const satisfies Record<string, readonly [string, string]>
+
+export function methodText(method: string, locale: Locale): string {
+  if (locale === 'en') return method
+  const row = methodCopy[method as keyof typeof methodCopy]
+  return row ? row[locale === 'ru' ? 0 : 1] : method
+}
