@@ -26,7 +26,13 @@ export type MarsMetadata = {
     elevation_min_m: number
     elevation_max_m: number
   }
-  coordinate_convention: { source_crs_sphere_radius_m: number }
+  coordinate_convention: {
+    source_crs_sphere_radius_m: number
+    projection_standard_parallel_deg?: number
+    projection_central_meridian_deg?: number
+    projection_false_easting_m?: number
+    projection_false_northing_m?: number
+  }
   crs_wkt: string
   checked_points: MarsPoint[]
 }
@@ -77,8 +83,14 @@ export function parseMarsMetadata(raw: unknown): MarsMetadata {
   const grid = record(root.grid, 'grid')
   const coordinate = record(root.coordinate_convention, 'coordinate_convention')
   const wkt = string(root.crs_wkt, 'crs_wkt')
-  if (!/Jezero_Crater_Projection/i.test(wkt) || !/GCS_Mars_2000_Sphere/.test(wkt) || /WGS[_ ]?84/i.test(wkt)) {
-    throw new Error('Для карты требуется исходная марсианская проекция Jezero, не WGS84')
+  const region = string(root.region_id, 'region_id')
+  const isGale = region === 'gale_crater_curiosity_demo'
+  const isJezero = region === 'jezero_west_delta_demo'
+  if ((!isJezero && !isGale) || /WGS[_ ]?84/i.test(wkt) ||
+      !/GCS_Mars_2000_Sphere/.test(wkt) ||
+      !(isGale ? /Equirectangular/.test(wkt)
+        : /Jezero_Crater_Projection/i.test(wkt))) {
+    throw new Error('Для карты требуется подтверждённая марсианская проекция Jezero или Gale, не WGS84')
   }
   const width = number(grid.width, 'width')
   const height = number(grid.height, 'height')
@@ -97,6 +109,14 @@ export function parseMarsMetadata(raw: unknown): MarsMetadata {
     throw new Error('Неподдерживаемая привязка DEM: требуется северо-ориентированная сетка')
   }
   const radius = number(coordinate.source_crs_sphere_radius_m, 'Mars radius')
+  const optionalCoordinate = (name: string, fallback: number): number =>
+    coordinate[name] === undefined ? fallback : number(coordinate[name], name)
+  const parallel = optionalCoordinate('projection_standard_parallel_deg', isGale ? 0 : 18.4663)
+  const centralMeridian = optionalCoordinate('projection_central_meridian_deg', 0)
+  const falseEasting = optionalCoordinate('projection_false_easting_m', 0)
+  const falseNorthing = optionalCoordinate('projection_false_northing_m', 0)
+  if (!Number.isFinite(parallel) || Math.abs(parallel) >= 89 ||
+      Math.abs(centralMeridian) > 180) throw new Error('Неизвестные параметры проекции Марса')
   if (radius < 3_000_000 || radius > 4_000_000) throw new Error('Некорректный радиус Марса')
   const checked = root.checked_points
   if (!Array.isArray(checked)) throw new Error('Не указаны контрольные точки Jezero')
@@ -117,7 +137,7 @@ export function parseMarsMetadata(raw: unknown): MarsMetadata {
     throw new Error('На карте отсутствует база или научная точка')
   }
   return {
-    region_id: string(root.region_id, 'region_id'),
+    region_id: region,
     source: {
       product: string(source.product, 'source product'),
       instrument: string(source.instrument, 'source instrument'),
@@ -132,7 +152,13 @@ export function parseMarsMetadata(raw: unknown): MarsMetadata {
       elevation_min_m: number(grid.elevation_min_m, 'elevation_min_m'),
       elevation_max_m: number(grid.elevation_max_m, 'elevation_max_m'),
     },
-    coordinate_convention: { source_crs_sphere_radius_m: radius },
+    coordinate_convention: {
+      source_crs_sphere_radius_m: radius,
+      projection_standard_parallel_deg: parallel,
+      projection_central_meridian_deg: centralMeridian,
+      projection_false_easting_m: falseEasting,
+      projection_false_northing_m: falseNorthing,
+    },
     crs_wkt: wkt, checked_points: points,
   }
 }
@@ -168,18 +194,23 @@ const DEG_TO_RAD = Math.PI / 180
 
 export function projectedToMarsDegrees(metadata: MarsMetadata, x: number, y: number): { longitude: number; latitude: number } {
   const radius = metadata.coordinate_convention.source_crs_sphere_radius_m
-  // Mars sphere + equirectangular, central meridian 0°, lat_ts 18.4663°.
-  // This is the published projection of the bundled Jezero CTX DEM.
-  const lon = x / (radius * Math.cos(18.4663 * DEG_TO_RAD)) * RAD_TO_DEG
-  const lat = y / radius * RAD_TO_DEG
+  // Mars sphere + equirectangular; use each DEM's declared parameters.
+  const c = metadata.coordinate_convention
+  const lon = (x - (c.projection_false_easting_m ?? 0)) /
+    (radius * Math.cos((c.projection_standard_parallel_deg ?? 18.4663) * DEG_TO_RAD)) * RAD_TO_DEG +
+    (c.projection_central_meridian_deg ?? 0)
+  const lat = (y - (c.projection_false_northing_m ?? 0)) / radius * RAD_TO_DEG
   return { longitude: lon, latitude: lat }
 }
 
 export function marsDegreesToProjected(metadata: MarsMetadata, longitude: number, latitude: number): { x: number; y: number } {
   const r = metadata.coordinate_convention.source_crs_sphere_radius_m
+  const c = metadata.coordinate_convention
   return {
-    x: longitude * DEG_TO_RAD * r * Math.cos(18.4663 * DEG_TO_RAD),
-    y: latitude * DEG_TO_RAD * r,
+    x: (longitude - (c.projection_central_meridian_deg ?? 0)) * DEG_TO_RAD *
+      r * Math.cos((c.projection_standard_parallel_deg ?? 18.4663) * DEG_TO_RAD) +
+      (c.projection_false_easting_m ?? 0),
+    y: latitude * DEG_TO_RAD * r + (c.projection_false_northing_m ?? 0),
   }
 }
 
