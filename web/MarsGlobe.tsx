@@ -12,6 +12,7 @@ import { preloadPanoramaImage } from './PanoramaViewer.tsx'
 import { loadDetailedRegions, type DetailedRegion } from './detailedRegions.ts'
 import { regionText } from './scienceRegionTranslations.ts'
 import { siteText } from './scienceSiteTranslations.ts'
+import { photoText } from './sciencePhotoTranslations.ts'
 
 const METADATA_URL = '/data/mars-global/mola_global_463m.json'
 const INITIAL_VIEW: GlobeView = { longitude: 58, latitude: 18, zoom: 1 }
@@ -324,9 +325,9 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
               return <button key={group.map(site => site.id).join(':')}
                 className={`globe-site-pin globe-site-pin--${mixed ? 'mixed' : isEvent ? 'event' : 'landing'}`}
                 style={{ left: `${50 + point.x * 43 * view.zoom}%`, top: `${50 - point.y * 43 * view.zoom}%` }}
-                aria-label={group.length > 1 ? t('map.sites.pinGroup', {count:group.length}) : t('map.sites.pin', {name:group[0].name})}
+                aria-label={group.length > 1 ? t('map.sites.pinGroup', {count:group.length}) : t('map.sites.pin', {name:siteText(group[0],locale,'name')})}
                 aria-pressed={group.some(site => site.id === selectedSiteId)}
-                title={group.map(site => site.name).join(' / ')}
+                title={group.map(site => siteText(site,locale,'name')).join(' / ')}
                 onClick={() => { setSelectedSiteIds(group.map(site => site.id)); setSelectedSiteId(group[0].id) }}>
                 {group.length > 1 ? group.length : isEvent ? '✦' : '●'}
               </button>
@@ -335,7 +336,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedReg
           {showPanoramas && <div className="globe-panorama-markers" aria-label={t('globe.panoramas')}>
             {panoramaClusters.map(cluster => <button key={cluster.id} className="globe-panorama-pin"
               style={{ left: `${cluster.x / size * 100}%`, top: `${cluster.y / size * 100}%` }}
-              aria-label={cluster.items.length > 1 ? t('globe.panorama.cluster',{count:cluster.items.length}) : t('globe.panorama.open',{title:cluster.items[0].title})}
+              aria-label={cluster.items.length > 1 ? t('globe.panorama.cluster',{count:cluster.items.length}) : t('globe.panorama.open',{title:photoText(cluster.items[0],locale,'title')})}
               title={cluster.items.map(item => item.title).join(' / ')}
               onMouseEnter={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
               onFocus={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
