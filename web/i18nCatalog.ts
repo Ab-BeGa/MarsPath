@@ -303,6 +303,8 @@ export const catalog = {
   'planner.kicker': ['НОВЫЙ РЕЖИМ · ПО DEM', 'NEW MODE · FROM DEM', 'ЖАҢА РЕЖИМ · DEM БОЙЫНША'],
   'planner.title': ['Маршрут прямо на карте', 'Plan a route on the map', 'Бағытты картадан құру'],
   'planner.description': ['Выберите старт A и цель B на карте Езеро. Браузер рассчитает два варианта по той же DEM без загрузки JSON.', 'Choose start A and goal B on the Jezero map. The browser computes two DEM-based alternatives without JSON uploads.', 'Езеро картасынан A бастауын және B мақсатын таңдаңыз. Браузер JSON жүктемей DEM бойынша екі бағытты есептейді.'],
+  'planner.shortest': ['Кратчайший по сетке', 'Shortest grid route', 'Тор бойынша қысқа бағыт'],
+  'planner.slopeCost': ['С учётом штрафа за уклон', 'Slope-penalized A*', 'Еңіс айыппұлымен A*'],
   'planner.method': ['A* · СЕТКА 20 М', 'A* · 20 M GRID', 'A* · 20 М ТОР'],
   'planner.start': ['Старт A', 'Start A', 'Бастау A'],
   'planner.goal': ['Цель B', 'Goal B', 'Мақсат B'],
