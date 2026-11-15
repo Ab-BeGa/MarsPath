@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useI18n } from './i18n.tsx'
 import type { MarsSite } from './marsSites.ts'
-import { siteText } from './scienceSiteTranslations.ts'
+import { siteText, methodText } from './scienceSiteTranslations.ts'
 
 export function MarsSiteInfoCard({
   sites, selectedId, onSelect, onClose,
@@ -74,7 +74,7 @@ export function MarsSiteInfoCard({
 
       <div className="global-site-precision">
         <h5>{t('map.sites.precision')}</h5>
-        <p><strong>{t('map.sites.method')}:</strong> {selected.georeferencing.method}</p>
+        <p><strong>{t('map.sites.method')}:</strong> {methodText(selected.georeferencing.method,locale)}</p>
         <p>{t('map.sites.decimals', {latitude:digits.latitude, longitude:digits.longitude})}</p>
         <p>{error === null
           ? t('map.sites.unknownAccuracy')
@@ -89,7 +89,7 @@ export function MarsSiteInfoCard({
         <div className="global-site-alternative">
           <h5>{t('map.sites.alternative')}</h5>
           {selected.alternative_positions.map(alt =>
-            <p key={alt.method}>{alt.method}: {alt.as_published.latitude} · {alt.as_published.longitude}</p>)}
+            <p key={alt.method}>{methodText(alt.method,locale)}: {alt.as_published.latitude} · {alt.as_published.longitude}</p>)}
         </div>
       )}
 
