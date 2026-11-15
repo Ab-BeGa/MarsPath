@@ -8,13 +8,13 @@ function line(points: ScreenPoint[]): string {
   return points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')
 }
 
-export function RouteOverview({ direct, detour }: { direct: MapPoint[]; detour: MapPoint[] }) {
+export function RouteOverview({ direct, detour, browserMode = false }: { direct: MapPoint[]; detour: MapPoint[]; browserMode?: boolean }) {
   const {t} = useI18n()
   const [active, setActive] = useState<RouteId>('direct')
   const geometry = buildRouteMapGeometry(direct, detour)
   const routes = [
-    { id: 'direct' as const, points: geometry.direct, name: t('route.direct.full') },
-    { id: 'detour' as const, points: geometry.detour, name: t('route.detour.full') },
+    { id: 'direct' as const, points: geometry.direct, name: t(browserMode ? 'planner.shortest' : 'route.direct.full') },
+    { id: 'detour' as const, points: geometry.detour, name: t(browserMode ? 'planner.slopeCost' : 'route.detour.full') },
   ]
   // Put the active line on top, but always render both.
   const ordered = routes.slice().sort((a, b) => Number(a.id === active) - Number(b.id === active))
@@ -50,11 +50,11 @@ export function RouteOverview({ direct, detour }: { direct: MapPoint[]; detour: 
         </svg>
       </div>
       <p className="route-map-status" role="status">
-        {t('overview.active')} <strong>{active === 'direct' ? t('route.direct.lower') : t('route.detour.lower')}</strong>. {t('overview.bothVisible')}
+        {t('overview.active')} <strong>{active === 'direct' ? t(browserMode ? 'planner.shortest' : 'route.direct.lower') : t(browserMode ? 'planner.slopeCost' : 'route.detour.lower')}</strong>. {t('overview.bothVisible')}
       </p>
       <div className="route-map-legend">
-        <span><i className="legend-line legend-line--direct" />{t('route.direct')}</span>
-        <span><i className="legend-line legend-line--detour" />{t('route.detour')}</span>
+        <span><i className="legend-line legend-line--direct" />{t(browserMode ? 'planner.shortest' : 'route.direct')}</span>
+        <span><i className="legend-line legend-line--detour" />{t(browserMode ? 'planner.slopeCost' : 'route.detour')}</span>
         <span><i className="legend-dot legend-dot--base" />{t('overview.baseSmall')}</span>
         <span><i className="legend-dot legend-dot--science" />{t('overview.scienceSmall')}</span>
       </div>
