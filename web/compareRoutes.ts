@@ -15,6 +15,7 @@ export type RouteComparison = {
   rows: ComparisonRow[]
   coverage: { direct: number; detour: number; partial: boolean }
   demVerified: boolean
+  origin?: 'browser' | 'import'
   routes: RoutePair
   source: { crs: string; demHash?: string; step: number }
 }
