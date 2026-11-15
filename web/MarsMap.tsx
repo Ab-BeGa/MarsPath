@@ -246,6 +246,9 @@ export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
   const safeSelectedIndex = activeProfile && selectedSample !== null &&
     selectedSample >= 0 && selectedSample < activeProfile.samples.length ? selectedSample : null
   useEffect(() => { setSelectedSample(null) }, [routes])
+  useEffect(() => {
+    if (routeOrigin !== 'browser') setPlanResult(null)
+  }, [routeOrigin])
   const state = pinned ?? hovered ?? cellAtGrid(terrain, Math.floor(grid.width / 2), Math.floor(grid.height / 2))
   const kelvin = showTemperature && state ? temperature.kelvinAt(state.col, state.row) : null
   const temperatureText = (value: number) => `${format(value, { maximumFractionDigits: 1 })} K / ${format(value - 273.15, { maximumFractionDigits: 1 })} °C`
@@ -641,7 +644,10 @@ export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
       } catch (cause) {
         if (request === planRequestRef.current) {
           setPlanResult(null)
-          setPlanError(cause instanceof Error ? cause.message : t('planner.noPath'))
+          const message = cause instanceof Error ? cause.message : ''
+          setPlanError(message.includes('разных ячейках') ? t('planner.sameCell')
+            : message.includes('слишком длинный') ? t('planner.tooLong')
+              : t('planner.noPath'))
           onPlan?.(null)
         }
       } finally {
