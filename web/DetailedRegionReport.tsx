@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import type { DetailedRegion } from './detailedRegions.ts'
 import { loadPhotoCatalog, type JezeroPhoto } from './photoCatalog.ts'
 import { RegionalMap } from './RegionalMap.tsx'
-import { GaleRoutePlanner } from './GaleRoutePlanner.tsx'
 import { PanoramaViewer, preloadPanoramaImage } from './PanoramaViewer.tsx'
 import { useI18n } from './i18n.tsx'
 
@@ -85,7 +84,6 @@ export function DetailedRegionReport({ region }: { region: DetailedRegion }) {
             </a>
           </details>}
         </section>}/>
-    {region.id === 'gale-crater' && <GaleRoutePlanner/>}
     <RegionSummary region={region} />
   </section>
 }
