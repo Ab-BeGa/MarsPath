@@ -73,7 +73,7 @@ a { color: inherit; }
   isolation: isolate;
   overflow: hidden;
 }
-.mars-map-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+.mars-map-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: none; user-select: none; }
 .mars-map-canvas:active { cursor: grabbing; }
 .map-overlay-head {
   position: absolute; left: 19px; top: 17px; z-index: 2; padding: 12px 14px;
@@ -967,3 +967,29 @@ thead { background: #132734; color: #afc9d4; }
   .global-site-popup { right: 6px; top: 6px; max-height: calc(100% - 12px); width: min(340px, calc(100% - 12px)); padding: 12px; }
   .global-site-facts { grid-template-columns: 90px minmax(0, 1fr); }
 }
+
+.regional-map { margin: 0 auto 1rem; max-width: 1310px; }
+.regional-stage.map-canvas-wrap {
+  display: grid;
+  place-items: center;
+  height: auto;
+  padding: 12px;
+  background-color: #091522;
+  background-image: linear-gradient(#759ba913 1px, transparent 1px),
+    linear-gradient(90deg, #759ba913 1px, transparent 1px);
+  background-size: 46px 46px;
+}
+.regional-viewport {
+  position: relative; display: grid; place-items: center;
+  width: min(100%, 690px); aspect-ratio: 1; margin-inline: auto; overflow: hidden;
+  background: #081421; touch-action: none; user-select: none;
+}
+.regional-viewport img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.regional-image { position: relative; width: 100%; height: 100%; pointer-events: none; isolation: isolate; }
+.regional-layer-note { padding: 12px 16px; margin: 0; color: #b4cad1; }
+.regional-layer-note p { margin: 5px 0 0; }
+.regional-layer-note a { color: #55efc4; }
+.regional-map .region-panorama-section { padding: 16px; }
+.regional-viewport .map-scale { box-sizing: content-box; }
+.regional-viewport .scale-stroke { box-sizing: border-box; }
+.regional-orbital-card img { display: block; width: min(100%, 380px); margin-block: 8px; border-radius: 6px; }

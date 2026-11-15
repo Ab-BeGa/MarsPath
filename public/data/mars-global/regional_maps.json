@@ -1,0 +1,362 @@
+{
+  "hecates-tholus": {
+    "bounds": [
+      149.2,
+      31.252878078617865,
+      151.2,
+      32.94712192138214
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 2.783
+    },
+    "temperature": {
+      "product": "I69590002PBT",
+      "date": "2017-08-22T02:43:22.660Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0063/i695xxpbt/I69590002PBT.IMG",
+      "min": 164.7,
+      "max": 219.5,
+      "coverage": 34.06,
+      "size": 384,
+      "center": [
+        0.7044270833333334,
+        0.4986979166666667
+      ]
+    },
+    "crism_center": [
+      0.474609375,
+      0.7259114583333334
+    ],
+    "crism_hyd": {
+      "product": "hrl00007331_07_brhydj_mtr3",
+      "resolution": 36.0,
+      "url": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/browse/2007/2007_231/hrl00007331/hrl00007331_07_brhydj_mtr3.png"
+    }
+  },
+  "olympus-mons": {
+    "bounds": [
+      -138.0,
+      15.146830451114539,
+      -132.0,
+      20.85316954888546
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 0.117
+    },
+    "temperature": {
+      "product": "I62796045PBT",
+      "date": "2016-02-09T10:35:23.844Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0057/i627xxpbt/I62796045PBT.IMG",
+      "min": 162.9,
+      "max": 177.0,
+      "coverage": 5.0,
+      "size": 384,
+      "center": [
+        0.4622395833333333,
+        0.4518229166666667
+      ]
+    },
+    "crism_center": [
+      0.826171875,
+      0.4680989583333333
+    ],
+    "crism_hyd": {
+      "product": "frt000072d8_07_brhydj_mtr3",
+      "resolution": 18.0,
+      "url": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/browse/2007/2007_230/frt000072d8/frt000072d8_07_brhydj_mtr3.png"
+    }
+  },
+  "arsia-mons": {
+    "bounds": [
+      -123.5,
+      -11.469220851487844,
+      -118.5,
+      -6.530779148512155
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 0.125
+    },
+    "temperature": {
+      "product": "I56338006PBT",
+      "date": "2014-08-26T14:57:17.150Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0051/i563xxpbt/I56338006PBT.IMG",
+      "min": 148.5,
+      "max": 196.2,
+      "coverage": 9.07,
+      "size": 384,
+      "center": [
+        0.4674479166666667,
+        0.4361979166666667
+      ]
+    },
+    "crism_center": [
+      0.6490885416666666,
+      0.533203125
+    ],
+    "crism_hyd": {
+      "product": "frt00007645_07_brhydj_mtr3",
+      "resolution": 18.0,
+      "url": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/browse/2007/2007_242/frt00007645/frt00007645_07_brhydj_mtr3.png"
+    }
+  },
+  "alba-patera": {
+    "bounds": [
+      -112.0,
+      39.027420698090424,
+      -104.0,
+      44.972579301909576
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 0.232
+    },
+    "temperature": {
+      "product": "I56980020PBT",
+      "date": "2014-10-18T12:20:35.797Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0052/i569xxpbt/I56980020PBT.IMG",
+      "min": 160.8,
+      "max": 190.2,
+      "coverage": 5.01,
+      "size": 384,
+      "center": [
+        0.51953125,
+        0.2955729166666667
+      ]
+    },
+    "crism_center": [
+      0.3404947916666667,
+      0.841796875
+    ],
+    "crism_hyd": {
+      "product": "hrl000078fa_07_brhydj_mtr3",
+      "resolution": 36.0,
+      "url": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/browse/2007/2007_251/hrl000078fa/hrl000078fa_07_brhydj_mtr3.png"
+    }
+  },
+  "gale-crater": {
+    "bounds": [
+      135.8,
+      -7.39112392920616,
+      139.8,
+      -3.4088760707938404
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 0.16
+    },
+    "temperature": {
+      "product": "I60123023PBT",
+      "date": "2015-07-04T06:36:54.538Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0055/i601xxpbt/I60123023PBT.IMG",
+      "min": 169.1,
+      "max": 201.9,
+      "coverage": 10.45,
+      "size": 384,
+      "center": [
+        0.4986979166666667,
+        0.4127604166666667
+      ]
+    },
+    "crism_center": [
+      0.3561197916666667,
+      0.419921875
+    ]
+  },
+  "utopia-planitia": {
+    "bounds": [
+      107.5,
+      43.23223304703363,
+      112.5,
+      46.76776695296637
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 0.4
+    },
+    "temperature": {
+      "product": "I71936014PBT",
+      "date": "2018-03-03T09:25:24.705Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0065/i719xxpbt/I71936014PBT.IMG",
+      "min": 203.1,
+      "max": 218.5,
+      "coverage": 11.78,
+      "size": 384,
+      "center": [
+        0.57421875,
+        0.64453125
+      ]
+    },
+    "crism_center": [
+      0.9069010416666666,
+      0.7766927083333334
+    ],
+    "crism_hyd": {
+      "product": "frt000096b1_07_brhydj_mtr3",
+      "resolution": 18.0,
+      "url": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/browse/2008/2008_014/frt000096b1/frt000096b1_07_brhydj_mtr3.png"
+    }
+  },
+  "elysium-planitia": {
+    "bounds": [
+      134.89999999999998,
+      3.503082666266872,
+      136.89999999999998,
+      5.496917333733128
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 59.236
+    },
+    "temperature": {
+      "product": "I57677006PBT",
+      "date": "2014-12-14T20:52:14.448Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0052/i576xxpbt/I57677006PBT.IMG",
+      "min": 184.0,
+      "max": 198.7,
+      "coverage": 24.12,
+      "size": 384,
+      "center": [
+        0.3658854166666667,
+        0.55859375
+      ]
+    },
+    "crism_center": [
+      0.4993489583333333,
+      0.4993489583333333
+    ],
+    "crism_hyd": {
+      "product": "MRDR HYD \u00b7 Mars QuickMap",
+      "resolution": null,
+      "url": "https://mars.quickmap.io/"
+    }
+  },
+  "cerberus-fossae": {
+    "bounds": [
+      156.5,
+      6.530779148512155,
+      161.5,
+      11.469220851487844
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 0.151
+    },
+    "temperature": {
+      "product": "I74504026PBT",
+      "date": "2018-09-30T22:10:31.998Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0068/i745xxpbt/I74504026PBT.IMG",
+      "min": 184.4,
+      "max": 205.8,
+      "coverage": 6.93,
+      "size": 384,
+      "center": [
+        0.52734375,
+        0.31640625
+      ]
+    },
+    "crism_center": [
+      0.10091145833333333,
+      0.240234375
+    ],
+    "crism_hyd": {
+      "product": "frt0000851b_07_brhydj_mtr3",
+      "resolution": 18.0,
+      "url": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/browse/2007/2007_293/frt0000851b/frt0000851b_07_brhydj_mtr3.png"
+    }
+  },
+  "oxia-planum": {
+    "bounds": [
+      -26.632000000000062,
+      16.375875215372943,
+      -22.632000000000062,
+      20.174124784627054
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 0.04
+    },
+    "temperature": {
+      "product": "I73668038PBT",
+      "date": "2018-07-24T02:19:15.786Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0067/i736xxpbt/I73668038PBT.IMG",
+      "min": 206.6,
+      "max": 215.8,
+      "coverage": 11.95,
+      "size": 384,
+      "center": [
+        0.55078125,
+        0.4986979166666667
+      ]
+    },
+    "crism_center": [
+      0.892578125,
+      0.8990885416666666
+    ]
+  },
+  "syrtis-major": {
+    "bounds": [
+      67.0,
+      5.92681916759253,
+      72.0,
+      10.87318083240747
+    ],
+    "layers": {
+      "mola": true,
+      "ctx": true,
+      "themis": 100.0,
+      "crism": 0.143
+    },
+    "temperature": {
+      "product": "I52279006PBT",
+      "date": "2013-09-26T14:58:17.432Z",
+      "band": 9,
+      "url": "https://static.mars.asu.edu/pds/ODTGEO_v2/data/odtip2_0047/i522xxpbt/I52279006PBT.IMG",
+      "min": 225.2,
+      "max": 263.1,
+      "coverage": 6.82,
+      "size": 384,
+      "center": [
+        0.49609375,
+        0.3502604166666667
+      ]
+    },
+    "crism_center": [
+      0.06705729166666667,
+      0.4290364583333333
+    ],
+    "crism_hyd": {
+      "product": "frt00004185_07_brhydj_mtr3",
+      "resolution": 18.0,
+      "url": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/browse/2007/2007_032/frt00004185/frt00004185_07_brhydj_mtr3.png"
+    }
+  }
+}
