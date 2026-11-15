@@ -1,4 +1,6 @@
 import type { DetailedRegion } from './detailedRegions.ts'
+import { useI18n } from './i18n.tsx'
+import { regionText } from './scienceRegionTranslations.ts'
 
 export function regionCoordinates(region: DetailedRegion) {
   return {
@@ -8,24 +10,25 @@ export function regionCoordinates(region: DetailedRegion) {
 }
 
 export function RegionSummary({ region }: { region: DetailedRegion }) {
+  const { t, locale } = useI18n()
   const { lat, lon } = regionCoordinates(region)
   return <div className="region-report-grid">
     <article className="region-report-main">
-      <span className="region-report-index">MARS REGION · {region.id.toUpperCase()}</span>
-      <h3>{region.summary_ru}</h3>
-      <h4>Научное значение</h4>
-      <p>{region.science_ru}</p>
-      <div className="region-report-warning"><b>Привязка участка</b><p>{region.data_note_ru}</p></div>
+      <span className="region-report-index">{t('region.summary.kicker')} · {region.id.toUpperCase()}</span>
+      <h3>{regionText(region,locale,'summary')}</h3>
+      <h4>{t('region.summary.science')}</h4>
+      <p>{regionText(region,locale,'science')}</p>
+      <div className="region-report-warning"><b>{t('region.summary.location')}</b><p>{regionText(region,locale,'note')}</p></div>
     </article>
     <aside className="region-report-sidebar">
-      <span className="section-kicker">ТЕЛЕМЕТРИЯ УЧАСТКА</span>
+      <span className="section-kicker">{t('region.summary.telemetry')}</span>
       <dl>
-        <div><dt>Тип объекта</dt><dd>{region.feature_type_ru}</dd></div>
-        <div><dt>Широта</dt><dd>{lat}</dd></div>
-        <div><dt>Долгота</dt><dd>{lon}</dd></div>
-        <div><dt>Тип привязки</dt><dd>{region.coordinate_status === 'feature_center' ? 'центр объекта' : 'репрезентативная точка'}</dd></div>
+        <div><dt>{t('region.summary.type')}</dt><dd>{regionText(region,locale,'type')}</dd></div>
+        <div><dt>{t('region.summary.latitude')}</dt><dd>{lat}</dd></div>
+        <div><dt>{t('region.summary.longitude')}</dt><dd>{lon}</dd></div>
+        <div><dt>{t('region.summary.coordinateType')}</dt><dd>{t(region.coordinate_status === 'feature_center' ? 'region.summary.featureCenter' : 'region.summary.representative')}</dd></div>
       </dl>
-      <div className="region-report-sources"><h4>Проверенные источники</h4>
+      <div className="region-report-sources"><h4>{t('region.summary.sources')}</h4>
         {region.sources.map(source => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer">{source.title} ↗</a>)}
       </div>
     </aside>
