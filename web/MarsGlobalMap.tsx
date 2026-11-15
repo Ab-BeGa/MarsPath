@@ -14,6 +14,7 @@ import { preloadPanoramaImage } from './PanoramaViewer.tsx'
 import { loadDetailedRegions, type DetailedRegion } from './detailedRegions.ts'
 import { regionText } from './scienceRegionTranslations.ts'
 import { siteText } from './scienceSiteTranslations.ts'
+import { photoText } from './sciencePhotoTranslations.ts'
 
 type Size = { width: number; height: number }
 type Camera = { zoom: number; panX: number; panY: number }
@@ -487,7 +488,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
           {showPanoramas && <div className="global-panorama-markers" aria-label={t('globe.panoramas')}>
             {panoramaClusters.map(cluster => <button key={cluster.id} type="button"
               className="global-panorama-pin" style={{left:cluster.x,top:cluster.y}}
-              aria-label={cluster.items.length > 1 ? t('globe.panorama.cluster',{count:cluster.items.length}) : t('globe.panorama.open',{title:cluster.items[0].title})}
+              aria-label={cluster.items.length > 1 ? t('globe.panorama.cluster',{count:cluster.items.length}) : t('globe.panorama.open',{title:photoText(cluster.items[0],locale,'title')})}
               title={cluster.items.map(item => item.title).join(' / ')}
               onMouseEnter={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
               onFocus={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
@@ -505,9 +506,9 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
                 className={`global-site-pin global-site-pin--${markerClass}`}
                 style={{left:cluster.x,top:cluster.y}}
                 aria-label={grouped ? t('map.sites.pinGroup',{count:cluster.sites.length}) :
-                  t('map.sites.pin',{name:cluster.sites[0].name})}
+                  t('map.sites.pin',{name:siteText(cluster.sites[0],locale,'name')})}
                 aria-pressed={cluster.sites.some(site => site.id === selectedSiteId)}
-                title={cluster.sites.map(site => site.name).join(' / ')}
+                title={cluster.sites.map(site => siteText(site,locale,'name')).join(' / ')}
                 onClick={() => openSiteGroup(cluster.sites)}>
                 {grouped ? cluster.sites.length : event ? '✦' : '●'}
               </button>
