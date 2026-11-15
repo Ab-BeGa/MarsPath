@@ -300,6 +300,7 @@ export const catalog = {
   'overview.bothVisible': ['Оба маршрута остаются видимыми.', 'Both routes remain visible.', 'Екі бағыт та көрініп тұрады.'],
   'overview.baseSmall': ['База A', 'Base A', 'A базасы'],
   'overview.scienceSmall': ['Научная точка B', 'Science point B', 'B ғылыми нүктесі'],
+  'gale.planner.tab': ['Маршруты · DEM', 'Routes · DEM', 'Бағыттар · DEM'],
   'gale.planner.badge': ['ГЕЙЛ · ЧИСЛОВАЯ DEM', 'GALE · NUMERICAL DEM', 'ГЕЙЛ · САНДЫҚ DEM'],
   'gale.planner.title': ['Маршруты по рельефу кратера Гейла', 'Routes across Gale crater terrain', 'Гейл кратерінің бедері бойынша бағыттар'],
   'gale.planner.subtitle': ['Выберите две точки на проверенном участке DEM для расчёта A*. Глобальная MOLA-карта выше служит обзором.', 'Select A/B on the verified DEM subset to compute A*. The regional MOLA image above is contextual only.', 'Есептеу үшін тексерілген DEM жерінен A/B нүктелерін таңдаңыз. Жоғарыдағы MOLA картасы тек шолу үшін.'],

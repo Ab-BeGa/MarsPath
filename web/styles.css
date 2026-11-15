@@ -1061,3 +1061,29 @@ thead { background: #132734; color: #afc9d4; }
   .gale-planner-heading {flex-direction:column;}
   .gale-canvas-container {min-height:290px;height:390px;}
 }
+
+/* Gale routes share the same region map frame as orbital overview layers.
+ * The DEM is a separate numerical layer; no click coordinates are inferred
+ * from the coarse MOLA/CTX preview.
+ */
+.regional-map .map-frame > .gale-planner-panel {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #0b1d2b;
+  padding: 14px;
+}
+.regional-map .map-frame > .gale-planner-panel .gale-canvas-container {
+  margin-bottom: 12px;
+  height: min(62vh, 540px);
+  min-height: 340px;
+}
+.regional-map .gale-route-results .table-scroll { overflow-x: auto; }
+@media (max-width: 680px) {
+  .regional-map .map-frame > .gale-planner-panel { padding: 10px; }
+  .regional-map .map-frame > .gale-planner-panel .gale-canvas-container {
+    height: 380px;
+    min-height: 290px;
+  }
+}

@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/gale-route-planner
+      - feature/gale-route-in-region-map
 permissions:
   contents: read
 jobs:
