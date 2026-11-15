@@ -241,7 +241,7 @@ export function planBrowserRoutes(terrain: MarsTerrain, start: MapPoint, goal: M
   return {
     comparison: {rows,coverage:{direct:coverageA,detour:coverageB,
       partial:shortStats.unknown_m>0||gentleStats.unknown_m>0},
-      demVerified:true,routes:{direct:direct.waypoints,detour:detour.waypoints},
+      demVerified:true,origin:'browser',routes:{direct:direct.waypoints,detour:detour.waypoints},
       source:{crs:terrain.metadata.crs_wkt,demHash:terrain.metadata.source.source_sha256,
         step:BROWSER_PLANNER_SAMPLE_STEP_M}},
     direct,detour,
