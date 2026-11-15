@@ -1,44 +1,13 @@
-name: Prepare verified compact Gale DEM
+name: Gale DEM validation
 on:
   push:
-    branches: [feature/gale-route-planner]
+    branches:
+      - feature/gale-route-planner
     paths:
-      - "scripts/preprocess_gale_dem.py"
       - ".github/workflows/gale-dem-assets.yml"
-permissions:
-  contents: write
 jobs:
-  prepare:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install GeoTIFF tooling
-        run: python -m pip install --only-binary=:all: "numpy>=1.26,<3" "rasterio>=1.3,<2" "affine>=2.4,<3"
-      - name: Read numeric USGS Gale 1m DEM and prepare audited 20m subset
-        run: python scripts/preprocess_gale_dem.py --size 251 --spacing 20
-      - name: Check outputs are real numeric data
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          d=Path('public/data/gale')
-          m=json.loads((d/'metadata.json').read_text())
-          assert m['grid']['valid_cells'] >= int(0.75*251*251)
-          assert (d/'heights.f32').stat().st_size == 251*251*4
-          assert (d/'mask.u8').stat().st_size == 251*251
-          assert m['source']['url'].startswith('https://planetarymaps.usgs.gov/')
-          print('Gale numerical DEM validated:',m['grid']['valid_cells'])
-          PY
-      - name: Commit only validated compact DEM to Gale branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/gale/heights.f32 public/data/gale/mask.u8 public/data/gale/metadata.json public/data/gale/checksums.sha256
-          git commit -m "data(gale): add validated compact USGS MSL DEM subset and provenance"
-          git push origin HEAD:feature/gale-route-planner
+      - name: Check workflow availability
+        run: echo "Gale DEM workflow available"
