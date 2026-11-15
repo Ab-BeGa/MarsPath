@@ -8,6 +8,7 @@ import { loadThemisLayer, loadThemisTemperature } from './themisLayer.ts'
 import { loadCrismModels, CRISM_MODELS, type CrismModel } from './crismModels.ts'
 import { RouteSlopePanel } from './RouteSlopePanel.tsx'
 import { useI18n } from './i18n.tsx'
+import { photoText } from './sciencePhotoTranslations.ts'
 import { loadPhotoCatalog, type JezeroPhoto, type PhotoCatalog } from './photoCatalog.ts'
 import { clusterPhotoPoints, filterPhotos } from './photoMap.ts'
 import {
@@ -94,7 +95,7 @@ function toGridPosition(screenX: number, screenY: number, m: ReturnType<typeof m
 }
 
 export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain; routes?: RoutePair; routeStepM?: number }) {
-  const { t, format, meters, error: localizeError } = useI18n()
+  const { t, format, meters, locale, error: localizeError } = useI18n()
   const elevation = (v: number | null) => v === null ? t('status.nodata') : meters(v)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -711,7 +712,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
                 return <button key={cluster.id} type="button"
                   className={single ? `photo-marker ${single.location_type}` : 'photo-marker cluster'}
                   style={{ left: cluster.x, top: cluster.y }}
-                  aria-label={single ? t('map.photos.open', {title:single.title}) : t('map.photos.cluster', {count:cluster.points.length})}
+                  aria-label={single ? t('map.photos.open', {title:photoText(single,locale,'title')}) : t('map.photos.cluster', {count:cluster.points.length})}
                   title={single?.title ?? t('map.photos.cluster', {count:cluster.points.length})}
                   onPointerDown={event => event.stopPropagation()}
                   onClick={event => {
@@ -843,8 +844,8 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
             </span>
             <button type="button" className="text-action" onClick={() => setSelectedPhoto(null)}>{t('map.photos.close')}</button>
           </div>
-          <h3 id="selected-photo-title">{selectedPhoto.title}</h3>
-          <p>{selectedPhoto.caption}</p>
+          <h3 id="selected-photo-title">{photoText(selectedPhoto,locale,'title')}</h3>
+          <p>{photoText(selectedPhoto,locale,'caption')}</p>
           <dl className="photo-metadata">
             <dt>{t('map.photos.camera')}</dt><dd>{selectedPhoto.camera}</dd>
             <dt>{t('map.photos.sols')}</dt><dd>{selectedPhoto.acquisition.sols.join(', ')}</dd>
@@ -852,7 +853,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
             <dt>{t('map.photos.credit')}</dt><dd>{selectedPhoto.credit}</dd>
           </dl>
           {selectedPhoto.coordinates && <p className="photo-coordinate-note">
-            {coordinate.format(selectedPhoto.coordinates.latitude_deg)}° N · {coordinate.format(selectedPhoto.coordinates.longitude_deg)}° E — {selectedPhoto.coordinates.note}
+            {coordinate.format(selectedPhoto.coordinates.latitude_deg)}° N · {coordinate.format(selectedPhoto.coordinates.longitude_deg)}° E — {photoText(selectedPhoto,locale,'note')}
           </p>}
           <a href={selectedPhoto.page_url} target="_blank" rel="noreferrer">{t('map.photos.nasaSource')}</a>
           {' · '}<a href={selectedPhoto.image_url} target="_blank" rel="noreferrer">{t('map.photos.original')}</a>
@@ -864,7 +865,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
         <div>
           {photosWithoutMarkers.map(photo => <button type="button" key={photo.id} onClick={() => setSelectedPhoto(photo)}>
             <img src={photo.thumbnail_url} alt="" loading="lazy" />
-            <span><strong>{photo.title}</strong><small>{t(photo.coordinates ? 'map.photos.outsideMap' : 'map.photos.noMarker')}</small></span>
+            <span><strong>{photoText(photo,locale,'title')}</strong><small>{t(photo.coordinates ? 'map.photos.outsideMap' : 'map.photos.noMarker')}</small></span>
           </button>)}
         </div>
       </section>}

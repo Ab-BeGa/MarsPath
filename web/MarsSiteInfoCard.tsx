@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useI18n } from './i18n.tsx'
 import type { MarsSite } from './marsSites.ts'
+import { siteText } from './scienceSiteTranslations.ts'
 
 export function MarsSiteInfoCard({
   sites, selectedId, onSelect, onClose,
@@ -42,17 +43,17 @@ export function MarsSiteInfoCard({
           {sites.map(site => (
             <button type="button" key={site.id} aria-pressed={site.id === selected.id}
               className={site.id === selected.id ? 'selected' : ''}
-              onClick={() => onSelect(site.id)}>{site.name}</button>
+              onClick={() => onSelect(site.id)}>{siteText(site,locale,'name')}</button>
           ))}
         </div>
       </div>}
 
-      <h4 id="global-site-popup-title">{selected.name}</h4>
+      <h4 id="global-site-popup-title">{siteText(selected,locale,'name')}</h4>
       {selected.image && <figure className="global-site-image">
         <a href={selected.image.page_url} target="_blank" rel="noopener noreferrer">
-          <img src={selected.image.url} alt={selected.image.alt_ru} loading="eager" decoding="async"/>
+          <img src={selected.image.url} alt={siteText(selected,locale,'imageAlt')} loading="eager" decoding="async"/>
         </a>
-        <figcaption>{selected.image.caption_ru} <span>© {selected.image.credit}</span></figcaption>
+        <figcaption>{siteText(selected,locale,'imageCaption')} <span>© {selected.image.credit}</span></figcaption>
       </figure>}
       <dl className="global-site-facts">
         <dt>{t('map.sites.type')}</dt><dd>{typeLabel}</dd>
@@ -64,8 +65,8 @@ export function MarsSiteInfoCard({
       </dl>
 
       <p className="global-site-description">
-        <strong>{t('map.sites.description')}{locale !== 'ru' ? ' (RU)' : ''}:</strong>{' '}
-        {selected.description_ru}
+        <strong>{t('map.sites.description')}:</strong>{' '}
+        {siteText(selected,locale,'description')}
       </p>
       {selected.category === 'science_event' && <p className="global-site-caution">
         {t('map.sites.observationAnchor')}
@@ -81,7 +82,7 @@ export function MarsSiteInfoCard({
         <p className="global-site-precision-note">
           {t('map.sites.accuracyNote')}
         </p>
-        <p>{selected.georeferencing.notes_ru}</p>
+        <p>{siteText(selected,locale,'notes')}</p>
       </div>
 
       {selected.alternative_positions && selected.alternative_positions.length > 0 && (
