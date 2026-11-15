@@ -146,6 +146,7 @@ export const catalog = {
   'map.layer.aria': ['Основной слой карты', 'Base map layer', 'Картаның негізгі қабаты'],
   'map.layer.dem': ['Рельеф DEM', 'DEM terrain', 'DEM жер бедері'],
   'map.layer.ctx': ['CTX · 5 м', 'CTX · 5 m', 'CTX · 5 м'],
+  'map.layer.photos': ['Снимки', 'Photos', 'Суреттер'],
   'map.layer.themis': ['Дневная ИК-мозаика', 'Daytime IR mosaic', 'Күндізгі ИҚ мозаикасы'],
   'map.layer.temperature': ['Температура', 'Temperature', 'Температура'],
   'map.temperature.label': ['Яркостная температура THEMIS', 'THEMIS brightness temperature', 'THEMIS жарықтық температурасы'],
