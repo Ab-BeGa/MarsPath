@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { cellAtGrid, type MarsTerrain } from './marsTerrain.ts'
+import { cellAtGrid, parseMarsMetadata, decodeMarsTerrain, type MarsTerrain } from './marsTerrain.ts'
 import { planGridRoute, planBrowserRoutes, BROWSER_PLANNER_PENALTY } from './routePlanner.ts'
 
 function mockTerrain(width=5,height=5): MarsTerrain {
@@ -115,4 +115,31 @@ test('prohibited diagonal grade exits match Python A* hard-cap semantics',()=>{
   const result=planGridRoute(t,start,goal,0,10)
   assert.ok(result.cells.length>=2)
   assert.throws(()=>planGridRoute(t,start,goal,0,10,10),/не найден/)
+})
+
+test('bundled real USGS Jezero DEM builds two route profiles without Python/JSON upload',()=>{
+  const base=new URL('../public/data/jezero/',import.meta.url)
+  const metadata=parseMarsMetadata(JSON.parse(readFileSync(new URL('metadata.json',base),'utf8')))
+  const heights=readFileSync(new URL(metadata.grid.heights_file,base))
+  const mask=readFileSync(new URL(metadata.grid.mask_file,base))
+  const hBuf=new ArrayBuffer(heights.byteLength)
+  const mBuf=new ArrayBuffer(mask.byteLength)
+  new Uint8Array(hBuf).set(heights)
+  new Uint8Array(mBuf).set(mask)
+  const t=decodeMarsTerrain(metadata,hBuf,mBuf)
+  assert.equal(t.metadata.grid.width,375)
+  assert.equal(t.metadata.grid.height,375)
+  const a=t.metadata.checked_points.find(point=>point.id==='base')!
+  const b=t.metadata.checked_points.find(point=>point.id==='science_target')!
+  const start={x:a.projected_x_m,y:a.projected_y_m}
+  const goal={x:b.projected_x_m,y:b.projected_y_m}
+  const routes=planBrowserRoutes(t,start,goal)
+  assert.ok(routes.direct.grid_length_m>0 && routes.detour.grid_length_m>0)
+  assert.deepEqual(routes.comparison.routes.direct[0],start)
+  assert.deepEqual(routes.comparison.routes.detour.at(-1),goal)
+  assert.equal(routes.comparison.source.demHash,t.metadata.source.source_sha256)
+  assert.ok(routes.comparison.rows.every(row=>row.direct===null||Number.isFinite(row.direct)))
+  assert.ok(routes.comparison.rows.every(row=>row.detour===null||Number.isFinite(row.detour)))
+  assert.ok(routes.direct.cells.every(id=>t.mask[id]===1))
+  assert.ok(routes.detour.cells.every(id=>t.mask[id]===1))
 })
