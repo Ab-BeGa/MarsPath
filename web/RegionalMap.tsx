@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useI18n } from './i18n.tsx'
 import type { DetailedRegion } from './detailedRegions.ts'
 import { MolaElevationLegend } from './MolaElevationLegend.tsx'
+import { GaleRoutePlanner } from './GaleRoutePlanner.tsx'
 
 const MAPS = '/data/mars-global'
 const RASTERS = {
@@ -11,7 +12,7 @@ const RASTERS = {
 } as const
 type Raster = keyof typeof RASTERS
 const INITIAL_VIEW = { zoom: 1, x: 0, y: 0 }
-const LAYERS = ['mola', 'ctx', 'photos'] as const
+const LAYERS = ['mola', 'ctx', 'routes', 'photos'] as const
 type Layer = typeof LAYERS[number]
 type Coverage = { bounds: [number, number, number, number]; layers: Partial<Record<Raster, boolean>> }
 
@@ -23,7 +24,7 @@ function clampOffset(offset: number, zoom: number) {
 export function RegionalMap({ region, photos }: { region: DetailedRegion; photos: ReactNode }) {
   const { t, format } = useI18n()
   const { lat, lon } = regionCoordinates(region)
-  const [layer, setLayer] = useState<Layer>('mola')
+  const [layer, setLayer] = useState<Layer>(region.id === 'gale-crater' ? 'routes' : 'mola')
   const [coverage, setCoverage] = useState<Coverage>()
   const [loading, setLoading] = useState(true)
   const [failedLayer, setFailedLayer] = useState<Raster>()
@@ -42,10 +43,11 @@ export function RegionalMap({ region, photos }: { region: DetailedRegion; photos
     return () => controller.abort()
   }, [region.id])
 
-  const raster = layer === 'photos' ? (coverage?.layers.ctx ? 'ctx' : 'mola') : layer
+  const raster = layer === 'photos' || layer === 'routes' ? (coverage?.layers.ctx ? 'ctx' : 'mola') : layer
   const definition = RASTERS[raster]
   const covered = coverage?.layers[raster]
-  const showRaster = covered && failedLayer !== raster
+  const showRaster = layer === 'routes' ? true : Boolean(covered && failedLayer !== raster)
+  const visibleLayers = region.id === 'gale-crater' ? LAYERS : LAYERS.filter(layer => layer !== 'routes')
   const zoom = (factor: number) => {
     setView(previous => {
       const next = Math.max(1, Math.min(6, previous.zoom * factor))
@@ -65,14 +67,16 @@ export function RegionalMap({ region, photos }: { region: DetailedRegion; photos
     <div className="map-layout">
       <div className="map-frame">
         <div className="layer-select" role="group" aria-label={t('map.layer.aria')}>
-          {LAYERS.map(mode => <button key={mode} type="button"
+          {visibleLayers.map(mode => <button key={mode} type="button"
             aria-pressed={layer === mode}
             className={layer === mode ? 'selected' : ''}
             onClick={() => { setLayer(mode); setFailedLayer(undefined); resetView() }}>
-            {mode === 'photos' ? t('map.layer.photos') : RASTERS[mode].title}
+            {mode === 'routes' ? t('gale.planner.tab') : mode === 'photos' ? t('map.layer.photos') : RASTERS[mode].title}
           </button>)}
         </div>
-        {showRaster ? <div className="regional-stage map-canvas-wrap"><div className="regional-viewport" tabIndex={0} aria-label={t('region.map.controls')}
+        {layer === 'routes' && region.id === 'gale-crater'
+          ? <GaleRoutePlanner />
+          : showRaster ? <div className="regional-stage map-canvas-wrap"><div className="regional-viewport" tabIndex={0} aria-label={t('region.map.controls')}
           onKeyDown={event => {
             if (event.target !== event.currentTarget) return
             if (event.key === '+' || event.key === '=') zoom(1.4)
@@ -132,7 +136,7 @@ export function RegionalMap({ region, photos }: { region: DetailedRegion; photos
         </div>}
       </aside>
     </div>
-    {showRaster && <div className="regional-layer-note">
+    {showRaster && layer !== 'routes' && <div className="regional-layer-note">
       <a href={definition.url}>{definition.source}</a>
       {' · '}{t('region.map.preview', { size: format(renderedResolution, { maximumFractionDigits: 0 }) })}
       {raster === 'mola' && <p>{t('region.map.reliefNote')}</p>}
