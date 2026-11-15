@@ -24,15 +24,18 @@ async function readExport(file: File): Promise<unknown> {
   catch { throw new Error(`Не удалось прочитать JSON из файла «${file.name}».`) }
 }
 
-function RouteComparisonPanel({ onComparison }: { onComparison: (value: RouteComparison | null) => void }) {
+function RouteComparisonPanel({ comparison, onComparison }: {
+  comparison: RouteComparison | null
+  onComparison: (value: RouteComparison | null) => void
+}) {
   const {t, locale, format: localizedNumber, error: localizeError} = useI18n()
   const format = (value: number | null, delta = false) =>
     value === null ? '—' : localizedNumber(value, {signDisplay: delta ? 'exceptZero' : 'auto'})
-  const [result, setResult] = useState<RouteComparison | null>(null)
+  const result = comparison
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
 
-  function clearResult() { setResult(null); setError(''); onComparison(null) }
+  function clearResult() { setError(''); onComparison(null) }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
@@ -44,7 +47,6 @@ function RouteComparisonPanel({ onComparison }: { onComparison: (value: RouteCom
     try {
       const inputs = await Promise.all([readExport(direct), readExport(detour)])
       const comparison = compareRoutes(...inputs)
-      setResult(comparison)
       onComparison(comparison)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Не удалось сравнить маршруты.')
@@ -77,6 +79,9 @@ function RouteComparisonPanel({ onComparison }: { onComparison: (value: RouteCom
         {error && <p role="alert" className="alert error-alert">{localizeError(error)}</p>}
         <div aria-live="polite">
           {result && <>
+            {result.origin === 'browser' && <p className="comparison-summary">
+              {t('planner.comparisonSource')}
+            </p>}
             {!result.demVerified && <p className="alert">{t('compare.demMissing')}</p>}
             {result.coverage.partial && <p className="alert">{t('compare.partial', {direct:format(result.coverage.direct),detour:format(result.coverage.detour)})}</p>}
             {!result.coverage.partial && lengthDelta != null && steepDelta != null &&
@@ -169,7 +174,7 @@ function App() {
               </section>}
               {terrain && <>
                 <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}
-                  routeStepM={mapSourceMatches ? comparison?.source.step : undefined}/>
+                  routeStepM={mapSourceMatches ? comparison?.source.step : undefined} onPlan={setComparison}/>
                 <RegionSummary region={selectedRegion} />
               </>}
             </>}
@@ -178,7 +183,7 @@ function App() {
         {mapSourceMatches && selectedRegion?.detail_status !== 'local_map' && <p className="alert" role="status">
           {t('compare.selectJezero')}{' '}<a href="#globe">{t('nav.globe')}</a>
         </p>}
-        <RouteComparisonPanel onComparison={setComparison}/>
+        <RouteComparisonPanel comparison={comparison} onComparison={setComparison}/>
         <footer className="page-footer"><span>JEZERO TRAVERSE © 2026</span>
           <span>{t('app.footer.demo')}</span>
           <a href="https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.tif" target="_blank" rel="noopener noreferrer">{t('app.footer.usgs')}</a>
