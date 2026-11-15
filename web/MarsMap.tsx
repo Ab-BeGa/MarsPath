@@ -95,11 +95,12 @@ function toGridPosition(screenX: number, screenY: number, m: ReturnType<typeof m
   return { col: (screenX - m.ox) / m.scale, row: (screenY - m.oy) / m.scale }
 }
 
-export function MarsMap({ terrain, routes, routeStepM, onPlan }: {
+export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
   terrain: MarsTerrain
   routes?: RoutePair
   routeStepM?: number
   onPlan?: (comparison: RouteComparison | null) => void
+  routeOrigin?: RouteComparison['origin']
 }) {
   const { t, format, meters, error: localizeError } = useI18n()
   const elevation = (v: number | null) => v === null ? t('status.nodata') : meters(v)
@@ -933,11 +934,11 @@ export function MarsMap({ terrain, routes, routeStepM, onPlan }: {
             <div className="route-switcher-buttons" role="group" aria-label={t('map.routes.aria')}>
               <button type="button" className="route-switcher-direct"
                 aria-pressed={activeRoute === 'direct'} onClick={() => { setActiveRoute('direct'); setSelectedSample(null); setPinned(null) }}>
-                {t('route.direct')}
+                {t(routeOrigin === 'browser' ? 'planner.shortest' : 'route.direct')}
               </button>
               <button type="button" className="route-switcher-detour"
                 aria-pressed={activeRoute === 'detour'} onClick={() => { setActiveRoute('detour'); setSelectedSample(null); setPinned(null) }}>
-                {t('route.detour')}
+                {t(routeOrigin === 'browser' ? 'planner.slopeCost' : 'route.detour')}
               </button>
             </div>
             <span className="telemetry-muted">{t('map.routes.help')}</span>
