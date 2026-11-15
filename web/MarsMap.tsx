@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { cellAtGrid, cellAtProjected, marsDegreesToProjected, type MarsTerrain, type TerrainCell } from './marsTerrain.ts'
 import { routeToGrid, type RoutePair } from './routeMap.ts'
+import type { RouteComparison } from './compareRoutes.ts'
+import { planBrowserRoutes, type BrowserPlan } from './routePlanner.ts'
 import { sampleRouteElevation, selectedProfileInterval } from './routeProfile.ts'
 import { ElevationProfileChart } from './ElevationProfileChart.tsx'
 import { loadCtxOpticalLayer, type CtxOpticalLayer } from './ctxOptical.ts'
@@ -94,7 +96,13 @@ function toGridPosition(screenX: number, screenY: number, m: ReturnType<typeof m
   return { col: (screenX - m.ox) / m.scale, row: (screenY - m.oy) / m.scale }
 }
 
-export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain; routes?: RoutePair; routeStepM?: number }) {
+export function MarsMap({ terrain, routes, routeStepM, onPlan, routeOrigin }: {
+  terrain: MarsTerrain
+  routes?: RoutePair
+  routeStepM?: number
+  onPlan?: (comparison: RouteComparison | null) => void
+  routeOrigin?: RouteComparison['origin']
+}) {
   const { t, format, meters, locale, error: localizeError } = useI18n()
   const elevation = (v: number | null) => v === null ? t('status.nodata') : meters(v)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -104,6 +112,13 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
   const [camera, setCamera] = useState<Camera>({ zoom: 1, panX: 0, panY: 0 })
   const [activeRoute, setActiveRoute] = useState<'direct' | 'detour'>('direct')
   const [selectedSample, setSelectedSample] = useState<number | null>(null)
+  const [planMode, setPlanMode] = useState<'start' | 'goal' | null>(null)
+  const [planStart, setPlanStart] = useState<TerrainCell | null>(null)
+  const [planGoal, setPlanGoal] = useState<TerrainCell | null>(null)
+  const [planError, setPlanError] = useState('')
+  const [planPending, setPlanPending] = useState(false)
+  const [planResult, setPlanResult] = useState<BrowserPlan | null>(null)
+  const planRequestRef = useRef(0)
   const [slopeThresholds, setSlopeThresholds] = useState<SlopeThresholds>({ ...DEFAULT_SLOPE_THRESHOLDS })
   const [showSlopeHighlights, setShowSlopeHighlights] = useState(true)
   const cameraRef = useRef(camera)
@@ -232,6 +247,9 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
   const safeSelectedIndex = activeProfile && selectedSample !== null &&
     selectedSample >= 0 && selectedSample < activeProfile.samples.length ? selectedSample : null
   useEffect(() => { setSelectedSample(null) }, [routes])
+  useEffect(() => {
+    if (routeOrigin !== 'browser') setPlanResult(null)
+  }, [routeOrigin])
   const state = pinned ?? hovered ?? cellAtGrid(terrain, Math.floor(grid.width / 2), Math.floor(grid.height / 2))
   const kelvin = showTemperature && state ? temperature.kelvinAt(state.col, state.row) : null
   const temperatureText = (value: number) => `${format(value, { maximumFractionDigits: 1 })} K / ${format(value - 273.15, { maximumFractionDigits: 1 })} °C`
@@ -509,6 +527,18 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       marker(col, row, t('map.crism.silica'), '#cb83ff', 'CRISM')
     }
 
+    // Mark user-chosen planning endpoints separately from NASA reference sites.
+    for (const [point, label, color] of [
+      [planStart, 'A*', '#8cf7df'],
+      [planGoal, 'B*', '#ffbc79'],
+    ] as const) {
+      if (!point) continue
+      const [sx, , tx, , sy, ty] = grid.transform
+      const col = (point.x - tx) / sx
+      const row = (point.y - ty) / sy
+      marker(col, row, label === 'A*' ? 'START' : 'GOAL', color, label)
+    }
+
     // Fixed points originate in the original USGS Mars-projected CRS.
     for (const point of checkpoints) {
       const [sx, , tx, , sy, ty] = grid.transform
@@ -531,7 +561,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
       ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 16)
       ctx.stroke()
     }
-  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, showCtx, optical, themis, temperature, crism, selectedCrismModel, slopeState, showSlopeHighlights, activeProfile, safeSelectedIndex, t])
+  }, [camera, terrain, relief, size, state?.row, state?.col, pinned, checkpoints.length, grid, routes, activeRoute, activeLayer, showCtx, optical, themis, temperature, crism, selectedCrismModel, slopeState, showSlopeHighlights, activeProfile, safeSelectedIndex, planStart, planGoal, t])
 
   function selectProfileSample(index: number | null) {
     setSelectedSample(index)
@@ -547,6 +577,94 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
         panX: size.width / 2 - (original.ox + col * original.scale),
         panY: size.height / 2 - (original.oy + row * original.scale) }
     })
+  }
+
+  function changePlanMode(mode: 'start' | 'goal') {
+    planRequestRef.current++
+    setPlanPending(false)
+    setPlanError('')
+    setPlanMode(mode)
+  }
+  function selectPlanPoint(cell: TerrainCell | null) {
+    if (!planMode) return
+    if (!cell || cell.elevation === null) {
+      setPlanError(t('planner.invalidCell'))
+      return
+    }
+    planRequestRef.current++
+    setPlanPending(false)
+    setPlanResult(null)
+    setPlanError('')
+    if (planMode === 'start') {
+      setPlanStart(cell)
+      setPlanGoal(null)
+      setPlanMode('goal')
+    } else {
+      setPlanGoal(cell)
+      setPlanMode(null)
+    }
+    onPlan?.(null)
+    setSelectedSample(null)
+  }
+  function useDemoEndpoints() {
+    const base = terrain.metadata.checked_points.find(p => p.id === 'base')
+    const goal = terrain.metadata.checked_points.find(p => p.id === 'science_target')
+    if (!base || !goal) { setPlanError(t('planner.noDemoPoints')); return }
+    const a = cellAtProjected(terrain, base.projected_x_m, base.projected_y_m)
+    const b = cellAtProjected(terrain, goal.projected_x_m, goal.projected_y_m)
+    if (!a || !b || a.elevation === null || b.elevation === null) {
+      setPlanError(t('planner.invalidCell'))
+      return
+    }
+    planRequestRef.current++
+    setPlanPending(false)
+    setPlanStart(a)
+    setPlanGoal(b)
+    setPlanMode(null)
+    setPlanError('')
+    setPlanResult(null)
+    onPlan?.(null)
+  }
+  function buildBrowserPlan() {
+    if (!planStart || !planGoal || planPending) return
+    const request = ++planRequestRef.current
+    setPlanPending(true)
+    setPlanError('')
+    // Give React a chance to render the busy state before running local A*.
+    window.setTimeout(() => {
+      if (request !== planRequestRef.current) return
+      try {
+        const result = planBrowserRoutes(terrain,
+          {x:planStart.x,y:planStart.y}, {x:planGoal.x,y:planGoal.y})
+        if (request === planRequestRef.current) {
+          setPlanResult(result)
+          onPlan?.(result.comparison)
+          setActiveRoute('direct')
+          setSelectedSample(null)
+        }
+      } catch (cause) {
+        if (request === planRequestRef.current) {
+          setPlanResult(null)
+          const message = cause instanceof Error ? cause.message : ''
+          setPlanError(message.includes('разных ячейках') ? t('planner.sameCell')
+            : message.includes('слишком длинный') ? t('planner.tooLong')
+              : t('planner.noPath'))
+          onPlan?.(null)
+        }
+      } finally {
+        if (request === planRequestRef.current) setPlanPending(false)
+      }
+    }, 0)
+  }
+  function clearBrowserPlan() {
+    planRequestRef.current++
+    setPlanStart(null)
+    setPlanGoal(null)
+    setPlanMode(null)
+    setPlanError('')
+    setPlanPending(false)
+    setPlanResult(null)
+    onPlan?.(null)
   }
 
   function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
@@ -575,10 +693,17 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     dragRef.current = null
     if (drag && !drag.moved) {
       const rect = event.currentTarget.getBoundingClientRect()
-      setPinned(getCell(event.clientX - rect.left, event.clientY - rect.top))
+      const cell = getCell(event.clientX - rect.left, event.clientY - rect.top)
+      if (planMode) selectPlanPoint(cell)
+      else setPinned(cell)
     }
   }
   function handleKeys(event: KeyboardEvent<HTMLCanvasElement>) {
+    if (event.key === 'Enter' && planMode) {
+      event.preventDefault()
+      selectPlanPoint(getCell(size.width / 2, size.height / 2))
+      return
+    }
     const amount = event.shiftKey ? 110 : 40
     const arrows: Record<string, [number, number]> = {
       ArrowUp: [0, amount], ArrowDown: [0, -amount], ArrowLeft: [amount, 0], ArrowRight: [-amount, 0],
@@ -594,7 +719,8 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
     } else if (event.key === '0') {
       event.preventDefault(); setCamera({ zoom: 1, panX: 0, panY: 0 })
     } else if (event.key === 'Escape') {
-      setPinned(null)
+      if (planMode) setPlanMode(null)
+      else setPinned(null)
     }
   }
 
@@ -634,6 +760,48 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
           <p>{t('map.description')}</p>
         </div>
       </div>
+      <section className="browser-planner" aria-labelledby="browser-planner-title">
+        <div className="browser-planner-header">
+          <div>
+            <span className="section-kicker">{t('planner.kicker')}</span>
+            <h3 id="browser-planner-title">{t('planner.title')}</h3>
+            <p>{t('planner.description')}</p>
+          </div>
+          <span className="data-pill">{t('planner.method')}</span>
+        </div>
+        <div className="browser-planner-actions">
+          <button type="button" aria-pressed={planMode === 'start'}
+            className={planMode === 'start' ? 'is-selecting' : ''}
+            onClick={() => changePlanMode('start')}>{t('planner.start')}</button>
+          <button type="button" aria-pressed={planMode === 'goal'}
+            className={planMode === 'goal' ? 'is-selecting' : ''}
+            onClick={() => changePlanMode('goal')}>{t('planner.goal')}</button>
+          <button type="button" onClick={useDemoEndpoints}>{t('planner.demo')}</button>
+          <button type="button" className="browser-planner-build"
+            disabled={!planStart || !planGoal || planPending}
+            onClick={buildBrowserPlan}>{planPending ? t('planner.calculating') : t('planner.build')}</button>
+          <button type="button" onClick={clearBrowserPlan}>{t('planner.reset')}</button>
+        </div>
+        <div className="browser-planner-selection" role="status" aria-live="polite">
+          <span>{t('planner.start')}: <strong>{planStart
+            ? `${format(planStart.latitude, {maximumFractionDigits:5})}°, ${format(planStart.longitude, {maximumFractionDigits:5})}°E`
+            : '—'}</strong></span>
+          <span>{t('planner.goal')}: <strong>{planGoal
+            ? `${format(planGoal.latitude, {maximumFractionDigits:5})}°, ${format(planGoal.longitude, {maximumFractionDigits:5})}°E`
+            : '—'}</strong></span>
+          {planMode && <span className="browser-planner-hint">{t('planner.clickOnMap')}</span>}
+        </div>
+        {planError && <p className="alert error-alert" role="alert">{planError}</p>}
+        {planResult && <p className="browser-planner-result" role="status">
+          {t('planner.completed', {
+            short:format(planResult.comparison.rows[0].direct ?? 0,{maximumFractionDigits:0}),
+            gentle:format(planResult.comparison.rows[0].detour ?? 0,{maximumFractionDigits:0}),
+          })}
+          {' '}{planResult.same_grid_path ? t('planner.sameRoute') : t('planner.differentRoute')}
+          {' '}{t('planner.scroll')}
+        </p>}
+        <p className="browser-planner-caveat">{t('planner.caveat')}</p>
+      </section>
       <div className="map-layout" id="jezero-map-detail">
         <div className="map-frame">
           <div className="layer-select" role="group" aria-label={t('map.layer.aria')}>
@@ -773,11 +941,11 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
             <div className="route-switcher-buttons" role="group" aria-label={t('map.routes.aria')}>
               <button type="button" className="route-switcher-direct"
                 aria-pressed={activeRoute === 'direct'} onClick={() => { setActiveRoute('direct'); setSelectedSample(null); setPinned(null) }}>
-                {t('route.direct')}
+                {t(routeOrigin === 'browser' ? 'planner.shortest' : 'route.direct')}
               </button>
               <button type="button" className="route-switcher-detour"
                 aria-pressed={activeRoute === 'detour'} onClick={() => { setActiveRoute('detour'); setSelectedSample(null); setPinned(null) }}>
-                {t('route.detour')}
+                {t(routeOrigin === 'browser' ? 'planner.slopeCost' : 'route.detour')}
               </button>
             </div>
             <span className="telemetry-muted">{t('map.routes.help')}</span>
