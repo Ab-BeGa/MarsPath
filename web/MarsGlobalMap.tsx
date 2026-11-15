@@ -12,6 +12,9 @@ import { PanoramaDialog } from './PanoramaDialog.tsx'
 import { clusterPanoramas } from './panoramaClusters.ts'
 import { preloadPanoramaImage } from './PanoramaViewer.tsx'
 import { loadDetailedRegions, type DetailedRegion } from './detailedRegions.ts'
+import { regionText } from './scienceRegionTranslations.ts'
+import { siteText } from './scienceSiteTranslations.ts'
+import { photoText } from './sciencePhotoTranslations.ts'
 
 type Size = { width: number; height: number }
 type Camera = { zoom: number; panX: number; panY: number }
@@ -45,7 +48,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
   onOpenRegion: (region: DetailedRegion) => void; onReturnGlobe?: () => void
   initialLayer?: GlobalLayer; onLayerChange?: (layer: GlobalLayer) => void
 }) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -446,7 +449,7 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
                 else closeSiteDetails()
               }}>
               <option value="">{t('map.sites.pickPlaceholder')}</option>
-              {sites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}
+              {sites.map(site => <option key={site.id} value={site.id}>{siteText(site,locale,'name')}</option>)}
             </select>
           </label>
           {!siteCatalog && !siteError && <span role="status" className="global-site-loading">{t('map.sites.loading')}</span>}
@@ -475,17 +478,17 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
           <div className="global-region-markers" aria-label={t('globe.detailedRegions')}>
             {detailedRegionMarkers.map(({region,x,y}) => <button key={region.id} type="button"
               className={`global-detailed-region-pin${region.detail_status === 'local_map' ? ' is-local' : ''}`}
-              style={{left:x,top:y}} aria-label={`Открыть отчёт: ${region.name_ru}`}
-              title={region.name_ru} onClick={() => {
+              style={{left:x,top:y}} aria-label={t('region.report.open',{name:regionText(region,locale,'name')})}
+              title={regionText(region,locale,'name')} onClick={() => {
                 onOpenRegion(region)
               }}>
-              <span>▣</span><b>{region.name_ru}</b><small>{region.detail_status === 'local_map' ? 'DEM' : 'ОТЧЁТ'}</small>
+              <span>▣</span><b>{regionText(region,locale,'name')}</b><small>{region.detail_status === 'local_map' ? 'DEM' : t('globe.region.report')}</small>
             </button>)}
           </div>
           {showPanoramas && <div className="global-panorama-markers" aria-label={t('globe.panoramas')}>
             {panoramaClusters.map(cluster => <button key={cluster.id} type="button"
               className="global-panorama-pin" style={{left:cluster.x,top:cluster.y}}
-              aria-label={cluster.items.length > 1 ? t('globe.panorama.cluster',{count:cluster.items.length}) : t('globe.panorama.open',{title:cluster.items[0].title})}
+              aria-label={cluster.items.length > 1 ? t('globe.panorama.cluster',{count:cluster.items.length}) : t('globe.panorama.open',{title:photoText(cluster.items[0],locale,'title')})}
               title={cluster.items.map(item => item.title).join(' / ')}
               onMouseEnter={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
               onFocus={() => { void preloadPanoramaImage(cluster.items[0].image_url).catch(() => undefined) }}
@@ -503,9 +506,9 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
                 className={`global-site-pin global-site-pin--${markerClass}`}
                 style={{left:cluster.x,top:cluster.y}}
                 aria-label={grouped ? t('map.sites.pinGroup',{count:cluster.sites.length}) :
-                  t('map.sites.pin',{name:cluster.sites[0].name})}
+                  t('map.sites.pin',{name:siteText(cluster.sites[0],locale,'name')})}
                 aria-pressed={cluster.sites.some(site => site.id === selectedSiteId)}
-                title={cluster.sites.map(site => site.name).join(' / ')}
+                title={cluster.sites.map(site => siteText(site,locale,'name')).join(' / ')}
                 onClick={() => openSiteGroup(cluster.sites)}>
                 {grouped ? cluster.sites.length : event ? '✦' : '●'}
               </button>
