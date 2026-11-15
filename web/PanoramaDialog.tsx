@@ -46,7 +46,7 @@ export function PanoramaDialog({ panoramas, selected, onSelect, onClose }: {
         onFocus={() => { void preloadPanoramaImage(panorama.image_url).catch(() => undefined) }}
         onClick={() => onSelect(panorama)}>
         <img src={panorama.thumbnail_url} alt="" loading={itemIndex < 3 ? 'eager' : 'lazy'} decoding="async"/>
-        <span><b>{photoText(panorama,locale,'title')}</b><small>{panorama.mission} · Sol {panorama.acquisition.sols.join('–')}</small></span>
+        <span><b>{photoText(panorama,locale,'title')}</b><small>{panorama.mission} · {t('map.photos.sols')} {panorama.acquisition.sols.join('–')}</small></span>
       </button>)}
     </div>
   </aside>

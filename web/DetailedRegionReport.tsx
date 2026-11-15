@@ -71,7 +71,7 @@ export function DetailedRegionReport({ region }: { region: DetailedRegion }) {
               onFocus={() => { void preloadPanoramaImage(panorama.image_url).catch(() => undefined) }}
               onClick={() => setSelected(panorama)}>
               <img src={panorama.thumbnail_url} alt="" loading="lazy" decoding="async"/>
-              <span><small>{panorama.camera}</small><b>{photoText(panorama,locale,'title')}</b><em>{panorama.mission} · Sol {panorama.acquisition.sols.join('–')}</em></span>
+              <span><small>{panorama.camera}</small><b>{photoText(panorama,locale,'title')}</b><em>{panorama.mission} · {t('map.photos.sols')} {panorama.acquisition.sols.join('–')}</em></span>
             </button>)}
           </div>}
           {region.id === 'oxia-planum' && <details className="regional-orbital-card map-info-card">

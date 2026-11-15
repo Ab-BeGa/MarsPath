@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { regionCopy, regionText, type RegionField } from './scienceRegionTranslations.ts'
-import { siteCopy, siteText, type SiteField } from './scienceSiteTranslations.ts'
+import { siteCopy, siteText, methodCopy, methodText, type SiteField } from './scienceSiteTranslations.ts'
 import { photoCopy, photoText, type PhotoField } from './sciencePhotoTranslations.ts'
 import type { DetailedRegion } from './detailedRegions.ts'
 import type { MarsSite } from './marsSites.ts'
@@ -71,5 +71,34 @@ test('science UI has no visible hardcoded Cyrillic JSX and no unlocalized metada
     assert.deepEqual(contents.match(/>[^<>{]*[А-Яа-яЁё][^<>{]*</g) || [], [], path)
     assert.deepEqual(contents.match(/(?:aria-label|title)="[^"]*[А-Яа-яЁё][^"]*"/g) || [], [], path)
     assert.doesNotMatch(contents, /\{(?:region|selected)\.(?:name_ru|feature_type_ru|summary_ru|science_ru|data_note_ru|description_ru|caption_ru|alt_ru|notes_ru)\}/, path)
+  }
+})
+
+test('georeferencing methods shown in site cards are localized without altering source labels', () => {
+  const methods = new Set(sites.flatMap(site => [
+    site.georeferencing.method,
+    ...(site.alternative_positions ?? []).map(position => position.method),
+  ]))
+  assert.equal(methods.size, 7)
+  for (const method of methods) {
+    assert.ok(method in methodCopy, `Missing method translation: ${method}`)
+    assert.equal(methodText(method, 'en'), method, `Source method changed: ${method}`)
+    assert.match(methodText(method, 'ru'), /[\u0400-\u052F]/, method)
+    assert.match(methodText(method, 'kk'), /[\u0400-\u052F]/, method)
+    assert.notEqual(methodText(method, 'ru'), method, method)
+    assert.notEqual(methodText(method, 'kk'), method, method)
+  }
+})
+
+test('regional scale, alternate coordinates and panorama sol labels use locale-aware copy', () => {
+  const regionMap = readFileSync('web/RegionalMap.tsx', 'utf8')
+  const siteCard = readFileSync('web/MarsSiteInfoCard.tsx', 'utf8')
+  const reports = ['web/DetailedRegionReport.tsx', 'web/PanoramaDialog.tsx']
+  assert.equal((regionMap.match(/t\('region.map.scaleKm'/g) || []).length, 3)
+  assert.match(siteCard, /methodText\(selected\.georeferencing\.method,locale\)/)
+  assert.match(siteCard, /methodText\(alt\.method,locale\)/)
+  for (const file of reports) {
+    const text = readFileSync(file, 'utf8')
+    assert.match(text, /t\('map.photos.sols'\)/, file)
   }
 })

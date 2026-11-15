@@ -128,7 +128,7 @@ export function RegionalMap({ region, photos }: { region: DetailedRegion; photos
           <div className="coord-pair"><span>{t('map.telemetry.lon')}</span><strong>{lon}</strong></div>
         </div>
         {coverage && <div className="telemetry-block bottom">
-          <div className="coord-pair"><span>{t('map.telemetry.area')}</span><strong>{format(widthKm, { maximumFractionDigits: 0 })} × {t('region.map.scaleKm', {size:format((coverage.bounds[3] - coverage.bounds[1]) * Math.PI / 180 * 3396.19, { maximumFractionDigits: 0 })})}</strong></div>
+          <div className="coord-pair"><span>{t('map.telemetry.area')}</span><strong>{t('region.map.scaleKm', {size:format(widthKm, { maximumFractionDigits: 0 })})} × {t('region.map.scaleKm', {size:format((coverage.bounds[3] - coverage.bounds[1]) * Math.PI / 180 * 3396.19, { maximumFractionDigits: 0 })})}</strong></div>
           {showRaster && <div className="coord-pair"><span>{t('map.source.resolution')}</span><strong>{t('region.map.preview', { size: format(renderedResolution, { maximumFractionDigits: 0 }) })}</strong></div>}
         </div>}
       </aside>
