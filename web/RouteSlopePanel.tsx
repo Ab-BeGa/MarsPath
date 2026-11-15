@@ -87,24 +87,24 @@ export function RouteSlopePanel({
 
       <svg viewBox={'0 0 ' + W + ' ' + H} className="slope-profile-chart" role="img"
         aria-label={t('slope.aria')}>
-        <rect x={L} y={T} width={chartW} height={chartH} fill="#0a1c29"/>
+        <rect x={L} y={T} width={chartW} height={chartH} fill="var(--map-inset)"/>
         {[0, .5, 1].map(f => {
           const z = low + f * (high - low)
           return <g key={f}>
             <line x1={L} x2={W-R} y1={y(z)} y2={y(z)}
-              stroke="#3d5563" strokeDasharray="5 7" opacity=".7"/>
-            <text x={L-12} y={y(z)+4} textAnchor="end" fill="#b5cad4" fontSize="12">
+              stroke="var(--map-line)" strokeDasharray="5 7" opacity=".7"/>
+            <text x={L-12} y={y(z)+4} textAnchor="end" fill="var(--muted)" fontSize="12">
               {format(z)}
             </text>
           </g>
         })}
         {[0, .25, .5, .75, 1].map(f => <g key={f}>
           <line x1={x(report.total_m*f)} x2={x(report.total_m*f)}
-            y1={T} y2={H-B} stroke="#3e5360" strokeWidth="1" opacity=".4"/>
+            y1={T} y2={H-B} stroke="var(--map-line)" strokeWidth="1" opacity=".4"/>
           <text x={x(report.total_m*f)} y={H-28} textAnchor="middle"
-            fill="#b5cad4" fontSize="12">{meters(report.total_m*f)}</text>
+            fill="var(--muted)" fontSize="12">{meters(report.total_m*f)}</text>
         </g>)}
-        <text x={10} y={15} fill="#b5cad4" fontSize="12">{t('slope.height')}</text>
+        <text x={10} y={15} fill="var(--muted)" fontSize="12">{t('slope.height')}</text>
         {report.intervals.map((segment, i) =>
           segment.band === 'unknown'
             ? <rect key={i} x={x(segment.from.distance_m)}

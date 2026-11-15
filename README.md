@@ -56,7 +56,7 @@ Rebuild after updates with git pull --ff-only origin main and docker compose up 
 1. Open the site and choose **Русский / English / Қазақша** in the header. Refresh and verify the choice is remembered.
 2. Open **Surface map**. Explore and expand the global Mars map, switch between relief, MOC imagery, and Viking color; then pan and zoom the local Jezero map. Inspect coordinates/elevation in its 375 × 375 original CTX DEM cells (20 m posting), and focus reference markers A (Three Forks) and B (vicinity of Wildcat Ridge).
 3. Switch the **DEM relief** and **CTX 5 m optical** layers. The optical image shows finer *visual* surface detail; **elevation measurements are still based on the 20 m DEM**. Open the science stop and source/limitations panels.
-4. Scroll to **Route comparison**. Upload one direct and one detour **route_waypoints.json** from the Python steps below. Both exports must have identical original DEM SHA-256, Mars CRS, start/end points, grade limits and sample step.
+4. On the Jezero map, choose **Demo A/B** or select two points. Click **Build 2 routes** and open **Compare routes** from the result.
 5. Compare measured distances, ascents, maximum measured grade, difficult intervals and missing DEM coverage; switch the active route on the map.
 6. Click a sample in the elevation profile to highlight that location on the map; review color-coded steepness and the threshold settings. Experiment with 4°/9°/14° and restore defaults.
 7. Explain the scientific caveat: a detour might reduce the steep measured segments but the grid alone cannot certify human or rover safety.
@@ -85,7 +85,7 @@ $py = ".\.venv\Scripts\python.exe"
 & $py profile_mars.py --auto-detour --export-only --output results/detour
 ~~~
 
-Upload **results/direct/route_waypoints.json** and **results/detour/route_waypoints.json** through the website form. The route-profile CSV/PNG files are optional browser inputs.
+The JSON, CSV and PNG files are for offline analysis. The website computes its own comparison from the points chosen on the Jezero map.
 
 ### Linux / macOS
 
@@ -124,7 +124,7 @@ python scripts/preprocess_ctx.py --download
 | Builds/deployment | scripts/build_web.mjs, scripts/serve_static.mjs, Dockerfile, compose.yaml | Static site build and self-contained web runtime |
 | Verification | web/*.test.ts, tests/, .github/workflows/ | Frontend/algorithm tests, Docker smoke checks |
 
-The **web application is fully static**: there is **no database, backend API or secret key**. Preprocessing and route calculation are performed separately with Python. Docker needs no mounts, credentials or external NASA services at runtime.
+The **web application is fully static**: there is **no database, backend API or secret key**. Python prepares the data. The site calculates routes in the browser. Docker needs no mounts, credentials or external NASA services for local route planning.
 
 ~~~text
 Official Mars CTX DEM GeoTIFF [local only] ─┐
@@ -134,9 +134,8 @@ USGS CTX optical GeoTIFF [optional, local] ─┘                         ├─
                                                                     ├─ metadata.json + checksums.sha256
                                                                     └─ ctx_ortho.png + ctx_ortho.json
 
-Python profile_mars.py → direct/route_waypoints.json ──┐
-                       detour/route_waypoints.json ────┼─ Browser upload
-Browser reads public/data/jezero/ ──────────────────────┴─ React map + analytics
+Python profile_mars.py → JSON, CSV and PNG for offline analysis
+Browser reads public/data/jezero/ → interactive map → route calculation and comparison
 ~~~
 
 After **npm run build**, the served **dist/** directory contains index.html, assets/main.js, assets/main.css and data/jezero/. Docker uses this exact production build.

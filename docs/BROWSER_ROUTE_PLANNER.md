@@ -10,7 +10,7 @@ This feature adds route planning by clicking on the **existing local Jezero CTX 
 2. Click **Start A**, then a valid DEM cell. Next click the **Goal B** cell. Pressing Enter while the canvas is focused also selects the viewport centre.
 3. Click **Build 2 routes**. The browser runs A* twice on the actual 375×375 Mars-projected CTX DEM: weight 0 for minimum distance and weight 12 for DEM slope-penalized cost.
 4. Inspect both overlays, click their profile samples and compare measured lengths, elevations and slope-band statistics in the existing comparison panel. If both objectives yield exactly the same grid path, the UI reports this rather than inventing a detour.
-5. The **Demo A/B** button selects the prevalidated, already included source/target from the DEM metadata. **Clear selection** resets points and current comparison. Existing import of Python JSON remains available below.
+5. The **Demo A/B** button selects the prevalidated endpoints from the DEM metadata. **Clear selection** resets the points and comparison. After building routes, open **Compare routes** to see the results.
 
 ### Scientific contract
 
@@ -31,7 +31,7 @@ This feature adds route planning by clicking on the **existing local Jezero CTX 
 | `web/routePlanner.ts` | Typed-array A*, heap, validation, grid-to-polyline geometry, browser comparison adapter |
 | `web/routePlanner.test.ts` | Synthetic DEMs, Dijkstra cross-check, corner-cut/NoData tests, route source and endpoints |
 | `web/MarsMap.tsx` | A/B map selection, route buttons, DEM-projected markers, result/error states |
-| `web/main.tsx` | Shared comparison state between imported files and calculated routes |
+| `web/main.tsx` | Comparison state and results for browser-calculated routes |
 | `web/i18nCatalog.ts` | RU/EN/KK strings |
 | `web/styles.css` | Narrow, responsive planner panel |
 
@@ -45,6 +45,6 @@ npm.cmd run build
 npm.cmd run dev
 ~~~
 
-Manual checks: select endpoints on DEM and CTX modes, verify exact marker locations while panning/zooming, test NoData and same-cell rejection, compare profile and map highlights after switching active routes, check that importing JSON still works, and confirm all labels and messages in Russian/English/Kazakh.
+Manual checks: select endpoints on DEM and CTX modes, verify exact markers while panning and zooming, test NoData and same-cell rejection, compare profile and map highlights after switching active routes, open the comparison results, and check labels in Russian, English and Kazakh.
 
 The planner runs synchronously after a zero-delay UI yield; on lower-end devices a large route may cause a short main-thread pause. If measured responsiveness is insufficient, move the same pure computation into a Web Worker, without introducing a server or altering scientific costs.

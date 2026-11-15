@@ -155,11 +155,11 @@
 .section-kicker { color: var(--light); }
 .globe-flat-mode, .global-map-card, .map-frame, .telemetry, .comparison-card,
 .detailed-region-card, .map-info-card, .load-state { background: var(--surface); border-color: var(--line); }
-.data-pill, .telemetry-block.bottom, .route-form input, .comparison-summary { background: #100f13; border-color: var(--line); }
+.data-pill, .telemetry-block.bottom, .comparison-summary { background: #100f13; border-color: var(--line); }
 .telemetry-title, .telemetry-block, th, td, .page-footer { border-color: var(--line); }
 .comparison-card { padding: clamp(16px, 3vw, 32px); }
-.route-form label, .table-note, .page-footer { color: var(--muted); }
-.route-form input::file-selector-button, thead { background: #352522; color: var(--ink); }
+
+
 .primary-action { background: var(--light); color: #25150e; }
 .primary-action:hover { background: #ffdbca; }
 
@@ -281,13 +281,20 @@ html:has(.site-shell.is-intro), body:has(.site-shell.is-intro) { overflow: hidde
 .region-picker { margin: 14px 0; }
 .region-picker select { min-height: 38px; }
 
-.orbital-language {
+.corner-controls {
   position: fixed; z-index: 25; top: max(16px, env(safe-area-inset-top)); right: clamp(15px, 3vw, 45px);
+  display: flex; gap: 8px;
+}
+:is(.orbital-language, .orbital-sound) {
+  position: relative;
   width: 42px; height: 42px; display: grid; place-items: center;
   border: 1px solid #f6c4ab55; border-radius: 50%; background: #120e14dc; color: #fbe8df;
   transition: border-color .2s ease, background .2s ease;
 }
-.orbital-language:hover, .orbital-language:focus-within { border-color: var(--light); background: #35231f; }
+.orbital-language:is(:hover,:focus-within), .orbital-sound:is(:hover,:focus-visible,[aria-pressed="true"]) {
+  border-color: var(--light); background: #35231f;
+}
+.orbital-sound:disabled { opacity: .55; cursor: default; }
 .orbital-language select {
   position: absolute; inset: 0; width: 100%; height: 100%;
   opacity: 0; cursor: pointer; color-scheme: dark;
@@ -491,3 +498,42 @@ html:has(.site-shell.is-intro), body:has(.site-shell.is-intro) { overflow: hidde
 .gale-route-results :is(td, th) { border-color: var(--map-line); }
 .gale-route-results th { color: var(--muted); }
 .gale-dem-source a { color: var(--light); }
+
+/* Shared treatment for the route charts, their controls and secondary panels. */
+:is(.slope-panel,.elevation-profile-panel) {
+  padding: clamp(14px, 2.5vw, 25px); border-color: var(--map-line); border-radius: 16px;
+  background: var(--map-inset);
+}
+:is(.slope-profile-chart,.elevation-profile-svg,.slope-settings fieldset,
+    .slope-settings input[type="number"],.regional-stage,.regional-viewport,.panorama-viewport) {
+  background: var(--map-inset); border-color: var(--map-line); color: var(--ink);
+}
+:is(.slope-statistics > div,.slope-legend-entry,.slope-toggle,
+    .slope-settings button.slope-preset,.elevation-profile-controls button,
+    .panorama-viewer-toolbar button,.mola-elevation-legend,.detailed-region-close,
+    .unlocated-photos,.unlocated-photos button,.route-switcher-buttons button) {
+  background: var(--map-panel); border-color: var(--map-line); color: var(--ink);
+}
+:is(.slope-panel-heading h3,.elevation-profile-head h3,.slope-statistics strong,.slope-legend-entry strong) {
+  color: var(--ink);
+}
+:is(.slope-panel-heading p,.slope-statistics span,.slope-legend-entry span,.slope-settings label,.slope-settings legend,
+    .slope-science-note,.elevation-profile-head p,.elevation-profile-controls label,.elevation-profile-note) {
+  color: var(--muted);
+}
+:is(.slope-statistics strong.slope-orange,.elevation-profile-head > span,.elevation-profile-reading strong) {
+  color: var(--light);
+}
+.elevation-profile-reading { color: var(--ink); }
+#map .route-switcher-buttons button[aria-pressed="true"] { background: #432b27; border-color: var(--light); box-shadow: none; }
+.slope-toggle input, .elevation-profile-controls input[type="range"] { accent-color: var(--light); }
+.slope-settings button[type="submit"] { background: var(--light); color: #28170f; }
+.slope-settings button[type="submit"]:hover { background: #ffdbca; }
+:is(.slope-settings button.slope-preset,.elevation-profile-controls button,.panorama-viewer-toolbar button):hover:not(:disabled) {
+  background: #493028;
+}
+.panorama-loading { background: var(--map-inset); border-color: var(--map-line); color: var(--ink); }
+.route-endpoint, .route-point-label { stroke: var(--map-inset); }
+.comparison-empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.comparison-empty p { margin: 0; color: var(--muted); }
+.comparison-empty a { gap: 8px; }

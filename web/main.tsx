@@ -1,14 +1,15 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MarsMap } from './MarsMap.tsx'
 import { MarsGlobe } from './MarsGlobe.tsx'
 import { RouteOverview } from './RouteOverview.tsx'
 import { loadMarsTerrain, type MarsTerrain } from './marsTerrain.ts'
-import { compareRoutes, type RouteComparison } from './compareRoutes.ts'
+import type { RouteComparison } from './compareRoutes.ts'
 import { I18nProvider, LanguageSwitcher, useI18n } from './i18n.tsx'
 import { DetailedRegionReport } from './DetailedRegionReport.tsx'
 import type { DetailedRegion } from './detailedRegions.ts'
 import { RegionSummary } from './RegionSummary.tsx'
+import { SoundToggle } from './SoundToggle.tsx'
 import './styles.css'
 import './marsPath.css'
 
@@ -20,40 +21,15 @@ const metricKeys: Record<string, string> = {
   'Длина крутых интервалов': 'compare.steepLength',
   'Участки без данных': 'compare.unknownLength',
 }
-async function readExport(file: File): Promise<unknown> {
-  try { return JSON.parse(await file.text()) }
-  catch { throw new Error(`Не удалось прочитать JSON из файла «${file.name}».`) }
-}
-
-function RouteComparisonPanel({ comparison, onComparison, onClose }: {
+function RouteComparisonPanel({ comparison, plannerVisible, onClose }: {
   comparison: RouteComparison | null
-  onComparison: (value: RouteComparison | null) => void
+  plannerVisible: boolean
   onClose: () => void
 }) {
-  const {t, locale, format: localizedNumber, error: localizeError} = useI18n()
+  const {t, locale, format: localizedNumber} = useI18n()
   const format = (value: number | null, delta = false) =>
     value === null ? '—' : localizedNumber(value, {signDisplay: delta ? 'exceptZero' : 'auto'})
   const result = comparison
-  const [error, setError] = useState('')
-  const [pending, setPending] = useState(false)
-
-  function clearResult() { setError(''); onComparison(null) }
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const data = new FormData(event.currentTarget)
-    const direct = data.get('direct')
-    const detour = data.get('detour')
-    if (!(direct instanceof File) || !(detour instanceof File)) return
-    clearResult()
-    setPending(true)
-    try {
-      const inputs = await Promise.all([readExport(direct), readExport(detour)])
-      const comparison = compareRoutes(...inputs)
-      onComparison(comparison)
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Не удалось сравнить маршруты.')
-    } finally { setPending(false) }
-  }
 
   const lengthDelta = result?.rows[0].delta
   const steepDelta = result?.rows[4].delta
@@ -67,18 +43,13 @@ function RouteComparisonPanel({ comparison, onComparison, onClose }: {
         <button className="map-return" onClick={onClose}>{t('compare.close')}</button>
       </div>
       <div className="comparison-card">
-        <form onSubmit={submit} className="route-form">
-          <fieldset disabled={pending}>
-            <legend>{t('compare.upload')}</legend>
-            <label>{t('route.direct.full')} <input type="file" name="direct" accept=".json,application/json"
-              onChange={clearResult} required /></label>
-            <label>{t('route.detour.full')} <input type="file" name="detour" accept=".json,application/json"
-              onChange={clearResult} required /></label>
-            <button className="primary-action" type="submit">{pending ? t('compare.processing') : t('compare.button')}</button>
-          </fieldset>
-        </form>
-        {error && <p role="alert" className="alert error-alert">{localizeError(error)}</p>}
         <div aria-live="polite">
+          {!result && <div className="comparison-empty">
+            <p>{t('compare.empty')}</p>
+            <a className="map-return" href={plannerVisible ? '#browser-planner-title' : '#globe'}>
+              {t(plannerVisible ? 'planner.title' : 'globe.title')} <span aria-hidden="true">↑</span>
+            </a>
+          </div>}
           {result && <>
             {result.origin === 'browser' && <p className="comparison-summary">
               {t('planner.comparisonSource')}
@@ -145,7 +116,7 @@ function App() {
 
   return (
     <div className={`site-shell${entered ? '' : ' is-intro'}`}>
-      <LanguageSwitcher/>
+      <div className="corner-controls"><SoundToggle/><LanguageSwitcher/></div>
       <main className="main-content">
         <MarsGlobe entered={entered} onEnter={() => {
           if (window.location.hash) history.replaceState(history.state, '', window.location.pathname + window.location.search)
@@ -179,7 +150,7 @@ function App() {
         {mapSourceMatches && selectedRegion?.detail_status !== 'local_map' && <p className="alert" role="status">
           {t('compare.selectJezero')}{' '}<a href="#globe">{t('nav.globe')}</a>
         </p>}
-        <RouteComparisonPanel comparison={comparison} onComparison={setComparison} onClose={() => {
+        <RouteComparisonPanel comparison={comparison} plannerVisible={Boolean(selectedRegion?.detail_status === 'local_map' && terrain)} onClose={() => {
           setShowComparison(false)
           document.getElementById('globe')?.scrollIntoView({ behavior: 'smooth' })
         }}/>

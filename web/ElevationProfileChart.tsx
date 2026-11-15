@@ -61,23 +61,23 @@ export function ElevationProfileChart({
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="elevation-profile-svg"
         role="img" aria-label={t('profile.aria')}>
-        <rect x={L} y={T} width={chartW} height={chartH} fill="#0b1f2c" />
+        <rect x={L} y={T} width={chartW} height={chartH} fill="var(--map-inset)" />
         {[0, 0.5, 1].map(f => {
           const z = minHeight + f * (maxHeight - minHeight)
           return <g key={f}>
-            <line x1={L} x2={W-R} y1={y(z)} y2={y(z)} stroke="#405766" strokeDasharray="4 7" opacity=".7" />
-            <text x={L-11} y={y(z)+4} textAnchor="end" fill="#a8c1cd" fontSize="12">{format(z)}</text>
+            <line x1={L} x2={W-R} y1={y(z)} y2={y(z)} stroke="var(--map-line)" strokeDasharray="4 7" opacity=".7" />
+            <text x={L-11} y={y(z)+4} textAnchor="end" fill="var(--muted)" fontSize="12">{format(z)}</text>
           </g>
         })}
         {tickDistances.map((distance, i) => <g key={i}>
-          <line x1={x(distance)} x2={x(distance)} y1={T} y2={H-B} stroke="#38515e" opacity=".5" />
-          <text x={x(distance)} y={H-24} textAnchor="middle" fill="#acc4cf" fontSize="12">{meters(distance)}</text>
+          <line x1={x(distance)} x2={x(distance)} y1={T} y2={H-B} stroke="var(--map-line)" opacity=".5" />
+          <text x={x(distance)} y={H-24} textAnchor="middle" fill="var(--muted)" fontSize="12">{meters(distance)}</text>
         </g>)}
-        <text x={15} y={14} fill="#acc4cf" fontSize="12">{t('profile.axis')}</text>
+        <text x={15} y={14} fill="var(--muted)" fontSize="12">{t('profile.axis')}</text>
         {visibleIntervals.map(({ prev, next, i }) => (
           <line key={i} x1={x(prev.distance_m)} y1={y(prev.elevation_m!)}
             x2={x(next.distance_m)} y2={y(next.elevation_m!)}
-            stroke="#55efc4" strokeWidth="2.5" strokeLinecap="round" />
+            stroke="var(--light)" strokeWidth="2.5" strokeLinecap="round" />
         ))}
         {interval && <rect x={x(interval.from.distance_m)}
           y={T} width={Math.max(1, x(interval.to.distance_m) - x(interval.from.distance_m))}
@@ -87,7 +87,7 @@ export function ElevationProfileChart({
             stroke="#ffffff" strokeWidth="1.5" strokeDasharray="5 4" />
           {active.elevation_m !== null &&
             <circle cx={x(active.distance_m)} cy={y(active.elevation_m)}
-              r="6" stroke="#07121e" strokeWidth="2" fill="#ffd27d" />}
+              r="6" stroke="var(--map-inset)" strokeWidth="2" fill="#ffd27d" />}
         </>}
         <rect x={L} y={T} width={chartW} height={chartH}
           fill="transparent" className="elevation-profile-hit" onClick={selectByMouse} />

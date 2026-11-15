@@ -133,12 +133,11 @@ a { color: inherit; }
 .scientific-disclaimer { color: #96aab5; font-size: 11px; line-height: 1.65; margin: 10px 0 0; }
 .comparison-section { padding-top: 10px; }
 .comparison-card { padding: 25px; }
-.route-form fieldset { min-width: 0; border: 0; padding: 0; margin: 0 0 15px; display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 20px; align-items: end; }
-.route-form legend { font-size: 14px; font-weight: 750; grid-column: 1 / -1; margin-bottom: 16px; color: #e3f4f4; }
-.route-form label { font-size: 12px; font-weight: 700; color: #bfccd6; display: grid; gap: 8px; }
-.route-form input { min-width: 0; border: 1px solid #3b5360; border-radius: 7px; background: #0c2635; padding: 12px; width: 100%; font-size: 11px; color: #d8ebef; }
-.route-form input::file-selector-button { background: #264450; color: #dcecf2; border: 0; padding: 7px 12px; border-radius: 4px; margin-right: 9px; cursor: pointer; }
+
+
+
+
+
 .primary-action { background: #55efc4; color: #071522; border: 0; border-radius: 7px; padding: 14px 19px; font-weight: 800; white-space: nowrap; }
 .primary-action:hover { background: #83f9d4; }
 .alert { border: 1px solid #6f603a; background: #2b281c; color: #ffe3a8; border-radius: 7px; padding: 13px 15px; line-height: 1.6; font-size: 12px; }
@@ -174,7 +173,7 @@ thead { background: #132734; color: #afc9d4; }
   .telemetry-title { grid-column: 1 / -1; padding: 14px 18px; }
   .telemetry-block { border-right: 1px solid #29424c; }
   .telemetry-block.bottom { margin: 0; }
-  .route-form fieldset { grid-template-columns: 1fr 1fr; }
+
   .primary-action { grid-column: 1 / -1; width: 100%; }
   .map-source { display: none; }
 }
@@ -198,7 +197,7 @@ thead { background: #132734; color: #afc9d4; }
   .telemetry { grid-template-columns: 1fr; }
   .telemetry-title { grid-column: auto; }
   .telemetry-block { padding: 16px 20px; border-right: 0; }
-  .route-form fieldset { grid-template-columns: 1fr; }
+
   .primary-action { grid-column: auto; }
   .comparison-card { padding: 16px; }
   .page-footer { flex-direction: column; }
