@@ -172,6 +172,17 @@ function GalePlannerCanvas({terrain}:{terrain:MarsTerrain}) {
     if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true
     if(drag.moved)setCamera(c=>({...c,panX:c.panX+dx,panY:c.panY+dy}))
   }
+  const useDemo=()=>{
+    const base=terrain.metadata.checked_points.find(point=>point.id==='base')
+    const science=terrain.metadata.checked_points.find(point=>point.id==='science_target')
+    if(!base||!science){setError(t('planner.noDemoPoints'));return}
+    const a=cellAtProjected(terrain,base.projected_x_m,base.projected_y_m)
+    const b=cellAtProjected(terrain,science.projected_x_m,science.projected_y_m)
+    if(!a||!b||a.elevation===null||b.elevation===null){
+      setError(t('planner.invalidCell'));return
+    }
+    setStart(a);setGoal(b);setChoosing(null);setError('');setResult(null);setSelected(null)
+  }
   const build=()=>{
     if(!start||!goal)return
     setError('')
@@ -192,6 +203,7 @@ function GalePlannerCanvas({terrain}:{terrain:MarsTerrain}) {
         aria-pressed={choosing==='start'} onClick={()=>{setChoosing('start');setError('')}}>{t('planner.start')}</button>
       <button type="button" className={choosing==='goal'?'is-selecting':''}
         aria-pressed={choosing==='goal'} onClick={()=>{setChoosing('goal');setError('')}}>{t('planner.goal')}</button>
+      <button type="button" onClick={useDemo}>{t('planner.demo')}</button>
       <button type="button" className="browser-planner-build" disabled={!start||!goal} onClick={build}>{t('planner.build')}</button>
       <button type="button" onClick={()=>{setStart(null);setGoal(null);setResult(null);setChoosing(null);setSelected(null);setError('')}}>{t('planner.reset')}</button>
     </div>
