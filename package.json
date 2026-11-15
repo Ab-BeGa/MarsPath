@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/build_web.mjs --serve",
     "build": "tsc --noEmit && node scripts/build_web.mjs",
-    "test": "node --test web/compareRoutes.test.ts web/marsTerrain.test.ts web/marsGlobe.test.ts web/panoramaClusters.test.ts web/routeMap.test.ts web/ctxOptical.test.ts web/routeSlopes.test.ts web/routeProfile.test.ts web/routeOverviewGeometry.test.ts web/photoCatalog.test.ts web/photoMap.test.ts web/i18n.test.ts scripts/serve_static.test.mjs web/marsSites.test.ts web/marsSiteMapGeometry.test.ts web/detailedRegions.test.ts web/globalPanoramas.test.ts web/scienceLocalization.test.ts web/routePlanner.test.ts"
+    "test": "node --test web/compareRoutes.test.ts web/marsTerrain.test.ts web/marsGlobe.test.ts web/panoramaClusters.test.ts web/routeMap.test.ts web/ctxOptical.test.ts web/routeSlopes.test.ts web/routeProfile.test.ts web/routeOverviewGeometry.test.ts web/photoCatalog.test.ts web/photoMap.test.ts web/i18n.test.ts scripts/serve_static.test.mjs web/marsSites.test.ts web/marsSiteMapGeometry.test.ts web/detailedRegions.test.ts web/globalPanoramas.test.ts web/scienceLocalization.test.ts web/routePlanner.test.ts web/galeRoutePlanner.test.ts"
   },
   "dependencies": {
     "react": "^19.0.0",

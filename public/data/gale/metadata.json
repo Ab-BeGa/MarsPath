@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "region_id": "gale_crater_curiosity_demo",
+  "generated_on": "2026-11-15",
+  "source": {
+    "url": "https://planetarymaps.usgs.gov/mosaic/Mars/MSL/MSL_Gale_DEM_Mosaic_1m_v3.tif",
+    "product": "Mars MSL Gale Merged DEM Mosaic 1m v3 (downsampled for this app)",
+    "mission": "MRO / Mars Express / MGS control net",
+    "instrument": "HiRISE, CTX, HRSC, MOLA",
+    "publisher": "NASA/JPL-Caltech/USGS Astrogeology",
+    "source_file": "MSL_Gale_DEM_Mosaic_1m_v3.tif",
+    "source_sha256": "0c8c42422ff7e9e95e9030a55a81311d193fd86ac4ee94984af6a3e22ed40539",
+    "hash_scope": "compact_heights_f32_plus_mask_u8_not_original_geotiff",
+    "native_source_resolution_m": 1.0
+  },
+  "grid": {
+    "width": 251,
+    "height": 251,
+    "pixel_size_m": [
+      20.0,
+      20.0
+    ],
+    "bounds_projected_m": [
+      8144203.492786024,
+      -274580.075189438,
+      8149223.492786024,
+      -269560.075189438
+    ],
+    "transform": [
+      20.0,
+      0.0,
+      8144203.492786024,
+      0.0,
+      -20.0,
+      -269560.075189438
+    ],
+    "heights_file": "heights.f32",
+    "mask_file": "mask.u8",
+    "elevation_min_m": -4529.12109375,
+    "elevation_max_m": -4466.81591796875,
+    "valid_cells": 63001,
+    "valid_fraction": 1.0,
+    "resampling": "average of valid original 1 m DEM pixels into 20 m cells"
+  },
+  "coordinate_convention": {
+    "latitude": "planetocentric degrees north",
+    "longitude": "east-positive degrees",
+    "source_crs_sphere_radius_m": 3396190.0,
+    "projection_standard_parallel_deg": 0.0,
+    "projection_central_meridian_deg": 0.0,
+    "projection_false_easting_m": 0.0,
+    "projection_false_northing_m": 0.0
+  },
+  "crs_wkt": "PROJCS[\"Mars_Equirectangular_clon0\",GEOGCS[\"GCS_Mars_2000_Sphere\",DATUM[\"Mars_2000_(Sphere)\",SPHEROID[\"Mars_2000_Sphere_IAU_IAG\",3396190,0],AUTHORITY[\"ESRI\",\"106971\"]],PRIMEM[\"Reference_Meridian\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]],PROJECTION[\"Equirectangular\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+  "source_grid": {
+    "crs_wkt": "PROJCS[\"Mars_Equirectangular_clon0\",GEOGCS[\"GCS_Mars_2000_Sphere\",DATUM[\"Mars_2000_(Sphere)\",SPHEROID[\"Mars_2000_Sphere_IAU_IAG\",3396190,0],AUTHORITY[\"ESRI\",\"106971\"]],PRIMEM[\"Reference_Meridian\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]],PROJECTION[\"Equirectangular\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+    "width": 32980,
+    "height": 57440,
+    "pixel_size_m": [
+      1.0,
+      1.0
+    ],
+    "source_window_col_row": [
+      16210,
+      24779
+    ],
+    "source_window_size_pixels": 5020
+  },
+  "checked_points": [
+    {
+      "id": "site_center",
+      "name": "Gale Curiosity landing-area ROI",
+      "role": "roi_center",
+      "latitude_deg": -4.589986732238705,
+      "longitude_deg": 137.4399842290687,
+      "projected_x_m": 8146713.492786024,
+      "projected_y_m": -272070.075189438,
+      "elevation_m": -4501.22314453125,
+      "source": "synthetic_demo_waypoint_on_real_DEM_not_NASA_landmark"
+    },
+    {
+      "id": "base",
+      "name": "Gale demo A (model waypoint)",
+      "role": "base",
+      "latitude_deg": -4.589986732238705,
+      "longitude_deg": 137.42581292098788,
+      "projected_x_m": 8145873.492786024,
+      "projected_y_m": -272070.075189438,
+      "elevation_m": -4501.73095703125,
+      "source": "synthetic_demo_waypoint_on_real_DEM_not_NASA_landmark"
+    },
+    {
+      "id": "science_target",
+      "name": "Gale demo B (model waypoint)",
+      "role": "science_target",
+      "latitude_deg": -4.589986732238705,
+      "longitude_deg": 137.45381812505235,
+      "projected_x_m": 8147533.492786024,
+      "projected_y_m": -272070.075189438,
+      "elevation_m": -4523.91552734375,
+      "source": "synthetic_demo_waypoint_on_real_DEM_not_NASA_landmark"
+    }
+  ],
+  "limitations": [
+    "This is a 20 m area-averaged subset of original 1 m DEM, NOT a native 20 m CTX scene.",
+    "The numeric hash identifies the committed compact DEM, not the full source GeoTIFF.",
+    "HiRISE/CTX/HRSC source quality varies by location; absolute positioning is limited by MOLA control net.",
+    "Model waypoints A and B are not historical Curiosity traverse locations.",
+    "20 m cells cannot detect small rocks or certify EVA safety."
+  ]
+}
