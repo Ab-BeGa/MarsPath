@@ -6,6 +6,7 @@ import { RegionalMap } from './RegionalMap.tsx'
 import { PanoramaViewer, preloadPanoramaImage } from './PanoramaViewer.tsx'
 import { useI18n } from './i18n.tsx'
 import { regionText } from './scienceRegionTranslations.ts'
+import { photoText } from './sciencePhotoTranslations.ts'
 
 export function DetailedRegionReport({ region }: { region: DetailedRegion }) {
   const { t, locale, error: localizeError } = useI18n()
@@ -43,14 +44,14 @@ export function DetailedRegionReport({ region }: { region: DetailedRegion }) {
     <RegionalMap region={region} photos={<section className="region-panorama-section" aria-labelledby="region-panorama-title">
           {selected && <article className="photo-detail-card" aria-labelledby="regional-selected-photo">
             <PanoramaViewer key={selected.id} imageUrl={selected.image_url} previewUrl={selected.thumbnail_url}
-              title={selected.title} initialZoom={1} minimumZoom={1} fit="width" />
+              title={photoText(selected,locale,'title')} initialZoom={1} minimumZoom={1} fit="width" />
             <div>
               <div className="photo-card-heading">
                 <span>{selected.camera} · {selected.mission}</span>
                 <button type="button" className="text-action" onClick={() => setSelected(null)}>{t('map.photos.close')}</button>
               </div>
-              <h3 id="regional-selected-photo">{selected.title}</h3>
-              <p>{selected.caption}</p>
+              <h3 id="regional-selected-photo">{photoText(selected,locale,'title')}</h3>
+              <p>{photoText(selected,locale,'caption')}</p>
               <a href={selected.page_url} target="_blank" rel="noreferrer">{t('map.photos.nasaSource')}</a>
             </div>
           </article>}
@@ -70,7 +71,7 @@ export function DetailedRegionReport({ region }: { region: DetailedRegion }) {
               onFocus={() => { void preloadPanoramaImage(panorama.image_url).catch(() => undefined) }}
               onClick={() => setSelected(panorama)}>
               <img src={panorama.thumbnail_url} alt="" loading="lazy" decoding="async"/>
-              <span><small>{panorama.camera}</small><b>{panorama.title}</b><em>{panorama.mission} · Sol {panorama.acquisition.sols.join('–')}</em></span>
+              <span><small>{panorama.camera}</small><b>{photoText(panorama,locale,'title')}</b><em>{panorama.mission} · Sol {panorama.acquisition.sols.join('–')}</em></span>
             </button>)}
           </div>}
           {region.id === 'oxia-planum' && <details className="regional-orbital-card map-info-card">
