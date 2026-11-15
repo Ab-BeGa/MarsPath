@@ -42,7 +42,7 @@ function constrainPan(camera: Camera, size: Size): Camera {
 }
 
 export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'relief', onLayerChange }: {
-  onOpenRegion: (region?: DetailedRegion) => void; onReturnGlobe?: () => void
+  onOpenRegion: (region: DetailedRegion) => void; onReturnGlobe?: () => void
   initialLayer?: GlobalLayer; onLayerChange?: (layer: GlobalLayer) => void
 }) {
   const { t } = useI18n()
@@ -404,7 +404,6 @@ export function MarsGlobalMap({ onOpenRegion, onReturnGlobe, initialLayer = 'rel
         <div className="global-map-actions">
           {onReturnGlobe && <button type="button" className="global-map-detail" onClick={onReturnGlobe}>{t('globe.return3d')}</button>}
           <button type="button" className="global-map-jump" onClick={zoomToJezero}>{t('map.global.zoomJezero')}</button>
-          <button type="button" className="global-map-detail" onClick={() => onOpenRegion()}>{t('map.global.jump')}</button>
         </div>
       </div>
       <div className="global-map-frame">

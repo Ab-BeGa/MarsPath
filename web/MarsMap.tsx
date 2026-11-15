@@ -625,7 +625,7 @@ export function MarsMap({ terrain, routes, routeStepM }: { terrain: MarsTerrain;
   }
 
   return (
-    <section className="map-section" id="map" aria-labelledby="map-title">
+    <section className="map-section" aria-labelledby="map-title">
       <div className="section-heading">
         <div>
           <span className="section-kicker"><span className="live-dot"/> {t('map.kicker')}</span>

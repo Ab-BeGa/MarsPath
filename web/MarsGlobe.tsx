@@ -43,7 +43,7 @@ function validateMetadata(value: unknown): Metadata {
   return data as Metadata
 }
 
-export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region?: DetailedRegion) => void }) {
+export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region: DetailedRegion) => void }) {
   const { t, format } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textureRef = useRef<Partial<Record<GlobeLayer, ImageData>>>({})
@@ -106,13 +106,19 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region?: DetailedRe
     Promise.all([
       loadPhotoCatalog('/data/jezero/photos.json'),
       loadPhotoCatalog('/data/mars-global/panoramas.json'),
-      loadDetailedRegions(),
-    ]).then(([jezeroCatalogue, globalCatalogue, regions]) => {
+    ]).then(([jezeroCatalogue, globalCatalogue]) => {
       if (!active) return
       setPanoramas([...jezeroCatalogue.records, ...globalCatalogue.records]
         .filter(photo => photo.coordinates && /panorama|degree|градус/i.test(`${photo.title} ${photo.caption}`)))
-      setDetailedRegions(regions.regions)
     }).catch(reason => { if (active) setSiteError(reason instanceof Error ? reason.message : String(reason)) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    loadDetailedRegions()
+      .then(catalogue => { if (active) setDetailedRegions(catalogue.regions) })
+      .catch(reason => { if (active) setSiteError(reason instanceof Error ? reason.message : String(reason)) })
     return () => { active = false }
   }, [])
 
@@ -376,11 +382,7 @@ export function MarsGlobe({ onOpenDetail }: { onOpenDetail: (region?: DetailedRe
             <button aria-pressed={showPanoramas} onClick={() => { setShowPanoramas(value => !value); setSelectedPanorama(null) }}>
               <span>360°</span><b>{t('globe.panoramas')}</b><small>{panoramas.length}</small>
             </button>
-            <button aria-pressed="true" onClick={() => onOpenDetail(detailedRegions[0])}>
-              <span>▣</span><b>{t('globe.detailedRegions')}</b><small>{detailedRegions.length}</small>
-            </button>
           </div>
-          <button className="globe-detail-button" onClick={() => onOpenDetail()}>{t('globe.detail')}</button>
         </>}
       </aside>
     </div>}

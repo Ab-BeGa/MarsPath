@@ -8,6 +8,7 @@ import { compareRoutes, type RouteComparison } from './compareRoutes.ts'
 import { I18nProvider, LanguageSwitcher, useI18n } from './i18n.tsx'
 import { DetailedRegionReport } from './DetailedRegionReport.tsx'
 import type { DetailedRegion } from './detailedRegions.ts'
+import { RegionSummary } from './RegionSummary.tsx'
 import './styles.css'
 
 const metricKeys: Record<string, string> = {
@@ -105,6 +106,10 @@ function App() {
   const [terrain, setTerrain] = useState<MarsTerrain | null>(null)
   const [mapError, setMapError] = useState('')
   const [selectedRegion, setSelectedRegion] = useState<DetailedRegion | null>(null)
+  const scrollToRegion = () => document.getElementById('map')?.scrollIntoView({behavior:'smooth'})
+  useEffect(() => {
+    if (selectedRegion) scrollToRegion()
+  }, [selectedRegion])
   useEffect(() => {
     let active = true
     void loadMarsTerrain().then(data => { if (active) setTerrain(data) }).catch(reason => {
@@ -117,21 +122,21 @@ function App() {
     comparison.source.demHash === terrain.metadata.source.source_sha256 &&
     comparison.source.crs === terrain.metadata.crs_wkt)
 
-  const openRegion = (region?: DetailedRegion) => {
-    setSelectedRegion(region?.detail_status === 'report' ? region : null)
-    window.setTimeout(() => document.getElementById('map')?.scrollIntoView({behavior:'smooth'}), 0)
+  const openRegion = (region: DetailedRegion) => {
+    if (region === selectedRegion) scrollToRegion()
+    else setSelectedRegion(region)
   }
 
   return (
     <div className="site-shell">
       <header className="topbar">
-        <a className="brand" href="#map" aria-label={t('nav.home')}>
+        <a className="brand" href="#globe" aria-label={t('nav.home')}>
           <span className="brand-mark" aria-hidden="true"><span>◈</span></span>
           <span className="brand-title">JEZERO <em>TRAVERSE</em><small>{t('brand.subtitle')}</small></span>
         </a>
         <nav className="topnav" aria-label={t('nav.label')}>
           <a href="#globe">{t('nav.globe')}</a>
-          <a href="#map">{t('nav.map')}</a>
+          {selectedRegion && <a href="#map">{t('nav.map')}</a>}
           <a href="#compare">{t('nav.compare')}</a>
         </nav>
         <LanguageSwitcher/>
@@ -151,18 +156,28 @@ function App() {
           </div>
         </section>
         <MarsGlobe onOpenDetail={openRegion}/>
-        {mapError && <section className="load-state" role="alert">
-          <h2>{t('app.loadFailed')}</h2>
-          <p>{localizeError(mapError)}</p>
-          <p>{t('app.loadHelp', {command:'npm.cmd run dev',protocol:'file://',path:'public/data/jezero/'})}</p>
-        </section>}
-        {!terrain && !mapError && <section className="load-state" role="status" aria-live="polite">
-          <div className="loading-ring" aria-hidden="true"/><p>{t('app.loadingDEM')}</p>
-        </section>}
-        {selectedRegion && <DetailedRegionReport region={selectedRegion}/>}
-        {!selectedRegion && terrain && <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}
-          routeStepM={mapSourceMatches ? comparison?.source.step : undefined}/>}
+        {selectedRegion && <div id="map">
+          {selectedRegion.detail_status === 'report' ? <DetailedRegionReport key={selectedRegion.id} region={selectedRegion}/> :
+            <>
+              {mapError && <section className="load-state" role="alert">
+                <h2>{t('app.loadFailed')}</h2>
+                <p>{localizeError(mapError)}</p>
+                <p>{t('app.loadHelp', {command:'npm.cmd run dev',protocol:'file://',path:'public/data/jezero/'})}</p>
+              </section>}
+              {!terrain && !mapError && <section className="load-state" role="status" aria-live="polite">
+                <div className="loading-ring" aria-hidden="true"/><p>{t('app.loadingDEM')}</p>
+              </section>}
+              {terrain && <>
+                <MarsMap terrain={terrain} routes={mapSourceMatches ? comparison?.routes : undefined}
+                  routeStepM={mapSourceMatches ? comparison?.source.step : undefined}/>
+                <RegionSummary region={selectedRegion} />
+              </>}
+            </>}
+        </div>}
         {comparison && terrain && !mapSourceMatches && <p className="alert" role="status">{t('compare.mapNotMatched')}</p>}
+        {mapSourceMatches && selectedRegion?.detail_status !== 'local_map' && <p className="alert" role="status">
+          {t('compare.selectJezero')}{' '}<a href="#globe">{t('nav.globe')}</a>
+        </p>}
         <RouteComparisonPanel onComparison={setComparison}/>
         <footer className="page-footer"><span>JEZERO TRAVERSE © 2026</span>
           <span>{t('app.footer.demo')}</span>
